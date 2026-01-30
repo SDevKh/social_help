@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comment Moderation Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .comment {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+        .delete {
+            background: #ffe6e6;
+            border-left: 5px solid red;
+        }
+        .keep {
+            background: #e6ffe6;
+            border-left: 5px solid green;
+        }
+        small {
+            color: #555;
+        }
+        .section {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        #keywordsInput, #postId {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .clear-button {
+            background: #dc3545;
+            float: right;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🛡 Comment Moderation Dashboard</h1>
+
+<div class="section">
+    <h3>📱 Instagram Post Scanner</h3>
+    <label>Instagram Post URL or ID:</label><br>
+    <input type="text" id="postId" placeholder="Paste Instagram URL or enter post ID">
+    <div class="help-text">
+        Examples:<br>
+        • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
+        • Shortcode: DTnrWNNk-WY<br>
+        • Numeric ID: 17841400455970028
+    </div>
+    <br>
+    <button onclick="scanInstagramPost()">🔍 Scan Comments</button>
+    <p id="scanStatus"></p>
+</div>
+
+<div class="section">
+    <h3>📝 Recent Comments</h3>
+    <button onclick="clearComments()" class="clear-button">Clear Comments</button>
+    <div id="comments"></div>
+</div>
+
+<script>
+const settingsUrl = "/api/settings/";
+const commentsUrl = "/api/comments/";
+const instagramUrl = "/api/scan-instagram/";
+const clearCommentsUrl = "/api/comments/clear/";
+
+function extractPostId(input) {
+    // If it's a full URL
+    if (input.includes('instagram.com/p/')) {
+        const match = input.match(/\/p\/([^\/\?]+)/);
+        return match ? match[1] : input;
+    }
+    return input.trim();
+}
+
+fetch(settingsUrl)
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("thresholdSlider").value = data.toxicity_threshold;
+    document.getElementById("thresholdValue").innerText = data.toxicity_threshold;
+    document.getElementById("keywordsInput").value = data.keywords;
+  });
+
+// Update label when slider moves
+document.getElementById("thresholdSlider").addEventListener("input", e => {
+    document.getElementById("thresholdValue").innerText = e.target.value;
+});
+
+// Save settings
+function saveSettings() {
+    const payload = {
+        toxicity_threshold: parseFloat(document.getElementById("thresholdSlider").value),
+        keywords: document.getElementById("keywordsInput").value
+    };
+
+    fetch(settingsUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(() => {
+        document.getElementById("statusMsg").innerText = "✅ Settings saved!";
+        loadComments();
+    });
+}
+
+// Scan Instagram post
+function scanInstagramPost() {
+    const input = document.getElementById("postId").value;
+    if (!input) {
+        alert("Please enter an Instagram URL or post ID");
+        return;
+    }
+
+    const postId = extractPostId(input);
+    const scanButton = document.querySelector("button[onclick='scanInstagramPost()']");
+
+    document.getElementById("scanStatus").innerText = `🔄 Scanning post: ${postId}...`;
+    scanButton.disabled = true;
+    scanButton.innerHTML = "Scanning...";
+
+    fetch(instagramUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ post_id: postId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById("scanStatus").innerText = "❌ " + data.error;
+        } else {
+            document.getElementById("scanStatus").innerText = "✅ " + data.message;
+            loadComments();
+        }
+    })
+    .catch(err => {
+        document.getElementById("scanStatus").innerText = "❌ Error: " + err.message;
+    })
+    .finally(() => {
+        scanButton.disabled = false;
+        scanButton.innerHTML = "🔍 Scan Comments";
+    });
+}
+
+// Load comments
+function loadComments() {
+    fetch(commentsUrl)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("comments");
+        container.innerHTML = "";
+
+        if (data.length === 0) {
+            container.innerHTML = "<p>No comments found. Try scanning an Instagram post!</p>";
+            return;
+        }
+
+        data.forEach(item => {
+            const div = document.createElement("div");
+            div.className = `comment ${item.decision}`;
+            div.innerHTML = `
+              <strong>${item.comment_text}</strong><br>
+              <small>
+                Decision: ${item.decision.toUpperCase()} |
+                Reason: ${item.reason} |
+                Score: ${item.toxicity_score}
+              </small>
+            `;
+            container.appendChild(div);
+        });
+      });
+}
+
+// Load comments on page load
+loadComments();
+
+function clearComments() {
+    if (!confirm("Are you sure you want to delete all comments? This action cannot be undone.")) {
+        return;
+    }
+
+    fetch(clearCommentsUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(res => {
+        if (res.ok) {
+            document.getElementById("statusMsg").innerText = "✅ All comments cleared!";
+            loadComments();
+        } else {
+            document.getElementById("statusMsg").innerText = "❌ Error clearing comments.";
+        }
+    })
+    .catch(err => {
+        document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+    });
+}
+</script>
+</body>
+</html>
