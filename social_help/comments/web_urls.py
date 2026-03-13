@@ -10,6 +10,7 @@ from .views import (
     facebook_oauth_callback,
     instagram_connect_direct,
     privacy_policy,
+    terms_of_service,
 )
 
 urlpatterns = [
@@ -23,5 +24,6 @@ urlpatterns = [
     path("instagram/callback/", facebook_oauth_callback),
     path("instagram/connect-direct/", instagram_connect_direct),
     path("privacy-policy/", privacy_policy),
+    path("terms-of-service/", terms_of_service),
 ]
 

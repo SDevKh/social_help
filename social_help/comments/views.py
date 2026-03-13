@@ -392,3 +392,7 @@ def landing(request):
 def privacy_policy(request):
     """Serve the static Privacy Policy page required by Meta App Review."""
     return render(request, "comments/privacy_policy.html")
+
+def terms_of_service(request):
+    """Serve the static Terms of Service page required by Meta App Review."""
+    return render(request, "comments/terms_of_service.html")
