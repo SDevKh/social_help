@@ -388,3 +388,7 @@ def landing(request):
     if request.user.is_authenticated:
         return redirect("/dashboard/")
     return render(request, "landing.html")
+
+def privacy_policy(request):
+    """Serve the static Privacy Policy page required by Meta App Review."""
+    return render(request, "comments/privacy_policy.html")
