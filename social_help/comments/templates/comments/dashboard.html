@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Comment Moderation Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f6f8fc;
+            --panel: #ffffff;
+            --ink: #151826;
+            --muted: #5e667a;
+            --brand: #3b82f6;
+            --brand-strong: #1d4ed8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --line: #e5e7eb;
+            --shadow: 0 18px 40px rgba(16, 24, 40, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Manrope", sans-serif;
+            background: radial-gradient(900px 450px at 10% -10%, #e8f1ff 0%, rgba(232, 241, 255, 0) 60%),
+                radial-gradient(700px 450px at 90% 10%, #fff3e8 0%, rgba(255, 243, 232, 0) 60%),
+                var(--bg);
+            color: var(--ink);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .popup {
+            background: var(--panel);
+            border-radius: 12px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+            padding: 20px;
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .popup p {
+            margin: 0 0 14px;
+            font-size: 16px;
+            color: var(--ink);
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .popup-buttons button {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .popup-cancel {
+            background: #f1f5f9;
+            color: var(--ink);
+        }
+
+        .popup-confirm {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-user {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .navbar-actions a,
+        .navbar-actions button {
+            margin-left: 10px;
+            padding: 8px 12px;
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .navbar-actions {
+            position: relative;
+        }
+
+        .btn-danger {
+            background: var(--danger) !important;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626 !important;
+        }
+
+        .navbar-actions button:hover,
+        .navbar-actions a:hover {
+            background: var(--brand-strong);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links button {
+            margin-left: 0;
+        }
+
+        .instagram-section {
+            background: var(--panel);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+        }
+
+        .instagram-section h2 {
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .instagram-status {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .connected {
+            background: rgba(34, 197, 94, 0.12);
+            border-left: 4px solid var(--success);
+            color: #166534;
+        }
+
+        .not-connected {
+            background: rgba(239, 68, 68, 0.12);
+            border-left: 4px solid var(--danger);
+            color: #7f1d1d;
+        }
+
+        .connect-button {
+            background: var(--brand);
+            color: #fff;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .connect-button:hover {
+            background: var(--brand-strong);
+        }
+
+        .connect-button.facebook {
+            background: #1877f2;
+        }
+
+        .connect-button.token {
+            background: #64748b;
+        }
+
+        .connect-button.disconnect {
+            background: var(--danger);
+        }
+
+        .connect-button.disconnect:hover {
+            background: #dc2626;
+        }
+
+        .info-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .comment {
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: #fff;
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .comment-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .comment-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-actions button {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .comment-select {
+            width: 16px;
+            height: 16px;
+        }
+
+        .delete {
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 4px solid var(--danger);
+        }
+
+        .keep {
+            background: rgba(34, 197, 94, 0.08);
+            border-left: 4px solid var(--success);
+        }
+
+        small {
+            color: var(--muted);
+        }
+
+        .section {
+            background: var(--panel);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .section-header h3 {
+            margin: 0;
+        }
+
+        .comment-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .comment-toolbar .btn-outline {
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--line);
+        }
+
+        .comment-toolbar .btn-outline:hover {
+            background: #f1f5f9;
+        }
+
+        .comment-toolbar .btn-danger {
+            background: var(--danger);
+        }
+
+        .comment-toolbar .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .filter-group {
+            display: inline-flex;
+            gap: 6px;
+            padding: 4px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #fff;
+        }
+
+        .filter-group button {
+            background: transparent;
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 6px 12px;
+            border: none;
+            font-size: 12px;
+        }
+
+        .filter-group button.active {
+            background: #eef2ff;
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .section h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+        }
+
+        #keywordsInput,
+        #postId {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            background: #fff;
+            font-size: 14px;
+        }
+
+        button {
+            background: var(--brand);
+            color: #fff;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: var(--brand-strong);
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+
+        .clear-button {
+            background: var(--danger);
+        }
+
+        .clear-button:hover {
+            background: #dc2626;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--ink);
+            font-size: 24px;
+            gap: 4px;
+            margin-left: 20px;
+        }
+
+        .hamburger span {
+            width: 22px;
+            height: 2px;
+            background: var(--ink);
+            transition: 0.3s;
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                display: none;
+                top: 70px;
+                position: absolute;
+                right: 25px;
+                background: var(--panel);
+                padding: 12px;
+                border-radius: 12px;
+                box-shadow: 0 18px 30px rgba(16, 24, 40, 0.12);
+                flex-direction: column;
+                align-items: stretch;
+                min-width: 200px;
+                z-index: 1000;
+                border: 1px solid var(--line);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links a,
+            .nav-links button {
+                margin: 0;
+                width: 100%;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="navbar">
+        <h1 class="page-title">Comment Moderation</h1>
+        <div class="navbar-actions">
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="nav-links" id="nav-links">
+                <a href="#" class="navbar-user">👤 Welcome {{ user.username }}</a>
+                <button class="btn-danger" onclick="alertMessage('Are you sure to logout?')">Logout</button>
+                <a href="javascript:void(0)" class="btn-danger" onclick="alertMessage('Go back home?', '/')"
+                    style="text-align: center; display: inline-flex; align-items: center;">Home</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="instagram-section">
+            <h2>📱 Instagram Account</h2>
+            {% if account %}
+            <div class="instagram-status connected">
+                ✅ <strong>Connected!</strong><br>
+                Business Account ID: {{ account.ig_business_id }}<br>
+                Connected: {{ account.connected_at|date:"M d, Y H:i" }}
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+                <a href="/instagram/connect/" class="connect-button facebook"
+                    style="text-decoration: none; display: inline-block;">🔄 Reconnect Instagram</a>
+                <form method="post" action="/instagram/disconnect/">
+                    {% csrf_token %}
+                    <button class="connect-button disconnect" type="submit">🧹 Disconnect Instagram</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="instagram-status not-connected">
+                ❌ <strong>Not Connected</strong><br>
+                You need to connect your Instagram business account to start moderation.
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                <a href="/instagram/connect/" class="connect-button facebook"
+                    style="text-decoration: none; display: inline-block;">🔗 Connect Instagram (Facebook OAuth)</a>
+                <a href="/instagram/connect-direct/" class="connect-button token"
+                    style="text-decoration: none; display: inline-block;">🔑 Direct Token</a>
+            </div>
+            <div class="info-box">
+                <strong>Which method should I use?</strong><br>
+                • <strong>Facebook OAuth:</strong> Required by Instagram Graph API for business/creator accounts<br>
+                • <strong>Direct Token:</strong> If you already have a valid access token
+            </div>
+            {% endif %}
+        </div>
+
+        {% if account %}
+        <div class="section">
+            <h3>📱 Instagram Post Scanner</h3>
+            <label>Instagram Post URL or ID:</label><br>
+            <input type="text" id="postId" placeholder="Paste Instagram URL or enter post ID">
+            <div class="help-text">
+                Examples:<br>
+                • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
+                • Shortcode: DTnrWNNk-WY<br>
+                • Numeric ID: 17841400455970028
+            </div>
+            <br>
+            <button onclick="scanInstagramPost()">🔍 Scan Comments</button>
+            <p id="scanStatus"></p>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h3>📝 Recent Comments</h3>
+                <button onclick="clearComments()" class="clear-button">Clear Comments</button>
+            </div>
+            <div class="comment-toolbar">
+                <button class="btn-danger" onclick="autoDeleteBadComments()">Auto delete bad</button>
+                <button class="btn-outline" onclick="deleteSelectedComments()">Delete selected</button>
+                <button class="btn-danger" id="deleteSearchedBtn" onclick="deleteSearchedComments()" style="display: none;">Delete matching</button>
+                <div class="filter-group" role="group" aria-label="Comment filter">
+                    <button type="button" class="filter-btn active" data-filter="default">Default</button>
+                    <button type="button" class="filter-btn" data-filter="negative">Negative first</button>
+                    <button type="button" class="filter-btn" data-filter="positive">Positive first</button>
+                </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <input type="text" id="searchInput" placeholder="Search comments by word..." onkeyup="renderComments()" style="width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; box-sizing: border-box; font-family: inherit;">
+            </div>
+            <p id="statusMsg"></p>
+            <div id="comments"></div>
+        </div>
+        {% else %}
+        <div class="section">
+            <p style="text-align: center; color: #666;">
+                Please connect your Instagram account above to access moderation features.
+            </p>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div id="popupOverlay" class="popup-overlay" aria-hidden="true">
+        <div class="popup" role="dialog" aria-modal="true">
+            <p id="popupMessage">Confirm action</p>
+            <div class="popup-buttons">
+                <button id="popupCancel" class="popup-cancel">Cancel</button>
+                <button id="popupConfirm" class="popup-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const settingsUrl = "/api/settings/";
+        const commentsUrl = "/api/comments/";
+        const instagramUrl = "/api/scan-instagram/";
+        const clearCommentsUrl = "/api/comments/clear/";
+        const deleteInstagramUrl = "/api/delete-instagram-comment/";
+        let commentsCache = [];
+        let currentFilter = "default";
+
+        function alertMessage(message, confirmUrl = '/logout/') {
+            showPopup(message, () => { window.location.href = confirmUrl; });
+        }
+
+        function showPopup(message, onConfirm) {
+            const overlay = document.getElementById('popupOverlay');
+            const msgEl = document.getElementById('popupMessage');
+            const confirmBtn = document.getElementById('popupConfirm');
+            const cancelBtn = document.getElementById('popupCancel');
+
+            msgEl.innerText = message;
+            overlay.style.display = 'flex';
+
+            function cleanup() {
+                overlay.style.display = 'none';
+                confirmBtn.removeEventListener('click', onC);
+                cancelBtn.removeEventListener('click', onX);
+            }
+            function onC() { cleanup(); onConfirm && onConfirm(); }
+            function onX() { cleanup(); }
+
+            confirmBtn.addEventListener('click', onC);
+            cancelBtn.addEventListener('click', onX);
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function extractPostId(input) {
+            if (input.includes('instagram.com/p/')) {
+                const match = input.match(/\/p\/([^\/\?]+)/);
+                return match ? match[1] : input;
+            }
+            return input.trim();
+        }
+
+        fetch(settingsUrl)
+            .then(res => res.json())
+            .then(data => {
+                const thresholdSlider = document.getElementById("thresholdSlider");
+                const thresholdValue = document.getElementById("thresholdValue");
+                const keywordsInput = document.getElementById("keywordsInput");
+
+                if (thresholdSlider) {
+                    thresholdSlider.value = data.toxicity_threshold;
+                }
+                if (thresholdValue) {
+                    thresholdValue.innerText = data.toxicity_threshold;
+                }
+                if (keywordsInput) {
+                    keywordsInput.value = data.keywords;
+                }
+            })
+            .catch(err => console.log("Settings load optional"));
+
+        const thresholdSliderEl = document.getElementById("thresholdSlider");
+        if (thresholdSliderEl) {
+            thresholdSliderEl.addEventListener("input", e => {
+                const thresholdValue = document.getElementById("thresholdValue");
+                if (thresholdValue) {
+                    thresholdValue.innerText = e.target.value;
+                }
+            });
+        }
+
+        function saveSettings() {
+            const payload = {
+                toxicity_threshold: parseFloat(document.getElementById("thresholdSlider").value),
+                keywords: document.getElementById("keywordsInput").value
+            };
+
+            fetch(settingsUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(res => res.json())
+                .then(() => {
+                    document.getElementById("statusMsg").innerText = "✅ Settings saved!";
+                    loadComments();
+                });
+        }
+
+        function scanInstagramPost() {
+            const input = document.getElementById("postId").value;
+            if (!input) {
+                alert("Please enter an Instagram URL or post ID");
+                return;
+            }
+
+            const postId = extractPostId(input);
+            const scanButton = document.querySelector("button[onclick='scanInstagramPost()']");
+
+            document.getElementById("scanStatus").innerText = `🔄 Scanning post: ${postId}...`;
+            scanButton.disabled = true;
+            scanButton.innerHTML = "Scanning...";
+
+            fetch(instagramUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                },
+                body: JSON.stringify({ post_id: postId })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("scanStatus").innerText = "❌ " + data.error;
+                    } else {
+                        document.getElementById("scanStatus").innerText = "✅ " + data.message;
+                        loadComments();
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("scanStatus").innerText = "❌ Error: " + err.message;
+                })
+                .finally(() => {
+                    scanButton.disabled = false;
+                    scanButton.innerHTML = "🔍 Scan Comments";
+                });
+        }
+
+        function loadComments() {
+            fetch(commentsUrl)
+                .then(res => res.json())
+                .then(data => {
+                    commentsCache = Array.isArray(data) ? data : [];
+                    renderComments();
+                });
+        }
+
+        function renderComments() {
+            const container = document.getElementById("comments");
+            container.innerHTML = "";
+
+            const searchQuery = (document.getElementById("searchInput") ? document.getElementById("searchInput").value.toLowerCase() : "");
+
+            if (commentsCache.length === 0) {
+                container.innerHTML = "<p>No comments found. Try scanning an Instagram post!</p>";
+                if (document.getElementById("deleteSearchedBtn")) document.getElementById("deleteSearchedBtn").style.display = 'none';
+                return;
+            }
+
+            let sorted = [...commentsCache];
+            if (currentFilter === "negative") {
+                sorted.sort((a, b) => (a.decision === "delete") === (b.decision === "delete") ? 0 : a.decision === "delete" ? -1 : 1);
+            } else if (currentFilter === "positive") {
+                sorted.sort((a, b) => (a.decision === "keep") === (b.decision === "keep") ? 0 : a.decision === "keep" ? -1 : 1);
+            }
+
+            if (searchQuery) {
+                sorted = sorted.filter(item => item.comment_text.toLowerCase().includes(searchQuery));
+            }
+
+            const deleteSearchedBtn = document.getElementById("deleteSearchedBtn");
+            if (deleteSearchedBtn) {
+                if (searchQuery && sorted.length > 0) {
+                    deleteSearchedBtn.style.display = "inline-block";
+                    deleteSearchedBtn.innerText = `Delete ${sorted.length} matching`;
+                } else {
+                    deleteSearchedBtn.style.display = "none";
+                }
+            }
+
+            if (sorted.length === 0 && searchQuery) {
+                container.innerHTML = "<p>No matching comments found for your search.</p>";
+                return;
+            }
+
+            sorted.forEach(item => {
+                const div = document.createElement("div");
+                div.className = `comment ${item.decision}`;
+                div.innerHTML = `
+                    <div class="comment-head">
+                        <label class="comment-meta">
+                            <input class="comment-select" type="checkbox" data-id="${item.id}" data-instagram="${item.instagram_id || ''}">
+                            Select
+                        </label>
+                        <div class="comment-actions">
+                            <button class="btn-danger" onclick="deleteComment(${item.id}, '${item.instagram_id || ''}')">Delete</button>
+                        </div>
+                    </div>
+                    <strong>${item.comment_text}</strong><br>
+                    <small>
+                        Decision: ${String(item.decision || '').toUpperCase()} |
+                        Reason: ${item.reason} |
+                        Score: ${item.toxicity_score}
+                    </small>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const hamburger = document.getElementById('hamburger');
+            const navLinks = document.getElementById('nav-links');
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    renderComments();
+                });
+            });
+
+            hamburger.addEventListener('click', function () {
+                navLinks.classList.toggle('active');
+            });
+        });
+
+        loadComments();
+
+        function clearComments() {
+            if (!confirm("Are you sure you want to delete all comments? This action cannot be undone.")) {
+                return;
+            }
+
+            console.log("Clearing comments...");
+            fetch(clearCommentsUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                }
+            })
+                .then(res => {
+                    console.log("Response status:", res.status);
+                    if (res.ok) {
+                        document.getElementById("statusMsg").innerText = "✅ All comments cleared!";
+                        loadComments();
+                    } else {
+                        document.getElementById("statusMsg").innerText = "❌ Error clearing comments. Status: " + res.status;
+                    }
+                })
+                .catch(err => {
+                    console.log("Error:", err);
+                    document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+                });
+        }
+
+        function deleteComment(commentId, instagramId) {
+            if (!confirm("Delete this comment?")) {
+                return;
+            }
+            deleteCommentByItem({ id: commentId, instagram_id: instagramId })
+                .then(() => {
+                    document.getElementById("statusMsg").innerText = "✅ Comment deleted.";
+                    loadComments();
+                })
+                .catch(err => {
+                    document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+                });
+        }
+
+        function deleteCommentByItem(item) {
+            const instagramId = item.instagram_id;
+            const useInstagramDelete = instagramId && instagramId !== "None";
+            if (useInstagramDelete) {
+                return fetch(deleteInstagramUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ comment_id: item.id, instagram_id: instagramId })
+                }).then(res => res.json()).then(data => {
+                    if (!data.success) {
+                        throw new Error(data.error || "Failed to delete comment.");
+                    }
+                });
+            }
+
+            return fetch(`${commentsUrl}${item.id}/`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRFToken": getCookie('csrftoken')
+                }
+            }).then(res => {
+                if (!res.ok) {
+                    throw new Error("Error deleting comment. Status: " + res.status);
+                }
+            });
+        }
+
+        function getSelectedCommentItems() {
+            const inputs = Array.from(document.querySelectorAll('.comment-select:checked'));
+            return inputs.map(input => ({
+                id: parseInt(input.dataset.id, 10),
+                instagram_id: input.dataset.instagram || ""
+            }));
+        }
+
+        function deleteSelectedComments() {
+            const selected = getSelectedCommentItems();
+            if (selected.length === 0) {
+                document.getElementById("statusMsg").innerText = "Select at least one comment.";
+                return;
+            }
+
+            if (!confirm(`Delete ${selected.length} selected comments?`)) {
+                return;
+            }
+
+            Promise.allSettled(selected.map(deleteCommentByItem))
+                .then(results => {
+                    const failed = results.filter(r => r.status === 'rejected');
+                    if (failed.length) {
+                        document.getElementById("statusMsg").innerText = `❌ ${failed.length} deletions failed.`;
+                    } else {
+                        document.getElementById("statusMsg").innerText = "✅ Selected comments deleted.";
+                    }
+                    loadComments();
+                })
+                .catch(err => {
+                    document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+                });
+        }
+
+        function autoDeleteBadComments() {
+            const badItems = commentsCache.filter(item => item.decision === "delete");
+            if (badItems.length === 0) {
+                document.getElementById("statusMsg").innerText = "No negative comments to delete.";
+                return;
+            }
+
+            if (!confirm(`Auto delete ${badItems.length} negative comments?`)) {
+                return;
+            }
+
+            Promise.allSettled(badItems.map(deleteCommentByItem))
+                .then(results => {
+                    const failed = results.filter(r => r.status === 'rejected');
+                    if (failed.length) {
+                        document.getElementById("statusMsg").innerText = `❌ ${failed.length} deletions failed.`;
+                    } else {
+                        document.getElementById("statusMsg").innerText = "✅ Auto delete completed.";
+                    }
+                    loadComments();
+                })
+                .catch(err => {
+                    document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+                });
+        }
+
+        function deleteSearchedComments() {
+            const searchQuery = document.getElementById("searchInput").value.toLowerCase();
+            if (!searchQuery) return;
+
+            const matchingItems = commentsCache.filter(item => item.comment_text.toLowerCase().includes(searchQuery));
+            if (matchingItems.length === 0) return;
+
+            if (!confirm(`Are you sure you want to delete all ${matchingItems.length} comments containing "${searchQuery}"?`)) {
+                return;
+            }
+
+            document.getElementById("statusMsg").innerText = "Deleting matching comments...";
+
+            Promise.allSettled(matchingItems.map(deleteCommentByItem))
+                .then(results => {
+                    const failed = results.filter(r => r.status === 'rejected');
+                    if (failed.length) {
+                        document.getElementById("statusMsg").innerText = `❌ ${failed.length} deletions failed.`;
+                    } else {
+                        document.getElementById("statusMsg").innerText = "✅ Matching comments deleted successfully.";
+                        const searchInput = document.getElementById("searchInput");
+                        if (searchInput) {
+                            searchInput.value = "";
+                        }
+                    }
+                    loadComments();
+                })
+                .catch(err => {
+                    document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+                });
+        }
+    </script>
+</body>
+
+</html>

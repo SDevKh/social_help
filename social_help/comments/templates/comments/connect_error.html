@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Connection Error</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .error {
+            background: #ffe6e6;
+            border-left: 5px solid #dc3545;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .instructions h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+        }
+
+        .note {
+            background: #fff3cd;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .debug {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 20px;
+            word-break: break-all;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #007cba;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        a:hover {
+            background: #005a87;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>❌ Connection Error</h2>
+    <div class="error">
+        <p><strong>Unable to connect your Instagram account.</strong></p>
+        <p>We couldn't find a Facebook Page or Instagram Business account linked to your profile.</p>
+    </div>
+
+    <div class="instructions">
+        <h3>🔍 Troubleshooting Guide</h3>
+        <p>Meta returned <strong>{{ pages_found }} Facebook Pages</strong> and <strong>{{ direct_accounts_found }}
+                direct Instagram accounts</strong> for your profile.</p>
+
+        {% if pages_found == 0 and direct_accounts_found == 0 %}
+        <div
+            style="background: #fff4e5; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffa000; color: #663c00;">
+            <strong>⚠️ Zero Accounts Found</strong>
+            <p style="margin-top: 5px; font-size: 14px;">This usually means your account is invisible to this App.
+                Please check the following:</p>
+            <ul style="margin-top: 5px; font-size: 14px;">
+                <li><strong>Development Mode:</strong> If your Meta App is in "Development" mode, you MUST add your
+                    personal Facebook account as a <strong>Tester</strong> in the <i>App Roles</i> section of the Meta
+                    Dashboard.</li>
+                <li><strong>Account Type:</strong> Ensure your Instagram is a <strong>Professional
+                        (Business/Creator)</strong> account. Personal accounts will not show up.</li>
+                <li><strong>Linking:</strong> Linking a Facebook Page to your Instagram (in Instagram App -> Edit
+                    Profile -> Page) is the most reliable way to make it appear.</li>
+            </ul>
+        </div>
+        {% endif %}
+
+        <div
+            style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; color: #004085;">
+            <strong>Recommended Step: Link to a Facebook Page</strong>
+            <p style="margin-top: 5px; font-size: 14px;">Even if you don't use Facebook, creating a "bridge" Page is
+                often required for API access.</p>
+            <ol style="margin-top: 5px; font-size: 14px;">
+                <li>Open <strong>Instagram App</strong> -> Profile -> Edit Profile.</li>
+                <li>Under "Public Business Information", tap <strong>Page</strong>.</li>
+                <li>Connect an existing Page or create a new one.</li>
+                <li>Once linked, come back here and try again.</li>
+            </ol>
+        </div>
+
+        <h4>Additional Check:</h4>
+        <ol>
+            <li><strong>Reset Permissions:</strong> Go to <a href="https://www.facebook.com/settings?tab=applications"
+                    target="_blank">Facebook Business Integrations</a>, find this app, and click
+                <strong>Remove</strong>. Then try connecting again.</li>
+        </ol>
+    </div>
+
+    <div class="debug">
+        <strong>Debug Info:</strong> {{ error }}
+    </div>
+
+    <a href="/dashboard/">Back to Dashboard</a>
+    <a href="/instagram/connect-direct/" class="btn-secondary">Try Manual Token</a>
+</body>
+
+</html>
