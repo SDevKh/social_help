@@ -524,6 +524,28 @@
 
         {% if account %}
         <div class="section">
+            <h3>⚙️ Moderation Settings</h3>
+            <label>Toxicity Threshold:</label>
+            <input type="range" id="thresholdSlider" min="0" max="1" step="0.05" value="0.7" style="width: 100%;">
+            <div class="help-text">Threshold: <span id="thresholdValue">0.7</span></div>
+            <br>
+            <label>Keywords (comma separated):</label>
+            <input type="text" id="keywordsInput" placeholder="stupid,idiot,scam,fake,hate">
+            <br><br>
+            <label>
+                <input type="checkbox" id="enableSarcasmDetection" checked>
+                Enable AI Sarcasm Detection
+            </label>
+            <br><br>
+            <label>Sarcasm Threshold:</label>
+            <input type="range" id="sarcasmThresholdSlider" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+            <div class="help-text">Sarcasm Threshold: <span id="sarcasmThresholdValue">0.5</span></div>
+            <br>
+            <button onclick="saveSettings()">💾 Save Settings</button>
+            <p id="settingsStatus"></p>
+        </div>
+
+        <div class="section">
             <h3>📱 Instagram Post Scanner</h3>
             <label>Instagram Post URL or ID:</label><br>
             <input type="text" id="postId" placeholder="Paste Instagram URL or enter post ID">
@@ -551,6 +573,7 @@
                     <button type="button" class="filter-btn active" data-filter="default">Default</button>
                     <button type="button" class="filter-btn" data-filter="negative">Negative first</button>
                     <button type="button" class="filter-btn" data-filter="positive">Positive first</button>
+                    <button type="button" class="filter-btn" data-filter="sarcastic">Sarcastic first</button>
                 </div>
             </div>
             <div style="margin-bottom: 12px;">
@@ -642,6 +665,9 @@
                 const thresholdSlider = document.getElementById("thresholdSlider");
                 const thresholdValue = document.getElementById("thresholdValue");
                 const keywordsInput = document.getElementById("keywordsInput");
+                const enableSarcasm = document.getElementById("enableSarcasmDetection");
+                const sarcasmThresholdSlider = document.getElementById("sarcasmThresholdSlider");
+                const sarcasmThresholdValue = document.getElementById("sarcasmThresholdValue");
 
                 if (thresholdSlider) {
                     thresholdSlider.value = data.toxicity_threshold;
@@ -651,6 +677,15 @@
                 }
                 if (keywordsInput) {
                     keywordsInput.value = data.keywords;
+                }
+                if (enableSarcasm) {
+                    enableSarcasm.checked = data.enable_sarcasm_detection !== false;
+                }
+                if (sarcasmThresholdSlider) {
+                    sarcasmThresholdSlider.value = data.sarcasm_threshold || 0.5;
+                }
+                if (sarcasmThresholdValue) {
+                    sarcasmThresholdValue.innerText = data.sarcasm_threshold || 0.5;
                 }
             })
             .catch(err => console.log("Settings load optional"));
@@ -665,10 +700,22 @@
             });
         }
 
+        const sarcasmThresholdSliderEl = document.getElementById("sarcasmThresholdSlider");
+        if (sarcasmThresholdSliderEl) {
+            sarcasmThresholdSliderEl.addEventListener("input", e => {
+                const sarcasmThresholdValue = document.getElementById("sarcasmThresholdValue");
+                if (sarcasmThresholdValue) {
+                    sarcasmThresholdValue.innerText = e.target.value;
+                }
+            });
+        }
+
         function saveSettings() {
             const payload = {
                 toxicity_threshold: parseFloat(document.getElementById("thresholdSlider").value),
-                keywords: document.getElementById("keywordsInput").value
+                keywords: document.getElementById("keywordsInput").value,
+                enable_sarcasm_detection: document.getElementById("enableSarcasmDetection").checked,
+                sarcasm_threshold: parseFloat(document.getElementById("sarcasmThresholdSlider").value)
             };
 
             fetch(settingsUrl, {
@@ -681,7 +728,10 @@
             })
                 .then(res => res.json())
                 .then(() => {
-                    document.getElementById("statusMsg").innerText = "✅ Settings saved!";
+                    const settingsStatus = document.getElementById("settingsStatus");
+                    if (settingsStatus) {
+                        settingsStatus.innerText = "✅ Settings saved!";
+                    }
                     loadComments();
                 });
         }
@@ -752,6 +802,8 @@
                 sorted.sort((a, b) => (a.decision === "delete") === (b.decision === "delete") ? 0 : a.decision === "delete" ? -1 : 1);
             } else if (currentFilter === "positive") {
                 sorted.sort((a, b) => (a.decision === "keep") === (b.decision === "keep") ? 0 : a.decision === "keep" ? -1 : 1);
+            } else if (currentFilter === "sarcastic") {
+                sorted.sort((a, b) => (a.sarcasm_detected === b.sarcasm_detected) ? 0 : a.sarcasm_detected ? -1 : 1);
             }
 
             if (searchQuery) {
@@ -776,6 +828,9 @@
             sorted.forEach(item => {
                 const div = document.createElement("div");
                 div.className = `comment ${item.decision}`;
+                const sarcasmBadge = item.sarcasm_detected
+                    ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:999px;font-size:11px;margin-left:6px;">🔥 Sarcastic (${item.sarcasm_confidence || 0})</span>`
+                    : '';
                 div.innerHTML = `
                     <div class="comment-head">
                         <label class="comment-meta">
@@ -786,11 +841,12 @@
                             <button class="btn-danger" onclick="deleteComment(${item.id}, '${item.instagram_id || ''}')">Delete</button>
                         </div>
                     </div>
-                    <strong>${item.comment_text}</strong><br>
+                    <strong>${item.comment_text}</strong>${sarcasmBadge}<br>
                     <small>
                         Decision: ${String(item.decision || '').toUpperCase()} |
                         Reason: ${item.reason} |
-                        Score: ${item.toxicity_score}
+                        Score: ${item.toxicity_score} |
+                        Sentiment: ${item.sentiment || 'neutral'}
                     </small>
                 `;
                 container.appendChild(div);

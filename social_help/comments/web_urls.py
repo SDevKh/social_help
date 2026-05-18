@@ -11,6 +11,7 @@ from .views import (
     instagram_connect_direct,
     privacy_policy,
     terms_of_service,
+    contact,
 )
 
 urlpatterns = [
@@ -25,5 +26,7 @@ urlpatterns = [
     path("instagram/connect-direct/", instagram_connect_direct),
     path("privacy-policy/", privacy_policy),
     path("terms-of-service/", terms_of_service),
+    path("terms/", terms_of_service),
+    path("contact/", contact),
 ]
 

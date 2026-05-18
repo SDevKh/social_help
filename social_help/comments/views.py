@@ -346,6 +346,8 @@ class ModerationSettingsAPI(APIView):
         return Response({
             "toxicity_threshold": s.toxicity_threshold,
             "keywords": s.keywords,
+            "enable_sarcasm_detection": getattr(s, "enable_sarcasm_detection", True),
+            "sarcasm_threshold": getattr(s, "sarcasm_threshold", 0.5),
         })
 
     def post(self, request):
@@ -354,6 +356,12 @@ class ModerationSettingsAPI(APIView):
             "toxicity_threshold", s.toxicity_threshold
         )
         s.keywords = request.data.get("keywords", s.keywords)
+        s.enable_sarcasm_detection = request.data.get(
+            "enable_sarcasm_detection", getattr(s, "enable_sarcasm_detection", True)
+        )
+        s.sarcasm_threshold = request.data.get(
+            "sarcasm_threshold", getattr(s, "sarcasm_threshold", 0.5)
+        )
         s.save()
         return Response({"message": "Settings updated"})
 
@@ -396,3 +404,10 @@ def privacy_policy(request):
 def terms_of_service(request):
     """Serve the static Terms of Service page required by Meta App Review."""
     return render(request, "comments/terms_of_service.html")
+
+def contact(request):
+    """Serve the static Contact page required by Meta App Review."""
+    if request.method == "POST":
+        # Handle simple form submission securely if needed (just return a success page for now)
+        return render(request, "comments/contact.html", {"success": True})
+    return render(request, "comments/contact.html")

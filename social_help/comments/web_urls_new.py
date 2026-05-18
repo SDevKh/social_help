@@ -16,8 +16,10 @@ from .views import (
     dashboard,
     signup,
     facebook_oauth_login,
-    facebook_oauth_callback,
     instagram_connect_direct,
+    privacy_policy,
+    terms_of_service,
+    contact,
 )
 
 urlpatterns = [
@@ -36,4 +38,10 @@ urlpatterns = [
     
     # Direct Token Entry
     path("instagram/connect-direct/", instagram_connect_direct),
+    
+    # Legal & Contact
+    path("privacy-policy/", privacy_policy),
+    path("terms-of-service/", terms_of_service),
+    path("terms/", terms_of_service),
+    path("contact/", contact),
 ]

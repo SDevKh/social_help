@@ -10,6 +10,16 @@ class Comment(models.Model):
         ("keyword", "Keyword Match"),
         ("ai", "AI Score"),
         ("clean", "Clean"),
+        ("toxic_word", "Toxic Word"),
+        ("positive", "Positive"),
+        ("spam_keyword", "Spam Keyword"),
+        ("hf_ai", "HF AI"),
+    ]
+
+    SENTIMENT_CHOICES = [
+        ("positive", "Positive"),
+        ("negative", "Negative"),
+        ("neutral", "Neutral"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -18,6 +28,9 @@ class Comment(models.Model):
     decision = models.CharField(max_length=10, choices=DECISION_CHOICES)
     reason = models.CharField(max_length=20, choices=REASON_CHOICES)
     instagram_id = models.CharField(max_length=100, blank=True, null=True)
+    sentiment = models.CharField(max_length=10, choices=SENTIMENT_CHOICES, default="neutral")
+    sarcasm_detected = models.BooleanField(default=False)
+    sarcasm_confidence = models.FloatField(default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -30,6 +43,8 @@ class ModerationSetting(models.Model):
         help_text="Comma separated keywords",
         default="stupid,idiot,scam,fake,hate"
     )
+    enable_sarcasm_detection = models.BooleanField(default=True, help_text="Enable AI sarcasm detection")
+    sarcasm_threshold = models.FloatField(default=0.5, help_text="Confidence threshold for sarcasm flagging (0.0 - 1.0)")
 
     def keyword_list(self):
         return [k.strip().lower() for k in self.keywords.split(",")]
