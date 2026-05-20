@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Social Help - AI Comment Moderation for Creators and Brands</title>
+    <title>SocialFuse - AI Comment Moderation for Creators and Brands</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -72,6 +72,13 @@
             gap: 12px;
             letter-spacing: -0.5px;
             color: var(--ink);
+        }
+
+        .logo-mark {
+            width: 118px;
+            height: 40px;
+            object-fit: contain;
+            display: block;
         }
 
         .logo span {
@@ -501,7 +508,10 @@
     <div class="floating-graphic float-4">"Follow me pls" ❌</div>
 
     <header class="nav">
-        <a href="/" class="logo">Social<span>Help</span></a>
+        <a href="/" class="logo">
+            <img class="logo-mark" src="{% static 'comments/socialfuse-logo.png' %}" alt="SocialFuse logo">
+            SocialFuse
+        </a>
         
         <div class="nav-links" id="navLinks">
             <a href="/brands/" class="btn-ghost">For Brands</a>
@@ -615,7 +625,7 @@
     <footer>
         <div class="footer-grid">
             <div class="footer-brand">
-                <h3>Social Help</h3>
+                <h3>SocialFuse</h3>
                 <p>AI-powered moderation for creators and brands who want a safe, thriving community.</p>
             </div>
             <div class="footer-col">
@@ -644,7 +654,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <span>&copy; 2026 Social Help. All rights reserved.</span>
+            <span>&copy; 2026 SocialFuse. All rights reserved.</span>
             <span>Built for Creators.</span>
         </div>
     </footer>

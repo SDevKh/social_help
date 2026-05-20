@@ -465,7 +465,7 @@ class CreateCheckoutSession(APIView):
                     'price_data': {
                         'currency': 'usd',
                         'product_data': {
-                            'name': f'Social Help {tier.title()} Plan',
+                            'name': f'SocialFuse {tier.title()} Plan',
                         },
                         'unit_amount': amount,
                         'recurring': {'interval': 'month'},
