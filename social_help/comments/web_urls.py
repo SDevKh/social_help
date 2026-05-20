@@ -12,6 +12,7 @@ from .views import (
     privacy_policy,
     terms_of_service,
     contact,
+    pricing_page,
 )
 
 urlpatterns = [
@@ -28,5 +29,7 @@ urlpatterns = [
     path("terms-of-service/", terms_of_service),
     path("terms/", terms_of_service),
     path("contact/", contact),
+    path("pricing/", pricing_page),
 ]
+
 

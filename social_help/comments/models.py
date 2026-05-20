@@ -70,3 +70,35 @@ class InstagramAccount(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.ig_business_id}"
+
+class Subscription(models.Model):
+    TIER_CHOICES = [
+        ('free', 'Free Tier (50 comments/mo)'),
+        ('starter', 'Starter ($15/mo - 1,500 comments)'),
+        ('pro', 'Pro ($49/mo - Unlimited & Multi-Account)'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
+    tier = models.CharField(max_length=20, choices=TIER_CHOICES, default='free')
+    stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
+    stripe_subscription_id = models.CharField(max_length=100, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    comments_processed_this_month = models.IntegerField(default=0)
+    current_period_end = models.DateTimeField(null=True, blank=True)
+
+    def max_comments(self):
+        if self.tier == 'pro':
+            return "Unlimited"
+        elif self.tier == 'starter':
+            return 1500
+        return 50
+
+    def can_process_more(self):
+        if self.tier == 'pro':
+            return True
+        elif self.tier == 'starter':
+            return self.comments_processed_this_month < 1500
+        return self.comments_processed_this_month < 50
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tier.upper()} ({'Active' if self.is_active else 'Inactive'})"

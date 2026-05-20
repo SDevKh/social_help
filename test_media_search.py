@@ -1,9 +1,7 @@
-#!/usr/bin/env python
 import os
 import sys
 import django
 
-# Add the project directory to the path
 sys.path.insert(0, r'C:\Users\deves\OneDrive\Desktop\New folder\social_help\social_help')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'social_help.settings')
 django.setup()

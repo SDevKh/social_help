@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>SaaS Plans & Pricing - Social Help</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-0: #0b0714;
+            --bg-1: #12091f;
+            --bg-2: #1a0e2b;
+            --ink: #f5f2ff;
+            --muted: #b5a6d6;
+            --accent: #7b3cff;
+            --accent-2: #ff8a3d;
+            --card: rgba(28, 15, 46, 0.75);
+            --card-strong: rgba(40, 22, 62, 0.85);
+            --stroke: rgba(255, 255, 255, 0.08);
+            --glass: rgba(255, 255, 255, 0.07);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Space Grotesk", sans-serif;
+            color: var(--ink);
+            background: radial-gradient(900px 600px at 50% 0%, rgba(123, 60, 255, 0.25), transparent 70%),
+                radial-gradient(800px 560px at 90% 80%, rgba(255, 138, 61, 0.15), transparent 70%),
+                linear-gradient(180deg, #0a0612 0%, #12081f 35%, #170b27 70%, #0b0714 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .nav {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 24px;
+            border-bottom: 1px solid var(--stroke);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .logo-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(140deg, #6a37ff 0%, #ff7a2d 100%);
+            display: grid;
+            place-items: center;
+            box-shadow: 0 12px 28px rgba(123, 60, 255, 0.35);
+            font-size: 14px;
+            letter-spacing: 0.8px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-dash {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-dash:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .pricing-container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 60px auto 100px;
+            padding: 0 24px;
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .pricing-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: rgba(123, 60, 255, 0.2);
+            border: 1px solid rgba(123, 60, 255, 0.4);
+            font-size: 13px;
+            font-weight: 600;
+            color: #d8b4ff;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pricing-header h1 {
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            background: linear-gradient(180deg, #fff 0%, #c4b5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .pricing-header p {
+            color: var(--muted);
+            font-size: 18px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 32px;
+            align-items: stretch;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--stroke);
+            border-radius: 24px;
+            padding: 40px 32px;
+            position: relative;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 32px 70px rgba(123, 60, 255, 0.25);
+            border-color: rgba(123, 60, 255, 0.5);
+        }
+
+        .card.popular {
+            background: linear-gradient(160deg, rgba(123, 60, 255, 0.15), rgba(255, 138, 61, 0.1)), var(--card-strong);
+            border: 2px solid var(--accent);
+            box-shadow: 0 24px 60px rgba(123, 60, 255, 0.3);
+        }
+
+        .popular-tag {
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #7b3cff, #ff8a3d);
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 10px 20px rgba(123, 60, 255, 0.4);
+        }
+
+        .tier-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .tier-desc {
+            color: var(--muted);
+            font-size: 15px;
+            margin-bottom: 28px;
+            min-height: 48px;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .price span {
+            font-size: 18px;
+            color: var(--muted);
+            font-weight: 400;
+            margin-left: 6px;
+        }
+
+        .features {
+            list-style: none;
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .icon-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7b3cff 0%, #ff8a3d 100%);
+            color: #fff;
+            box-shadow: 0 16px 30px rgba(123, 60, 255, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(123, 60, 255, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .current-plan {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+            cursor: default;
+        }
+        
+        .current-plan:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        #statusModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            place-items: center;
+            z-index: 1000;
+            padding: 24px;
+        }
+
+        .modal-content {
+            background: var(--card-strong);
+            border: 1px solid var(--accent);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 30px 70px rgba(123, 60, 255, 0.5);
+        }
+
+        .modal-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .modal-desc {
+            color: var(--muted);
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="nav">
+        <a href="/" class="logo">
+            <span class="logo-badge">SH</span>
+            Social Help
+        </a>
+        <div class="nav-actions">
+            {% if user.is_authenticated %}
+            <a href="/dashboard/" class="btn-dash">Go to Dashboard</a>
+            {% else %}
+            <a href="/login/" class="btn-dash">Log in</a>
+            <a href="/signup/" class="btn-dash" style="background: var(--accent); border: none;">Sign up</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="pricing-container">
+        <div class="pricing-header">
+            <div class="pricing-badge">Simple & Predictable</div>
+            <h1>Choose Your Protection Plan</h1>
+            <p>Scale your automated comment moderation seamlessly as your audience and engagement grow.</p>
+        </div>
+
+        <div class="grid">
+            <!-- Free Tier -->
+            <div class="card">
+                <div>
+                    <div class="tier-name">Free Tier</div>
+                    <div class="tier-desc">Perfect for testing out AI moderation on individual posts.</div>
+                    <div class="price">$0<span>/ month</span></div>
+
+                    <ul class="features">
+                        <li><span class="icon-check">✓</span> 50 comments moderated / mo</li>
+                        <li><span class="icon-check">✓</span> 1 Instagram account</li>
+                        <li><span class="icon-check">✓</span> Core AI toxicity detection</li>
+                        <li><span class="icon-check">✓</span> Manual keyword filtering</li>
+                    </ul>
+                </div>
+
+                {% if subscription and subscription.tier == 'free' %}
+                <button class="btn current-plan">Current Plan</button>
+                {% else %}
+                <button class="btn btn-secondary" onclick="selectPlan('free')">Select Free</button>
+                {% endif %}
+            </div>
+
+            <!-- Starter Tier -->
+            <div class="card popular">
+                <div class="popular-tag">Most Popular</div>
+                <div>
+                    <div class="tier-name">Starter</div>
+                    <div class="tier-desc">Built for growing creators and boutique brands.</div>
+                    <div class="price">$15<span>/ month</span></div>
+
+                    <ul class="features">
+                        <li><span class="icon-check">✓</span> 1,500 comments moderated / mo</li>
+                        <li><span class="icon-check">✓</span> 1 Instagram account</li>
+                        <li><span class="icon-check">✓</span> Advanced Sarcasm AI Detection</li>
+                        <li><span class="icon-check">✓</span> Automated deletion rules</li>
+                        <li><span class="icon-check">✓</span> Priority email support</li>
+                    </ul>
+                </div>
+
+                {% if subscription and subscription.tier == 'starter' %}
+                <button class="btn current-plan">Current Plan</button>
+                {% else %}
+                <button class="btn btn-primary" onclick="selectPlan('starter')">Subscribe Now</button>
+                {% endif %}
+            </div>
+
+            <!-- Pro Tier -->
+            <div class="card">
+                <div>
+                    <div class="tier-name">Pro Agency</div>
+                    <div class="tier-desc">For high-volume brands, agencies, and public figures.</div>
+                    <div class="price">$49<span>/ month</span></div>
+
+                    <ul class="features">
+                        <li><span class="icon-check">✓</span> Unlimited comments moderated</li>
+                        <li><span class="icon-check">✓</span> Multiple Instagram accounts</li>
+                        <li><span class="icon-check">✓</span> Real-time Webhook instant deletion</li>
+                        <li><span class="icon-check">✓</span> Custom moderation rules & audit logs</li>
+                        <li><span class="icon-check">✓</span> Dedicated account manager</li>
+                    </ul>
+                </div>
+
+                {% if subscription and subscription.tier == 'pro' %}
+                <button class="btn current-plan">Current Plan</button>
+                {% else %}
+                <button class="btn btn-secondary" onclick="selectPlan('pro')" style="border-color: var(--accent);">Subscribe Pro</button>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <div id="statusModal">
+        <div class="modal-content">
+            <div class="modal-icon" id="modalIcon">🎉</div>
+            <div class="modal-title" id="modalTitle">Plan Upgraded!</div>
+            <div class="modal-desc" id="modalDesc">Your subscription was updated successfully. Enjoy automated moderation!</div>
+            <button class="btn btn-primary" onclick="window.location.href='/dashboard/'">Go to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function selectPlan(tier) {
+            const isAuth = "{{ user.is_authenticated }}" === "True";
+            if (!isAuth) {
+                window.location.href = "/signup/?plan=" + tier;
+                return;
+            }
+
+            fetch("/api/create-checkout/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ tier: tier })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("modalTitle").innerText = "Plan Upgraded!";
+                    document.getElementById("modalDesc").innerText = data.message;
+                    document.getElementById("statusModal").style.display = "grid";
+                } else {
+                    alert("Error: " + (data.error || "Failed to upgrade plan"));
+                }
+            })
+            .catch(err => alert("Request failed: " + err));
+        }
+    </script>
+</body>
+
+</html>

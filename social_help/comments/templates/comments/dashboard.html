@@ -478,10 +478,13 @@
                 <span></span>
             </button>
             <nav class="nav-links" id="nav-links">
-                <a href="#" class="navbar-user">👤 Welcome {{ user.username }}</a>
+                <a href="/pricing/" style="background: #eef2ff; color: #3b82f6; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px; border: 1px solid #bfdbfe; display: inline-block;">
+                    💎 Plan: {{ subscription.tier|default:"free"|upper }} ({{ subscription.comments_processed_this_month|default:0 }} / {{ subscription.max_comments|default:50 }})
+                </a>
+                <a href="/pricing/" style="background: var(--brand); color: #fff; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px; display: inline-block;">⚡ Upgrade</a>
+                <a href="#" class="navbar-user">👤 {{ user.username }}</a>
                 <button class="btn-danger" onclick="alertMessage('Are you sure to logout?')">Logout</button>
-                <a href="javascript:void(0)" class="btn-danger" onclick="alertMessage('Go back home?', '/')"
-                    style="text-align: center; display: inline-flex; align-items: center;">Home</a>
+                <a href="/" class="btn-danger" style="text-align: center; display: inline-flex; align-items: center;">Home</a>
             </nav>
         </div>
     </div>

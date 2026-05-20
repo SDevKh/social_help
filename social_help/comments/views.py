@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from .serializers import CommentSerializer
-from .models import Comment, ModerationSetting, InstagramAccount
+from .models import Comment, ModerationSetting, InstagramAccount, Subscription
 from .instagram_service import InstagramService
 
 import secrets
@@ -44,6 +44,13 @@ def get_settings(user=None):
     return obj
 
 
+def get_subscription(user):
+    if not user or not user.is_authenticated:
+        return None
+    sub, _ = Subscription.objects.get_or_create(user=user, defaults={'tier': 'free'})
+    return sub
+
+
 # -------------------------------------------------------------------
 # Auth / Dashboard
 # -------------------------------------------------------------------
@@ -51,8 +58,10 @@ def get_settings(user=None):
 @login_required
 def dashboard(request):
     account = InstagramAccount.objects.filter(user=request.user).first()
+    sub = get_subscription(request.user)
     return render(request, "comments/dashboard.html", {
         "account": account,
+        "subscription": sub,
     })
 
 
@@ -374,6 +383,13 @@ class ScanInstagramPost(APIView):
         if not post_id:
             return Response({"error": "post_id required"}, status=400)
 
+        sub = get_subscription(request.user)
+        if sub and not sub.can_process_more():
+            return Response({
+                "error": f"Monthly limit reached ({sub.comments_processed_this_month} / {sub.max_comments()} comments). Please upgrade your plan.",
+                "limit_reached": True
+            }, status=403)
+
         account = InstagramAccount.objects.filter(user=request.user).first()
         if not account:
             return Response({"error": "No Instagram account connected"}, status=400)
@@ -381,9 +397,18 @@ class ScanInstagramPost(APIView):
         service = InstagramService(account=account)
         results = service.scan_instagram_comments(post_id, user=request.user)
 
+        if isinstance(results, dict) and "error" in results:
+            return Response({"error": results["error"]}, status=400)
+
+        if sub and results:
+            sub.comments_processed_this_month += len(results)
+            sub.save()
+
         return Response({
-            "message": f"Scanned {len(results)} comments",
+            "message": f"Scanned {len(results)} comments (Used this month: {sub.comments_processed_this_month} / {sub.max_comments()})",
             "results": results,
+            "used": sub.comments_processed_this_month,
+            "max": sub.max_comments(),
         })
 
 
@@ -411,3 +436,33 @@ def contact(request):
         # Handle simple form submission securely if needed (just return a success page for now)
         return render(request, "comments/contact.html", {"success": True})
     return render(request, "comments/contact.html")
+
+
+def pricing_page(request):
+    """SaaS pricing plans page."""
+    sub = None
+    if request.user.is_authenticated:
+        sub = get_subscription(request.user)
+    return render(request, "comments/pricing.html", {"subscription": sub})
+
+
+class CreateCheckoutSession(APIView):
+    """API endpoint to initiate Stripe checkout or simulate instant plan upgrade."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        tier = request.data.get("tier", "starter")
+        sub = get_subscription(request.user)
+        if not sub:
+            return Response({"error": "Subscription not found"}, status=400)
+            
+        sub.tier = tier
+        sub.is_active = True
+        sub.comments_processed_this_month = 0
+        sub.save()
+        return Response({
+            "success": True, 
+            "message": f"🎉 Successfully upgraded to {tier.upper()} plan!", 
+            "tier": tier
+        })
+

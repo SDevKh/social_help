@@ -102,14 +102,14 @@ class InstagramService:
 
         if not self.page_token or not self.ig_business_id:
             print("[ERROR] Missing token or IG Business ID")
-            return self.get_demo_comments(post_input)
+            return {"error": "No Instagram Business account linked or token expired. Please connect your account."}
 
         shortcode = self.extract_shortcode(post_input)
         media_id = shortcode if shortcode.isdigit() else self.get_media_id(shortcode)
 
         if not media_id:
-            print("[WARN] Media ID not found, using demo comments")
-            return self.get_demo_comments(post_input)
+            print("[WARN] Media ID not found for shortcode:", shortcode)
+            return {"error": "We could not find this post. Please verify the link is correct and belongs to your connected Instagram account."}
 
         all_comments = []
         endpoint = f"{media_id}/comments"
@@ -181,12 +181,14 @@ class InstagramService:
             "great job", "well done", "nice one", "brilliant",
             "oh really", "really", "wow", "amazing", "fantastic",
             "love it", "so good", "best ever", "perfect",
+            "what a genius", "good job ruining", "as if", "so excited for nothing",
+            "not upto the mark", "not up to the mark"
         ]
 
         # Sarcastic indicators (often paired with negative context)
         sarcastic_indicators = [
             "not", "never", "always", "everyone", "nobody",
-            "obviously", "clearly", "surely", "definitely",
+            "obviously", "clearly", "surely", "definitely", "should"
         ]
 
         # Excessive punctuation often signals sarcasm
@@ -202,14 +204,14 @@ class InstagramService:
         # Check for direct sarcastic phrases
         for phrase in sarcastic_phrases:
             if phrase in text_lower:
-                score += 0.25
+                score += 0.4
 
         # Check for sarcastic indicators near negative words
-        negative_words = ["bad", "worst", "terrible", "awful", "hate", "stupid", "idiot", "fail", "wrong"]
+        negative_words = ["bad", "worst", "terrible", "awful", "hate", "stupid", "idiot", "fail", "wrong", "exist", "world", "ruin", "garbage"]
         for indicator in sarcastic_indicators:
             for neg in negative_words:
                 if indicator in text_lower and neg in text_lower:
-                    score += 0.3
+                    score += 0.35
 
         # Excessive punctuation boost
         if excessive_punctuation:
@@ -223,14 +225,14 @@ class InstagramService:
         sarcastic_emojis = ["🙄", "😒", "😏", "🤡", "💀", "😂", "🤣", "👏", "👍"]
         for emoji in sarcastic_emojis:
             if emoji in text:
-                score += 0.2
+                score += 0.25
 
         # Contrast detection: positive words near negative words
         positive_words = ["love", "great", "amazing", "awesome", "perfect", "best", "good", "nice"]
         has_positive = any(w in text_lower for w in positive_words)
         has_negative = any(w in text_lower for w in negative_words)
         if has_positive and has_negative:
-            score += 0.25
+            score += 0.35
 
         confidence = min(score, 1.0)
         return {"detected": confidence > 0.5, "confidence": round(confidence, 2)}
@@ -239,8 +241,6 @@ class InstagramService:
         try:
             analyzer = SentimentIntensityAnalyzer()
             vs = analyzer.polarity_scores(text)
-            
-            # vs contains 'neg', 'neu', 'pos', 'compound'
             compound = vs['compound']
             
             if compound <= -0.05:
@@ -257,14 +257,12 @@ class InstagramService:
                 sarcasm_confidence = sarcasm_result["confidence"]
                 sarcasm_detected = sarcasm_confidence >= sarcasm_threshold
 
-            # VADER's 'neg' score is exactly what we want for toxicity base
             toxicity_score = vs['neg'] 
-            
             if sentiment == "negative":
                 toxicity_score = max(toxicity_score, 0.4)
                 
             if sarcasm_detected:
-                toxicity_score += 0.3
+                toxicity_score += 0.45
 
             toxicity_score = min(toxicity_score, 1.0)
 
@@ -274,7 +272,7 @@ class InstagramService:
                 "sarcasm_confidence": round(sarcasm_confidence, 2),
                 "toxicity_score": round(toxicity_score, 2),
                 "decision": "delete" if toxicity_score >= 0.6 else "keep",
-                "reason": "vader_ai",
+                "reason": "sarcasm_ai" if sarcasm_detected else "vader_ai",
             }
         except Exception as e:
             print(f"[ERROR] Vader AI error: {e}")
@@ -286,36 +284,75 @@ class InstagramService:
         else:
             settings_obj = ModerationSetting.objects.first() or ModerationSetting.objects.create()
 
+        threshold = getattr(settings_obj, "toxicity_threshold", 0.6)
         enable_sarcasm = getattr(settings_obj, "enable_sarcasm_detection", True)
         sarcasm_threshold = getattr(settings_obj, "sarcasm_threshold", 0.5)
 
+        text_lower = text.lower().strip()
+
+        # 1. Custom Keywords (Highest Priority)
+        for keyword in settings_obj.keyword_list():
+            keyword = keyword.strip().lower()
+            if keyword and keyword in text_lower:
+                return {
+                    "toxicity_score": 0.95, 
+                    "decision": "delete", 
+                    "reason": "spam_keyword", 
+                    "sentiment": "negative", 
+                    "sarcasm_detected": False, 
+                    "sarcasm_confidence": 0.0
+                }
+
+        # 2. Comprehensive English & Hindi/Hinglish Profanity Lexicon
+        toxic_words = [
+            "hate", "idiot", "stupid", "scam", "fake", "kill", "die", "garbage", 
+            "terrible", "shit", "fuck", "fucker", "fucking", "bitch", "asshole", 
+            "bastard", "cunt", "slut", "whore", "motherfucker", "dick", "pussy", 
+            "hell", "disgusting", "trash", "loser", "moron", "retard", "scum",
+            "randi", "raand", "bhenchod", "bc", "madarchod", "mc", "chutiya", 
+            "bhosdike", "bsdk", "bhosdi", "saala", "saale", "kutta", "kutte", 
+            "kamina", "kaminey", "haramkhor", "gandu", "suar", "tatti", "hijra", 
+            "kamine", "lodu", "lode", "laude", "bhadwa", "mutthal", "chinal"
+        ]
+        words_cleaned = set(re.findall(r'\b\w+\b', text_lower))
+        if any(tw in words_cleaned for tw in toxic_words) or any(tw in text_lower.split() for tw in toxic_words):
+            return {
+                "toxicity_score": 0.95, 
+                "decision": "delete", 
+                "reason": "toxic_word", 
+                "sentiment": "negative", 
+                "sarcasm_detected": False, 
+                "sarcasm_confidence": 0.0
+            }
+
+        # 3. Severe Toxic Phrases & Death Wishes
+        severe_phrases = [
+            "not upto the mark", "not up to the mark", "should not exist", 
+            "should not exists", "kill yourself", "go to hell", "burn in hell", 
+            "waste of life", "waste of space", "wish you were dead", "rot in hell",
+            "worst ever", "utter garbage", "complete trash", "never exist"
+        ]
+        if any(phrase in text_lower for phrase in severe_phrases):
+            return {
+                "toxicity_score": 0.90, 
+                "decision": "delete", 
+                "reason": "toxic_phrase", 
+                "sentiment": "negative", 
+                "sarcasm_detected": False, 
+                "sarcasm_confidence": 0.0
+            }
+
+        # 4. Sarcasm & VADER AI Analysis
         analysis = self.analyze_with_vader(text, enable_sarcasm=enable_sarcasm, sarcasm_threshold=sarcasm_threshold)
         if analysis:
             return analysis
 
-        text_lower = text.lower().strip()
-        toxic_words = ["hate", "idiot", "stupid", "scam", "fake", "kill", "die", "garbage", "terrible", "shit", "fuck", "bitch", "asshole", "hell", "burn", "disgusting", "trash"]
-        if any(word in text_lower for word in toxic_words):
-            return {"toxicity_score": 0.95, "decision": "delete", "reason": "toxic_word", "sentiment": "negative", "sarcasm_detected": False, "sarcasm_confidence": 0.0}
-
-        positive_words = ["good", "nice", "great", "awesome", "love", "amazing", "wow", "cool", "beautiful"]
-        if any(word in text_lower for word in positive_words):
-            return {"toxicity_score": 0.05, "decision": "keep", "reason": "positive", "sentiment": "positive", "sarcasm_detected": False, "sarcasm_confidence": 0.0}
-
-        for keyword in settings_obj.keyword_list():
-            keyword = keyword.strip().lower()
-            if keyword in positive_words:
-                continue
-            if keyword and keyword in text_lower:
-                return {"toxicity_score": 0.9, "decision": "delete", "reason": "spam_keyword", "sentiment": "negative", "sarcasm_detected": False, "sarcasm_confidence": 0.0}
-
-        score = 0.7 if any(w in text_lower for w in ["bad", "worst", "poor", "ugly", "boring"]) else 0.1
-        threshold = settings_obj.toxicity_threshold or 0.6
+        score = 0.5
         return {
             "toxicity_score": round(score, 2),
             "decision": "delete" if score >= threshold else "keep",
-            "reason": "ai",
-            "sentiment": "neutral" if score < 0.3 else "negative",
+            "reason": "fallback_ai",
+            "sentiment": "neutral",
             "sarcasm_detected": False,
             "sarcasm_confidence": 0.0,
         }
@@ -339,6 +376,9 @@ class InstagramService:
 
     def scan_instagram_comments(self, post_url, user=None):
         comments = self.fetch_comments(post_url)
+        if isinstance(comments, dict) and "error" in comments:
+            return comments
+
         results = []
 
         for comment in comments:
