@@ -6,14 +6,16 @@ import tweepy
 def setup_client(access_token=None, access_token_secret=None):
     print("Authenticating with X (Twitter) API...")
     
-    # Hardcoded keys from your screenshot (Ensure these are kept secure!)
-    consumer_key = "hTOPcaTaa78oj8kZ8TaTdKPBi"
-    consumer_secret = "NDx5qw4PAN5DCbXTF26UYi42HLY0LAs09qL8ji4BiEYW2pJH86"
+    import os
+    
+    # Use environment variables instead of hardcoded keys to prevent security leaks
+    consumer_key = os.getenv("TWITTER_CONSUMER_KEY", "")
+    consumer_secret = os.getenv("TWITTER_CONSUMER_SECRET", "")
     
     if not access_token:
-        access_token = "1625818910216814595-nzlL3Y18IkLJkigdyDwoxG64ksfHM6"
+        access_token = os.getenv("TWITTER_ACCESS_TOKEN", "")
     if not access_token_secret:
-        access_token_secret = "Y4v8eDJhVQPldjj2EKvLskDsYsZz7oJCtlMqZzO4AOA2L"
+        access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET", "")
     
     client = tweepy.Client(
         consumer_key=consumer_key,
