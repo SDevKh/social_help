@@ -479,7 +479,9 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
+                if (data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                } else if (data.success) {
                     document.getElementById("modalTitle").innerText = "Plan Upgraded!";
                     document.getElementById("modalDesc").innerText = data.message;
                     document.getElementById("statusModal").style.display = "grid";

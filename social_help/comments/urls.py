@@ -7,6 +7,7 @@ from .views import (
     DeleteInstagramComment,
     ClearAllComments,
     CreateCheckoutSession,
+    StripeWebhook,
 )
 
 urlpatterns = [
@@ -17,5 +18,6 @@ urlpatterns = [
     path("delete-instagram-comment/", DeleteInstagramComment.as_view()),
     path("settings/", ModerationSettingsAPI.as_view()),
     path("create-checkout/", CreateCheckoutSession.as_view()),
+    path("stripe-webhook/", StripeWebhook.as_view()),
 ]
 

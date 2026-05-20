@@ -19,6 +19,8 @@ import requests
 import logging
 import hmac
 import hashlib
+import stripe
+from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
@@ -447,22 +449,73 @@ def pricing_page(request):
 
 
 class CreateCheckoutSession(APIView):
-    """API endpoint to initiate Stripe checkout or simulate instant plan upgrade."""
+    """API endpoint to initiate Stripe checkout"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         tier = request.data.get("tier", "starter")
-        sub = get_subscription(request.user)
-        if not sub:
-            return Response({"error": "Subscription not found"}, status=400)
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            amount = 1500 if tier == "starter" else 4900
             
-        sub.tier = tier
-        sub.is_active = True
-        sub.comments_processed_this_month = 0
-        sub.save()
-        return Response({
-            "success": True, 
-            "message": f"🎉 Successfully upgraded to {tier.upper()} plan!", 
-            "tier": tier
-        })
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': f'Social Help {tier.title()} Plan',
+                        },
+                        'unit_amount': amount,
+                        'recurring': {'interval': 'month'},
+                    },
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url=settings.DOMAIN_URL + '/dashboard/?success=true&session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=settings.DOMAIN_URL + '/pricing/',
+                client_reference_id=str(request.user.id),
+                metadata={'tier': tier}
+            )
+            return Response({'checkout_url': checkout_session.url})
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
 
+
+class StripeWebhook(APIView):
+    """Handle Stripe webhooks"""
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        payload = request.body
+        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+        event = None
+
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            )
+        except ValueError as e:
+            return Response(status=400)
+        except stripe.error.SignatureVerificationError as e:
+            return Response(status=400)
+
+        # Handle the event
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            user_id = session.get('client_reference_id')
+            tier = session.get('metadata', {}).get('tier', 'starter')
+            
+            if user_id:
+                sub = Subscription.objects.filter(user_id=user_id).first()
+                if sub:
+                    sub.tier = tier
+                    sub.is_active = True
+                    sub.stripe_customer_id = session.get('customer')
+                    sub.stripe_subscription_id = session.get('subscription')
+                    sub.comments_processed_this_month = 0
+                    sub.save()
+
+        return Response(status=200)
