@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Social Help - AI Comment Moderation for Creators and Brands</title>
+    <title>For Brands - Social Help</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -149,43 +149,22 @@
         }
 
         .btn-ghost {
-            padding: 8px 18px;
+            padding: 10px 20px;
             border-radius: 99px;
             font-weight: 600;
             transition: 0.2s;
             border: 1px solid rgba(0,0,0,0.1);
             color: var(--ink);
-            font-size: 15px;
         }
 
         .btn-ghost:hover {
             background: rgba(0,0,0,0.05);
         }
 
-        /* Background Floating Graphics */
-        .floating-graphic {
-            position: absolute;
-            opacity: 0.7;
-            pointer-events: none;
-            z-index: -1;
-            font-family: var(--font-hand);
-            font-size: 28px;
-        }
-
-        .float-1 { top: 15%; left: 5%; transform: rotate(-10deg); color: var(--accent-danger); animation: float 6s ease-in-out infinite; }
-        .float-2 { top: 40%; right: 5%; transform: rotate(15deg); color: var(--accent-success); animation: float 7s ease-in-out infinite reverse; }
-        .float-3 { bottom: 25%; left: 10%; color: var(--accent-brand); animation: float 5s ease-in-out infinite; }
-        .float-4 { top: 10%; right: 10%; transform: rotate(5deg); color: var(--muted); animation: float 8s ease-in-out infinite; }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(-10deg); }
-            50% { transform: translateY(-20px) rotate(-5deg); }
-        }
-
         /* Hero */
         .hero {
             text-align: center;
-            padding: 120px 20px 100px;
+            padding: 100px 20px 80px;
             position: relative;
             max-width: 900px;
             margin: 0 auto;
@@ -194,38 +173,24 @@
         .handwritten-badge {
             font-family: var(--font-hand);
             font-size: 32px;
-            color: var(--accent-orange);
+            color: var(--accent-grape);
             transform: rotate(-5deg);
             display: inline-block;
             margin-bottom: 10px;
         }
 
         .hero h1 {
-            font-size: clamp(48px, 8vw, 84px);
+            font-size: clamp(40px, 7vw, 72px);
             font-weight: 800;
             letter-spacing: -2px;
             line-height: 1.1;
             margin-bottom: 24px;
         }
 
-        .text-gradient-play {
-            background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand), var(--accent-orange), var(--accent-grape));
-            background-size: 300% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 4s linear infinite;
-        }
-
-        @keyframes shine {
-            to {
-                background-position: 300% center;
-            }
-        }
-
         .hero p {
             font-size: 22px;
             color: var(--muted);
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto 40px;
         }
 
@@ -252,36 +217,52 @@
             transform: scale(1.05);
         }
 
-        /* Split Section (Pain & Solution) */
+        /* Floating Graphics */
+        .floating-graphic {
+            position: absolute;
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: -1;
+            font-family: var(--font-hand);
+            font-size: 28px;
+        }
+
+        .float-1 { top: 20%; left: 5%; transform: rotate(-10deg); color: var(--accent-danger); animation: float 6s ease-in-out infinite; }
+        .float-2 { top: 60%; right: 5%; transform: rotate(15deg); color: var(--accent-grape); animation: float 7s ease-in-out infinite reverse; }
+        .float-3 { bottom: -10%; left: 15%; color: var(--accent-brand); animation: float 5s ease-in-out infinite; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(-10deg); }
+            50% { transform: translateY(-20px) rotate(-5deg); }
+        }
+
+        /* Split Section */
         .split-section {
-            max-width: 1200px;
-            margin: 0 auto 120px;
+            max-width: 1100px;
+            margin: 0 auto 100px;
             padding: 0 20px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 80px;
+            gap: 60px;
             align-items: center;
         }
 
         @media (max-width: 768px) {
             .split-section {
                 grid-template-columns: 1fr;
-                gap: 40px;
             }
         }
 
         .text-content h2 {
-            font-size: 48px;
+            font-size: 36px;
             font-weight: 800;
-            margin-bottom: 24px;
-            line-height: 1.1;
-            letter-spacing: -1px;
+            margin-bottom: 20px;
         }
 
         .text-content p {
-            font-size: 20px;
+            font-size: 18px;
             color: var(--muted);
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .visual-box {
@@ -338,83 +319,6 @@
             right: -20px;
             top: -10px;
             transform: rotate(15deg);
-        }
-
-        /* Features Section */
-        .features-section {
-            max-width: 1200px;
-            margin: 0 auto 100px;
-            padding: 0 20px;
-        }
-
-        .section-title {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-title h2 {
-            font-size: 40px;
-            font-weight: 800;
-            margin-bottom: 10px;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 32px;
-            padding: 40px;
-            position: relative;
-            transition: 0.3s;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(0,0,0,0.15);
-            background: var(--bg-card-hover);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
-        }
-
-        .feature-card .hand-icon {
-            font-family: var(--font-hand);
-            font-size: 48px;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        .feature-card h3 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-
-        .feature-card p {
-            color: var(--muted);
-            font-size: 16px;
-        }
-        
-        .scribble-arrow {
-            position: absolute;
-            top: -40px;
-            left: 50%;
-            width: 80px;
-            height: auto;
-            stroke: var(--accent-success);
-            stroke-width: 2;
-            fill: none;
-            stroke-dasharray: 200;
-            animation: draw 2s ease forwards;
-        }
-        
-        @keyframes draw {
-            to { stroke-dashoffset: 0; }
-            from { stroke-dashoffset: 200; }
         }
 
         /* Large Footer */
@@ -494,17 +398,15 @@
 </head>
 <body>
 
-    <!-- Floating Graphics -->
-    <div class="floating-graphic float-1">"Ugly scam!" ❌</div>
-    <div class="floating-graphic float-2">"Love this!" ✓</div>
-    <div class="floating-graphic float-3">"Buy crypto!" ❌</div>
-    <div class="floating-graphic float-4">"Follow me pls" ❌</div>
+    <div class="floating-graphic float-1">"Fake product!" ❌</div>
+    <div class="floating-graphic float-2">Brand Safety 100%</div>
+    <div class="floating-graphic float-3">Stop burning ad spend</div>
 
     <header class="nav">
         <a href="/" class="logo">Social<span>Help</span></a>
         
         <div class="nav-links" id="navLinks">
-            <a href="/brands/" class="btn-ghost">For Brands</a>
+            <a href="/brands/" class="btn-ghost" style="background: rgba(0,0,0,0.05);">For Brands</a>
             <a href="/creators/" class="btn-ghost">For Creators</a>
             <a href="/pricing/" class="btn-ghost">Pricing</a>
             {% if not user.is_authenticated %}
@@ -524,90 +426,51 @@
 
     <main>
         <section class="hero">
-            <div class="handwritten-badge">Say goodbye to trolls!</div>
-            <h1>Your comment section, <br><span class="text-gradient-play">finally clean.</span></h1>
-            <p>We use advanced AI to instantly filter hate speech, spam, and bot comments from your Instagram, so you can focus on creating content.</p>
-            <a href="/signup/" class="btn-main btn-gradient">Protect your peace →</a>
+            <div class="handwritten-badge">Protect your ROI.</div>
+            <h1>Scam comments are destroying your ad conversions.</h1>
+            <p>You spend thousands on Instagram ads to drive sales. But when the first comment is a bot shouting "SCAM!" or linking to a competitor, your customers leave. We stop the leaks.</p>
+            <a href="/signup/" class="btn-main btn-gradient">Secure your brand →</a>
         </section>
 
-        <!-- The Pain -->
         <section class="split-section">
             <div class="visual-box">
                 <div class="mock-comment">
-                    <div class="mock-avatar" style="background: linear-gradient(45deg, #ff9a9e, #fecfef);"></div>
+                    <div class="mock-avatar" style="background: linear-gradient(45deg, #4facfe, #00f2fe);"></div>
                     <div class="mock-text">
-                        <strong>@bot_farm_88</strong>
-                        <span>I made $10,000 yesterday using this trick, click link in my bio!! 👇👇👇</span>
+                        <strong>@competitor_bot_29</strong>
+                        <span>Don't buy from them, I got the exact same thing for $5 on this other site!! link in bio</span>
                     </div>
+                    <div class="scribble-strike"></div>
+                    <div class="hand-note">Ad leak stopped!</div>
                 </div>
                 <div class="mock-comment" style="border: none; padding: 0;">
-                    <div class="mock-avatar" style="background: linear-gradient(45deg, #a18cd1, #fbc2eb);"></div>
+                    <div class="mock-avatar" style="background: linear-gradient(45deg, #fbc2eb, #a6c1ee);"></div>
                     <div class="mock-text">
-                        <strong>@hater_anon</strong>
-                        <span>Honestly you look terrible in this video. Quit social media.</span>
+                        <strong>@angry_customer</strong>
+                        <span>I haven't received my order yet, this company is a total fraud!</span>
                     </div>
+                    <div class="scribble-strike"></div>
                 </div>
-                <div class="hand-note" style="top: -30px; right: 10px; color: var(--accent-grape);">This is exhausting...</div>
             </div>
             <div class="text-content">
-                <span class="handwritten-badge" style="color: var(--accent-danger);">The Problem</span>
-                <h2>The silent engagement killer.</h2>
-                <p>When real fans see a comment section full of spam and toxicity, they leave. They don't want to engage in a messy environment.</p>
-                <p>For brands, a single "Scam!" comment on an expensive ad can destroy conversion rates entirely. For creators, it's a massive drain on mental health.</p>
-                <a href="/brands/" style="font-weight: bold; color: var(--accent-brand);">See how we protect Brands &rarr;</a>
+                <h2>Your comment section is your storefront.</h2>
+                <p>When a customer clicks on your ad, the first thing they do is read the comments to verify social proof. A single unchecked negative comment can tank the conversion rate of an entire campaign.</p>
+                <p>Social Help instantly hides malicious links, competitor spam, and aggressive complaints, ensuring your social proof remains pristine.</p>
             </div>
         </section>
 
-        <!-- The Solution -->
         <section class="split-section" style="direction: rtl;">
             <div class="visual-box" style="direction: ltr;">
-                <div class="mock-comment">
-                    <div class="mock-avatar" style="background: linear-gradient(45deg, #ff9a9e, #fecfef);"></div>
-                    <div class="mock-text">
-                        <strong style="opacity: 0.5;">@bot_farm_88</strong>
-                        <span style="opacity: 0.5;">I made $10,000 yesterday using this trick, click link in my bio!! 👇👇👇</span>
-                    </div>
-                    <div class="scribble-strike"></div>
-                    <div class="hand-note" style="color: var(--accent-danger);">Deleted instantly</div>
+                <div style="text-align: center;">
+                    <span style="font-size: 64px; display: block; margin-bottom: 20px;">🛡️</span>
+                    <h3 style="font-size: 24px; margin-bottom: 10px;">Automated PR crisis management.</h3>
+                    <p style="color: var(--muted);">We detect spikes in negative sentiment so your social team can react before a PR disaster unfolds.</p>
                 </div>
             </div>
             <div class="text-content" style="direction: ltr;">
-                <span class="handwritten-badge" style="color: var(--accent-success);">The Solution</span>
-                <h2>Let AI do the heavy lifting.</h2>
-                <p>Our intelligent sentiment analysis scans every single new comment in real-time. Spam, crypto bots, and hate speech are hidden instantly before your audience even sees them.</p>
-                <p>You don't even get the push notification. We protect your peace automatically.</p>
-                <a href="/creators/" style="font-weight: bold; color: var(--accent-brand);">See how we protect Creators &rarr;</a>
-            </div>
-        </section>
-
-        <section class="features-section">
-            <div class="section-title">
-                <h2>How it works</h2>
-                <p style="color: var(--muted);">We built this for people who are tired of playing whack-a-mole.</p>
-            </div>
-
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <span class="hand-icon" style="color: var(--accent-brand);">1. Connect</span>
-                    <h3>Link your Instagram</h3>
-                    <p>Securely connect your Instagram Professional account in two clicks. We never ask for your password.</p>
-                </div>
-                
-                <div class="feature-card" style="border-color: rgba(0, 230, 118, 0.3);">
-                    <svg class="scribble-arrow" viewBox="0 0 100 100">
-                        <path d="M10,90 Q40,10 90,50" />
-                        <path d="M70,40 L90,50 L80,70" />
-                    </svg>
-                    <span class="hand-icon" style="color: var(--accent-success);">2. Relax</span>
-                    <h3>AI does the heavy lifting</h3>
-                    <p>Our intelligent sentiment analysis scans every new comment. Spam and hate speech are hidden instantly.</p>
-                </div>
-
-                <div class="feature-card">
-                    <span class="hand-icon" style="color: var(--accent-orange);">3. Control</span>
-                    <h3>You're the boss</h3>
-                    <p>Review flagged comments in a beautiful dashboard. Approve the good, permanently delete the bad.</p>
-                </div>
+                <h2>Brand safety on autopilot.</h2>
+                <p>You don't have the time or resources to monitor the comments on every organic and sponsored post 24/7. Your social team is exhausted from playing defense.</p>
+                <p>Let AI enforce your brand safety guidelines automatically, so your social managers can get back to community building.</p>
             </div>
         </section>
     </main>
@@ -645,7 +508,7 @@
         </div>
         <div class="footer-bottom">
             <span>&copy; 2026 Social Help. All rights reserved.</span>
-            <span>Built for Creators.</span>
+            <span>Protecting modern brands.</span>
         </div>
     </footer>
 

@@ -519,3 +519,9 @@ class StripeWebhook(APIView):
                     sub.save()
 
         return Response(status=200)
+
+def creators_page(request):
+    return render(request, "comments/creators.html")
+
+def brands_page(request):
+    return render(request, "comments/brands.html")

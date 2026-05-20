@@ -5,23 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <title>SaaS Plans & Pricing - Social Help</title>
+    <title>Creator Plans - Social Help</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Import modern sans-serif and handwritten font -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-0: #0b0714;
-            --bg-1: #12091f;
-            --bg-2: #1a0e2b;
-            --ink: #f5f2ff;
-            --muted: #b5a6d6;
-            --accent: #7b3cff;
-            --accent-2: #ff8a3d;
-            --card: rgba(28, 15, 46, 0.75);
-            --card-strong: rgba(40, 22, 62, 0.85);
-            --stroke: rgba(255, 255, 255, 0.08);
-            --glass: rgba(255, 255, 255, 0.07);
+            --bg-dark: #faf9f6; /* Sketchbook paper color */
+            --bg-card: #ffffff;
+            --bg-card-hover: #f4f3f0;
+            --ink: #1a1a1a; /* Dark ink color */
+            --muted: #6b6b6b;
+            --accent-brand: #e91e63;
+            --accent-grape: #673ab7;
+            --accent-orange: #ff5722;
+            --accent-success: #00c853;
+            --accent-danger: #d50000;
+            
+            --font-main: 'Outfit', sans-serif;
+            --font-hand: 'Caveat', cursive;
         }
 
         * {
@@ -31,15 +34,19 @@
         }
 
         body {
-            font-family: "Space Grotesk", sans-serif;
+            font-family: var(--font-main);
             color: var(--ink);
-            background: radial-gradient(900px 600px at 50% 0%, rgba(123, 60, 255, 0.25), transparent 70%),
-                radial-gradient(800px 560px at 90% 80%, rgba(255, 138, 61, 0.15), transparent 70%),
-                linear-gradient(180deg, #0a0612 0%, #12081f 35%, #170b27 70%, #0b0714 100%);
+            background-color: var(--bg-dark);
+            /* Subtle paper texture effect using subtle gradients */
+            background-image: 
+                radial-gradient(circle at 15% 30%, rgba(233, 30, 99, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(103, 58, 183, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 50% 10%, rgba(255, 87, 34, 0.02) 0%, transparent 30%);
             min-height: 100vh;
             line-height: 1.6;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
         a {
@@ -47,6 +54,7 @@
             text-decoration: none;
         }
 
+        /* Nav */
         .nav {
             max-width: 1200px;
             width: 100%;
@@ -54,395 +62,559 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 24px 24px;
-            border-bottom: 1px solid var(--stroke);
+            padding: 24px;
+            position: relative;
+            z-index: 100;
         }
 
         .logo {
+            font-weight: 800;
+            font-size: 24px;
             display: flex;
             align-items: center;
             gap: 12px;
-            color: #fff;
-            font-weight: 700;
-            font-size: 20px;
+            letter-spacing: -0.5px;
+            color: var(--ink);
         }
 
-        .logo-badge {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: linear-gradient(140deg, #6a37ff 0%, #ff7a2d 100%);
-            display: grid;
-            place-items: center;
-            box-shadow: 0 12px 28px rgba(123, 60, 255, 0.35);
-            font-size: 14px;
-            letter-spacing: 0.8px;
-        }
-
-        .nav-actions {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-        }
-
-        .btn-dash {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 8px 18px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .btn-dash:hover {
-            background: #fff;
-            color: #000;
-        }
-
-        .pricing-container {
-            max-width: 1200px;
-            width: 100%;
-            margin: 60px auto 100px;
-            padding: 0 24px;
-        }
-
-        .pricing-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .pricing-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 16px;
-            border-radius: 999px;
-            background: rgba(123, 60, 255, 0.2);
-            border: 1px solid rgba(123, 60, 255, 0.4);
-            font-size: 13px;
-            font-weight: 600;
-            color: #d8b4ff;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .pricing-header h1 {
-            font-size: clamp(36px, 5vw, 56px);
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 16px;
-            background: linear-gradient(180deg, #fff 0%, #c4b5fd 100%);
+        .logo span {
+            background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .pricing-header p {
-            color: var(--muted);
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .nav-main-action {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--ink);
+            padding: 0;
+            line-height: 1;
+        }
+
+        .btn-main-action {
+            padding: 8px 18px;
+            border-radius: 99px;
+            font-weight: 600;
+            transition: 0.2s;
+            border: none;
+            background: var(--ink);
+            color: var(--bg-card);
+            font-size: 15px;
+            text-decoration: none;
+        }
+        
+        .btn-main-action:hover {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 1100px) {
+            .menu-toggle {
+                display: block;
+            }
+            .nav-links {
+                display: none !important;
+                position: absolute;
+                top: 100%;
+                left: 20px;
+                right: 20px;
+                background: var(--bg-card);
+                padding: 20px;
+                border-radius: 16px;
+                box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+                flex-direction: column;
+                align-items: stretch;
+                z-index: 50;
+                border: 1px solid rgba(0,0,0,0.05);
+            }
+            .nav-links.show {
+                display: flex !important;
+            }
+            .nav-links a {
+                text-align: center;
+                padding: 12px;
+                width: 100%;
+            }
+        }
+
+        .btn-ghost {
+            padding: 10px 20px;
+            border-radius: 99px;
+            font-weight: 600;
+            transition: 0.2s;
+            border: 1px solid rgba(0,0,0,0.1);
+            color: var(--ink);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        /* Hero */
+        .pricing-hero {
+            text-align: center;
+            padding: 60px 20px 40px;
+            position: relative;
+        }
+
+        .handwritten-badge {
+            font-family: var(--font-hand);
+            font-size: 28px;
+            color: var(--accent-orange);
+            transform: rotate(-5deg);
+            display: inline-block;
+            margin-bottom: -10px;
+        }
+
+        .pricing-hero h1 {
+            font-size: clamp(40px, 6vw, 64px);
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .pricing-hero p {
             font-size: 18px;
-            max-width: 600px;
+            color: var(--muted);
+            max-width: 500px;
             margin: 0 auto;
         }
 
-        .grid {
+        /* Background Floating Graphics (The solution visualizing chaos vs clean) */
+        .floating-graphic {
+            position: absolute;
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: -1;
+            font-family: var(--font-hand);
+            font-size: 24px;
+        }
+
+        .float-1 { top: 10%; left: 10%; transform: rotate(-10deg); color: var(--accent-danger); animation: float 6s ease-in-out infinite; }
+        .float-2 { top: 30%; right: 15%; transform: rotate(15deg); color: var(--accent-success); animation: float 7s ease-in-out infinite reverse; }
+        .float-3 { bottom: 20%; left: 20%; color: var(--accent-brand); animation: float 5s ease-in-out infinite; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(-10deg); }
+            50% { transform: translateY(-20px) rotate(-5deg); }
+        }
+
+        /* Pricing Grid */
+        .pricing-grid {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto 100px;
+            padding: 0 20px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 32px;
+            gap: 24px;
             align-items: stretch;
+            position: relative;
+        }
+
+        /* Creative scribbles around cards */
+        .scribble-arrow {
+            position: absolute;
+            top: -40px;
+            right: 30%;
+            width: 80px;
+            height: auto;
+            stroke: var(--accent-brand);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 200;
+            animation: draw 2s ease forwards;
+            z-index: 2;
+        }
+        
+        .scribble-text {
+            position: absolute;
+            top: -60px;
+            right: 25%;
+            font-family: var(--font-hand);
+            font-size: 32px;
+            color: var(--accent-brand);
+            transform: rotate(10deg);
+            z-index: 2;
+        }
+
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+            from { stroke-dashoffset: 200; }
         }
 
         .card {
-            background: var(--card);
-            border: 1px solid var(--stroke);
-            border-radius: 24px;
-            padding: 40px 32px;
-            position: relative;
-            backdrop-filter: blur(20px);
+            background: var(--bg-card);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 32px;
+            padding: 40px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
         }
 
         .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 32px 70px rgba(123, 60, 255, 0.25);
-            border-color: rgba(123, 60, 255, 0.5);
+            transform: translateY(-10px);
+            border-color: rgba(0,0,0,0.15);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.08);
         }
 
-        .card.popular {
-            background: linear-gradient(160deg, rgba(123, 60, 255, 0.15), rgba(255, 138, 61, 0.1)), var(--card-strong);
-            border: 2px solid var(--accent);
-            box-shadow: 0 24px 60px rgba(123, 60, 255, 0.3);
+        .card.highlight {
+            background: linear-gradient(180deg, rgba(103, 58, 183, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+            border: 1px solid rgba(103, 58, 183, 0.3);
+            box-shadow: 0 20px 50px rgba(103, 58, 183, 0.1);
         }
 
-        .popular-tag {
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #7b3cff, #ff8a3d);
-            color: #fff;
-            padding: 6px 18px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 1px;
+        .card.highlight:hover {
+            border-color: rgba(103, 58, 183, 0.6);
+        }
+
+        .tier-label {
+            font-size: 14px;
             text-transform: uppercase;
-            box-shadow: 0 10px 20px rgba(123, 60, 255, 0.4);
-        }
-
-        .tier-name {
-            font-size: 24px;
+            letter-spacing: 2px;
             font-weight: 700;
+            color: var(--muted);
             margin-bottom: 8px;
         }
+        
+        .card.highlight .tier-label {
+            color: var(--accent-grape);
+        }
 
-        .tier-desc {
-            color: var(--muted);
-            font-size: 15px;
-            margin-bottom: 28px;
-            min-height: 48px;
+        .price-wrap {
+            margin-bottom: 24px;
+            position: relative;
         }
 
         .price {
-            font-size: 48px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            display: flex;
-            align-items: baseline;
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -2px;
         }
 
         .price span {
             font-size: 18px;
-            color: var(--muted);
             font-weight: 400;
-            margin-left: 6px;
+            color: var(--muted);
+            letter-spacing: 0;
+        }
+
+        /* Handwritten circle over the price in highlight card */
+        .highlight .price-wrap::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -10px;
+            width: 140px;
+            height: 70px;
+            transform: translateY(-50%) rotate(-5deg);
+            border: 3px solid var(--accent-orange);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0.7;
+            pointer-events: none;
         }
 
         .features {
             list-style: none;
             margin-bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            flex-grow: 1;
         }
 
         .features li {
+            padding: 12px 0;
+            border-bottom: 1px dashed rgba(0,0,0,0.05);
+            color: var(--ink);
+            font-size: 16px;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.85);
         }
 
-        .icon-check {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(34, 197, 94, 0.2);
-            color: #4ade80;
-            display: grid;
-            place-items: center;
-            font-size: 12px;
+        .features li:last-child {
+            border-bottom: none;
+        }
+
+        .icon-drawn {
+            font-family: var(--font-hand);
+            font-size: 22px;
+            color: var(--accent-success);
             font-weight: 700;
-            flex-shrink: 0;
         }
 
-        .btn {
+        .btn-main {
             width: 100%;
-            padding: 16px 24px;
+            padding: 16px;
             border-radius: 16px;
-            font-size: 16px;
+            font-family: var(--font-main);
+            font-size: 18px;
             font-weight: 700;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.2s ease;
             border: none;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #7b3cff 0%, #ff8a3d 100%);
+        .btn-outline {
+            background: transparent;
+            border: 2px solid rgba(0,0,0,0.1);
+            color: var(--ink);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--ink);
+            background: rgba(0,0,0,0.05);
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand));
             color: #fff;
-            box-shadow: 0 16px 30px rgba(123, 60, 255, 0.35);
+            box-shadow: 0 10px 25px rgba(255, 0, 123, 0.3);
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 40px rgba(123, 60, 255, 0.5);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .current-plan {
-            background: rgba(34, 197, 94, 0.15);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #4ade80;
-            cursor: default;
+        .btn-gradient:hover {
+            box-shadow: 0 15px 35px rgba(255, 0, 123, 0.5);
+            transform: scale(1.02);
         }
         
-        .current-plan:hover {
-            transform: none;
-            box-shadow: none;
+        .btn-active {
+            background: rgba(0, 230, 118, 0.1);
+            border: 2px dashed rgba(0, 230, 118, 0.4);
+            color: var(--accent-success);
+            cursor: default;
         }
 
+        /* Modal */
         #statusModal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
             display: none;
             place-items: center;
-            z-index: 1000;
-            padding: 24px;
+            z-index: 100;
         }
 
-        .modal-content {
-            background: var(--card-strong);
-            border: 1px solid var(--accent);
-            border-radius: 24px;
+        .modal-box {
+            background: var(--bg-dark);
+            border: 2px solid var(--accent-success);
             padding: 40px;
-            max-width: 480px;
-            width: 100%;
+            border-radius: 32px;
             text-align: center;
-            box-shadow: 0 30px 70px rgba(123, 60, 255, 0.5);
+            max-width: 400px;
+            position: relative;
         }
 
-        .modal-icon {
-            font-size: 64px;
+        .modal-box .hand-text {
+            font-family: var(--font-hand);
+            font-size: 40px;
+            color: var(--accent-success);
+            margin-bottom: -10px;
+            transform: rotate(-3deg);
+        }
+        /* Large Footer */
+        footer {
+            background: #ffffff;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding: 80px 20px 40px;
+            margin-top: 100px;
+        }
+
+        .footer-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .footer-grid > div:first-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+        .footer-brand h3 {
+            font-weight: 800;
+            font-size: 24px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .footer-brand p {
+            color: var(--muted);
+            max-width: 300px;
+            margin-bottom: 24px;
+        }
+
+        .footer-col h4 {
+            font-weight: 700;
+            font-size: 18px;
             margin-bottom: 20px;
         }
 
-        .modal-title {
-            font-size: 28px;
-            font-weight: 700;
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
             margin-bottom: 12px;
         }
 
-        .modal-desc {
+        .footer-col ul li a {
             color: var(--muted);
-            margin-bottom: 32px;
-            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .footer-col ul li a:hover {
+            color: var(--accent-brand);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 60px auto 0;
+            padding-top: 24px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 14px;
         }
     </style>
-</head>
 
 <body>
+    
+    <!-- Floating Graphics -->
+    <div class="floating-graphic float-1">"Ugly scam!" ❌</div>
+    <div class="floating-graphic float-2">"Love this!" ✓</div>
+    <div class="floating-graphic float-3">"Buy crypto!" ❌</div>
 
     <header class="nav">
-        <a href="/" class="logo">
-            <span class="logo-badge">SH</span>
-            Social Help
-        </a>
-        <div class="nav-actions">
-            {% if user.is_authenticated %}
-            <a href="/dashboard/" class="btn-dash">Go to Dashboard</a>
-            {% else %}
-            <a href="/login/" class="btn-dash">Log in</a>
-            <a href="/signup/" class="btn-dash" style="background: var(--accent); border: none;">Sign up</a>
+        <a href="/" class="logo">Social<span>Help</span></a>
+        
+        <div class="nav-links" id="navLinks">
+            <a href="/brands/" class="btn-ghost">For Brands</a>
+            <a href="/creators/" class="btn-ghost">For Creators</a>
+            <a href="/pricing/" class="btn-ghost">Pricing</a>
+            {% if not user.is_authenticated %}
+            <a href="/login/" class="btn-ghost">Log in</a>
             {% endif %}
+        </div>
+
+        <div class="nav-main-action">
+            {% if user.is_authenticated %}
+            <a href="/dashboard/" class="btn-main-action">Dashboard</a>
+            {% else %}
+            <a href="/signup/" class="btn-main-action">Sign up</a>
+            {% endif %}
+            <button class="menu-toggle" onclick="document.getElementById('navLinks').classList.toggle('show')">☰</button>
         </div>
     </header>
 
-    <main class="pricing-container">
-        <div class="pricing-header">
-            <div class="pricing-badge">Simple & Predictable</div>
-            <h1>Choose Your Protection Plan</h1>
-            <p>Scale your automated comment moderation seamlessly as your audience and engagement grow.</p>
+    <div class="pricing-hero">
+        <div class="handwritten-badge">Invest in your peace of mind</div>
+        <h1>Pricing for creators.</h1>
+        <p>No corporate jargon. Just powerful AI filtering that keeps your comment sections clean so you can focus on creating.</p>
+    </div>
+
+    <div class="pricing-grid">
+        
+        <!-- Starter/Free -->
+        <div class="card">
+            <div class="tier-label">Hobbyist</div>
+            <div class="price-wrap">
+                <div class="price">$0<span>/mo</span></div>
+            </div>
+            <ul class="features">
+                <li><span class="icon-drawn">✓</span> 50 comments moderated</li>
+                <li><span class="icon-drawn">✓</span> 1 Instagram account</li>
+                <li><span class="icon-drawn">✓</span> Basic AI Toxicity filter</li>
+                <li><span class="icon-drawn">✓</span> Manual keyword blocklist</li>
+            </ul>
+            {% if subscription and subscription.tier == 'free' %}
+            <button class="btn-main btn-active">Active Plan ✓</button>
+            {% else %}
+            <button class="btn-main btn-outline" onclick="selectPlan('free')">Get Started</button>
+            {% endif %}
         </div>
 
-        <div class="grid">
-            <!-- Free Tier -->
-            <div class="card">
-                <div>
-                    <div class="tier-name">Free Tier</div>
-                    <div class="tier-desc">Perfect for testing out AI moderation on individual posts.</div>
-                    <div class="price">$0<span>/ month</span></div>
-
-                    <ul class="features">
-                        <li><span class="icon-check">✓</span> 50 comments moderated / mo</li>
-                        <li><span class="icon-check">✓</span> 1 Instagram account</li>
-                        <li><span class="icon-check">✓</span> Core AI toxicity detection</li>
-                        <li><span class="icon-check">✓</span> Manual keyword filtering</li>
-                    </ul>
-                </div>
-
-                {% if subscription and subscription.tier == 'free' %}
-                <button class="btn current-plan">Current Plan</button>
-                {% else %}
-                <button class="btn btn-secondary" onclick="selectPlan('free')">Select Free</button>
-                {% endif %}
+        <!-- Highlight: Creator -->
+        <div class="card highlight">
+            <svg class="scribble-arrow" viewBox="0 0 100 100">
+                <path d="M10,90 Q40,10 90,50" />
+                <path d="M70,40 L90,50 L80,70" />
+            </svg>
+            <div class="scribble-text">Most popular!</div>
+            
+            <div class="tier-label">Creator</div>
+            <div class="price-wrap">
+                <div class="price">$15<span>/mo</span></div>
             </div>
-
-            <!-- Starter Tier -->
-            <div class="card popular">
-                <div class="popular-tag">Most Popular</div>
-                <div>
-                    <div class="tier-name">Starter</div>
-                    <div class="tier-desc">Built for growing creators and boutique brands.</div>
-                    <div class="price">$15<span>/ month</span></div>
-
-                    <ul class="features">
-                        <li><span class="icon-check">✓</span> 1,500 comments moderated / mo</li>
-                        <li><span class="icon-check">✓</span> 1 Instagram account</li>
-                        <li><span class="icon-check">✓</span> Advanced Sarcasm AI Detection</li>
-                        <li><span class="icon-check">✓</span> Automated deletion rules</li>
-                        <li><span class="icon-check">✓</span> Priority email support</li>
-                    </ul>
-                </div>
-
-                {% if subscription and subscription.tier == 'starter' %}
-                <button class="btn current-plan">Current Plan</button>
-                {% else %}
-                <button class="btn btn-primary" onclick="selectPlan('starter')">Subscribe Now</button>
-                {% endif %}
-            </div>
-
-            <!-- Pro Tier -->
-            <div class="card">
-                <div>
-                    <div class="tier-name">Pro Agency</div>
-                    <div class="tier-desc">For high-volume brands, agencies, and public figures.</div>
-                    <div class="price">$49<span>/ month</span></div>
-
-                    <ul class="features">
-                        <li><span class="icon-check">✓</span> Unlimited comments moderated</li>
-                        <li><span class="icon-check">✓</span> Multiple Instagram accounts</li>
-                        <li><span class="icon-check">✓</span> Real-time Webhook instant deletion</li>
-                        <li><span class="icon-check">✓</span> Custom moderation rules & audit logs</li>
-                        <li><span class="icon-check">✓</span> Dedicated account manager</li>
-                    </ul>
-                </div>
-
-                {% if subscription and subscription.tier == 'pro' %}
-                <button class="btn current-plan">Current Plan</button>
-                {% else %}
-                <button class="btn btn-secondary" onclick="selectPlan('pro')" style="border-color: var(--accent);">Subscribe Pro</button>
-                {% endif %}
-            </div>
+            <ul class="features">
+                <li><span class="icon-drawn">✓</span> 1,500 comments moderated</li>
+                <li><span class="icon-drawn">✓</span> Advanced Sarcasm AI</li>
+                <li><span class="icon-drawn">✓</span> Automated deletion rules</li>
+                <li><span class="icon-drawn">✓</span> Priority email support</li>
+            </ul>
+            {% if subscription and subscription.tier == 'starter' %}
+            <button class="btn-main btn-active">Active Plan ✓</button>
+            {% else %}
+            <button class="btn-main btn-gradient" onclick="selectPlan('starter')">Upgrade to Creator</button>
+            {% endif %}
         </div>
-    </main>
 
+        <!-- Agency -->
+        <div class="card">
+            <div class="tier-label">Agency</div>
+            <div class="price-wrap">
+                <div class="price">$49<span>/mo</span></div>
+            </div>
+            <ul class="features">
+                <li><span class="icon-drawn">✓</span> Unlimited moderation</li>
+                <li><span class="icon-drawn">✓</span> Multi-account linking</li>
+                <li><span class="icon-drawn">✓</span> Instant webhook deletion</li>
+                <li><span class="icon-drawn">✓</span> Custom brand audit logs</li>
+            </ul>
+            {% if subscription and subscription.tier == 'pro' %}
+            <button class="btn-main btn-active">Active Plan ✓</button>
+            {% else %}
+            <button class="btn-main btn-outline" onclick="selectPlan('pro')">Upgrade to Agency</button>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Success Modal -->
     <div id="statusModal">
-        <div class="modal-content">
-            <div class="modal-icon" id="modalIcon">🎉</div>
-            <div class="modal-title" id="modalTitle">Plan Upgraded!</div>
-            <div class="modal-desc" id="modalDesc">Your subscription was updated successfully. Enjoy automated moderation!</div>
-            <button class="btn btn-primary" onclick="window.location.href='/dashboard/'">Go to Dashboard</button>
+        <div class="modal-box">
+            <div class="hand-text" id="modalIcon">Heck yes!</div>
+            <h2 id="modalTitle" style="margin: 16px 0; font-size: 28px;">Plan Upgraded</h2>
+            <p id="modalDesc" style="color: var(--muted); margin-bottom: 32px;">Your subscription is now active.</p>
+            <button class="btn-main btn-gradient" onclick="window.location.href='/dashboard/'">Go to Dashboard</button>
         </div>
     </div>
 
@@ -492,6 +664,41 @@
             .catch(err => alert("Request failed: " + err));
         }
     </script>
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <h3>Social Help</h3>
+                <p>AI-powered moderation for creators and brands who want a safe, thriving community.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/pricing/">Pricing</a></li>
+                    <li><a href="/creators/">For Creators</a></li>
+                    <li><a href="/brands/">For Brands</a></li>
+                    <li><a href="/login/">Log in</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/privacy-policy/">Privacy Policy</a></li>
+                    <li><a href="/terms/">Terms of Service</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/contact/">Contact Us</a></li>
+                    <li><a href="https://twitter.com/">Twitter</a></li>
+                    <li><a href="https://instagram.com/">Instagram</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 Social Help. All rights reserved.</span>
+            <span>Built for Creators.</span>
+        </div>
+    </footer>
 </body>
-
 </html>

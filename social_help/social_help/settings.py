@@ -112,3 +112,8 @@ LOGOUT_REDIRECT_URL = '/'
 
 SESSION_COOKIE_SAMESITE = 'Lax'
 
+# Stripe Settings
+STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+DOMAIN_URL = os.getenv("DOMAIN_URL", "http://localhost:8000")
