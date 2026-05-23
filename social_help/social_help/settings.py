@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-w#vq%^4p^b3dl4@6rlxu0wo4il
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['social-help.onrender.com', 'localhost', '127.0.0.1', 'socialhelp.ai', 'socialhelpapp.com', 'getsocialhelp.com', '.vercel.app', 'socialfuse.azurewebsites.net', '.azurewebsites.net', 'socialfuse-eybzczb3e8gcg0c2.southeastasia-01.azurewebsites.net', '.southeastasia-01.azurewebsites.net']
+ALLOWED_HOSTS = ['social-help.onrender.com', 'localhost', '127.0.0.1', 'socialhelp.ai', 'socialhelpapp.com', 'getsocialhelp.com', '.vercel.app', 'socialfuse.azurewebsites.net', '.azurewebsites.net', 'socialfuse-eybzczb3e8gcg0c2.southeastasia-01.azurewebsites.net', '.southeastasia-01.azurewebsites.net', '169.254.129.4']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
