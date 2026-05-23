@@ -5,7 +5,7 @@ import django
 import json
 
 # Add the project directory to the path
-sys.path.insert(0, r'C:\Users\deves\OneDrive\Desktop\New folder\social_help\social_help')
+sys.path.insert(0, r'C:\Users\deves\OneDrive\Desktop\sicial_help\social_help\social_help')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'social_help.settings')
 django.setup()
 

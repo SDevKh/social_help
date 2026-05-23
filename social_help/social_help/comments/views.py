@@ -4,11 +4,13 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
 
 from .serializers import CommentSerializer
 from .models import Comment, ModerationSetting, InstagramAccount, Subscription
@@ -19,10 +21,33 @@ import requests
 import logging
 import hmac
 import hashlib
-import stripe
+from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
+import stripe
 
 logger = logging.getLogger(__name__)
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+PAYPAL_PLAN_CONFIG = {
+    "starter": {
+        "label": "SocialFuse Creator Plan",
+        "amount": "15.00",
+    },
+    "pro": {
+        "label": "SocialFuse Agency Plan",
+        "amount": "49.00",
+    },
+}
+
+GUMROAD_PRODUCT_TIER_MAP = {
+    "starter": "starter",
+    "pro": "pro",
+    "creator": "starter",
+    "agency": "pro",
+    "creator_plan": "starter",
+    "agency_plan": "pro",
+}
 
 
 def get_signed_state(user_id, state_val):
@@ -50,6 +75,54 @@ def get_subscription(user):
     if not user or not user.is_authenticated:
         return None
     sub, _ = Subscription.objects.get_or_create(user=user, defaults={'tier': 'free'})
+    return sub
+
+
+def get_paypal_api_base():
+    if settings.PAYPAL_MODE == "live":
+        return "https://api-m.paypal.com"
+    return "https://api-m.sandbox.paypal.com"
+
+
+def get_paypal_access_token():
+    if not settings.PAYPAL_CLIENT_ID or not settings.PAYPAL_CLIENT_SECRET:
+        raise ValueError("PayPal client ID and secret are not configured.")
+
+    response = requests.post(
+        f"{get_paypal_api_base()}/v1/oauth2/token",
+        data={"grant_type": "client_credentials"},
+        auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET),
+        headers={"Accept": "application/json", "Accept-Language": "en_US"},
+        timeout=20,
+    )
+    response.raise_for_status()
+    return response.json()["access_token"]
+
+
+def paypal_headers():
+    return {
+        "Authorization": f"Bearer {get_paypal_access_token()}",
+        "Content-Type": "application/json",
+    }
+
+
+def get_requested_paid_tier(request):
+    tier = request.data.get("tier", "starter")
+    if tier not in PAYPAL_PLAN_CONFIG:
+        raise ValueError("Choose either the Creator or Agency plan.")
+    return tier
+
+
+def activate_subscription(user, tier, provider="", order_id=None, capture_id=None):
+    sub = get_subscription(user)
+    sub.tier = tier
+    sub.is_active = True
+    sub.payment_provider = provider
+    sub.paypal_order_id = order_id
+    sub.paypal_capture_id = capture_id
+    sub.comments_processed_this_month = 0
+    sub.current_period_end = timezone.now() + timedelta(days=30)
+    sub.save()
     return sub
 
 
@@ -445,42 +518,64 @@ def pricing_page(request):
     sub = None
     if request.user.is_authenticated:
         sub = get_subscription(request.user)
-    return render(request, "comments/pricing.html", {"subscription": sub})
+    return render(request, "comments/pricing.html", {
+        "subscription": sub,
+        "gumroad_creator_url": getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://gumroad.com/l/creator_plan"),
+        "gumroad_agency_url": getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://gumroad.com/l/agency_plan"),
+    })
 
 
 class CreateCheckoutSession(APIView):
-    """API endpoint to initiate Stripe checkout"""
+    """Create a Stripe Checkout Session for subscription upgrade."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        tier = request.data.get("tier", "starter")
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        
         try:
-            amount = 1500 if tier == "starter" else 4900
+            tier = request.data.get("tier", "starter")
+            if tier == "free":
+                activate_subscription(request.user, "free")
+                return Response({
+                    "success": True,
+                    "message": "Free plan activated.",
+                    "redirect_url": "/dashboard/",
+                })
+
+            if tier not in PAYPAL_PLAN_CONFIG:
+                return Response({"error": "Choose either the Creator or Agency plan."}, status=400)
+
+            plan = PAYPAL_PLAN_CONFIG[tier]
             
+            # Create Stripe Checkout Session
             checkout_session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': f'SocialFuse {tier.title()} Plan',
+                payment_method_types=['card', 'link'],
+                line_items=[
+                    {
+                        'price_data': {
+                            'currency': 'usd',
+                            'product_data': {
+                                'name': plan['label'],
+                            },
+                            'unit_amount': int(float(plan['amount']) * 100),
                         },
-                        'unit_amount': amount,
-                        'recurring': {'interval': 'month'},
+                        'quantity': 1,
                     },
-                    'quantity': 1,
-                }],
-                mode='subscription',
-                success_url=settings.DOMAIN_URL + '/dashboard/?success=true&session_id={CHECKOUT_SESSION_ID}',
-                cancel_url=settings.DOMAIN_URL + '/pricing/',
+                ],
+                mode='payment',
                 client_reference_id=str(request.user.id),
-                metadata={'tier': tier}
+                metadata={
+                    'tier': tier,
+                },
+                success_url=settings.DOMAIN_URL + '/dashboard/?payment=success',
+                cancel_url=settings.DOMAIN_URL + '/pricing/?payment=cancelled',
             )
-            return Response({'checkout_url': checkout_session.url})
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
+
+            return Response({
+                "checkout_url": checkout_session.url,
+                "session_id": checkout_session.id
+            })
+        except Exception as exc:
+            logger.exception("Stripe checkout session creation failed")
+            return Response({"error": str(exc)}, status=400)
 
 
 class StripeWebhook(APIView):
@@ -509,19 +604,224 @@ class StripeWebhook(APIView):
             tier = session.get('metadata', {}).get('tier', 'starter')
             
             if user_id:
-                sub = Subscription.objects.filter(user_id=user_id).first()
-                if sub:
-                    sub.tier = tier
-                    sub.is_active = True
+                try:
+                    from django.contrib.auth.models import User
+                    user = User.objects.get(id=user_id)
+                    activate_subscription(user, tier, provider="stripe")
+                    
+                    sub = get_subscription(user)
                     sub.stripe_customer_id = session.get('customer')
                     sub.stripe_subscription_id = session.get('subscription')
-                    sub.comments_processed_this_month = 0
                     sub.save()
+                except User.DoesNotExist:
+                    logger.error(f"User with ID {user_id} not found during Stripe webhook processing.")
 
         return Response(status=200)
+
+class PayPalCheckout(APIView):
+    """Create a PayPal checkout order and return the buyer approval URL."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            if request.data.get("tier") == "free":
+                activate_subscription(request.user, "free")
+                return Response({
+                    "success": True,
+                    "message": "Free plan activated.",
+                    "redirect_url": "/dashboard/",
+                })
+
+            tier = get_requested_paid_tier(request)
+            plan = PAYPAL_PLAN_CONFIG[tier]
+            payload = {
+                "intent": "CAPTURE",
+                "purchase_units": [
+                    {
+                        "reference_id": f"user-{request.user.id}-{tier}",
+                        "custom_id": f"{request.user.id}:{tier}",
+                        "description": f"Monthly {plan['label']}",
+                        "amount": {
+                            "currency_code": "USD",
+                            "value": plan["amount"],
+                            "breakdown": {
+                                "item_total": {
+                                    "currency_code": "USD",
+                                    "value": plan["amount"],
+                                }
+                            },
+                        },
+                        "items": [
+                            {
+                                "name": plan["label"],
+                                "unit_amount": {
+                                    "currency_code": "USD",
+                                    "value": plan["amount"],
+                                },
+                                "quantity": "1",
+                                "category": "DIGITAL_GOODS",
+                            }
+                        ],
+                    }
+                ],
+                "application_context": {
+                    "brand_name": "SocialFuse",
+                    "landing_page": "LOGIN",
+                    "shipping_preference": "NO_SHIPPING",
+                    "user_action": "PAY_NOW",
+                    "return_url": request.build_absolute_uri("/api/paypal/execute/"),
+                    "cancel_url": request.build_absolute_uri("/pricing/?payment=cancelled"),
+                },
+            }
+
+            response = requests.post(
+                f"{get_paypal_api_base()}/v2/checkout/orders",
+                json=payload,
+                headers=paypal_headers(),
+                timeout=20,
+            )
+            response.raise_for_status()
+            order = response.json()
+            approval_url = next(
+                (link["href"] for link in order.get("links", []) if link.get("rel") == "approve"),
+                None,
+            )
+            if not approval_url:
+                return Response({"error": "PayPal did not return an approval URL."}, status=400)
+
+            pending_tiers = request.session.get("paypal_pending_tiers", {})
+            pending_tiers[order["id"]] = tier
+            request.session["paypal_pending_tiers"] = pending_tiers
+            request.session.modified = True
+
+            return Response({
+                "checkout_url": approval_url,
+                "approval_url": approval_url,
+                "order_id": order["id"],
+            })
+        except requests.HTTPError as exc:
+            error = exc.response.text if exc.response is not None else str(exc)
+            logger.exception("PayPal order creation failed")
+            return Response({"error": f"PayPal order creation failed: {error}"}, status=400)
+        except ValueError as exc:
+            return Response({"error": str(exc)}, status=400)
+        except Exception as exc:
+            logger.exception("Checkout failed")
+            return Response({"error": str(exc)}, status=400)
+
+class PayPalExecute(APIView):
+    """Capture an approved PayPal order and activate the selected plan."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        order_id = request.GET.get("token") or request.GET.get("order_id")
+        if not order_id:
+            messages.error(request, "PayPal did not return an order token.")
+            return redirect("/pricing/?payment=failed")
+
+        try:
+            response = requests.post(
+                f"{get_paypal_api_base()}/v2/checkout/orders/{order_id}/capture",
+                headers=paypal_headers(),
+                timeout=20,
+            )
+            response.raise_for_status()
+            capture_data = response.json()
+            if capture_data.get("status") != "COMPLETED":
+                messages.error(request, "PayPal payment was not completed.")
+                return redirect("/pricing/?payment=failed")
+
+            pending_tiers = request.session.get("paypal_pending_tiers", {})
+            tier = pending_tiers.pop(order_id, None)
+            request.session["paypal_pending_tiers"] = pending_tiers
+            request.session.modified = True
+
+            purchase_unit = capture_data.get("purchase_units", [{}])[0]
+            custom_id = purchase_unit.get("custom_id")
+            if not tier and custom_id and ":" in custom_id:
+                _, tier = custom_id.split(":", 1)
+            if tier not in PAYPAL_PLAN_CONFIG:
+                tier = "starter"
+
+            captures = purchase_unit.get("payments", {}).get("captures", [])
+            capture_id = captures[0].get("id") if captures else None
+            activate_subscription(
+                request.user,
+                tier,
+                provider="paypal",
+                order_id=order_id,
+                capture_id=capture_id,
+            )
+            messages.success(request, "Payment successful. Your plan is active.")
+            return redirect("/dashboard/?payment=success")
+        except requests.HTTPError as exc:
+            error = exc.response.text if exc.response is not None else str(exc)
+            logger.exception("PayPal capture failed")
+            messages.error(request, f"PayPal capture failed: {error}")
+            return redirect("/pricing/?payment=failed")
+        except Exception as exc:
+            logger.exception("PayPal payment finalization failed")
+            messages.error(request, str(exc))
+            return redirect("/pricing/?payment=failed")
+
+# Placeholder for PayPal IPN / webhook handling if needed.
+# Currently no PayPal webhook is configured.Response(status=200)
 
 def creators_page(request):
     return render(request, "comments/creators.html")
 
 def brands_page(request):
     return render(request, "comments/brands.html")
+
+
+class GumroadWebhook(APIView):
+    """Handle Gumroad payment notifications (pings) to activate subscriptions."""
+    permission_classes = []
+    authentication_classes = []
+
+    def post(self, request):
+        logger.warning(f"Gumroad webhook payload: {request.data}")
+        
+        # Extract user_id from custom fields
+        custom_fields = request.data.get("custom_fields", {})
+        user_id = None
+        if isinstance(custom_fields, dict):
+            user_id = custom_fields.get("user_id")
+        
+        if not user_id:
+            user_id = request.data.get("custom_fields[user_id]")
+            
+        if not user_id:
+            logger.error("Gumroad webhook missing user_id custom field.")
+            return Response({"error": "user_id is required in custom_fields"}, status=400)
+
+        # Map product to subscription tier
+        product_name = request.data.get("product_name", "").lower()
+        permalink = request.data.get("permalink", "").lower()
+        
+        tier = "starter" # Default fallback
+        for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
+            if key in product_name or key in permalink:
+                tier = val
+                break
+
+        try:
+            from django.contrib.auth.models import User
+            user = User.objects.get(id=user_id)
+            
+            # Activate the subscription in the database
+            activate_subscription(
+                user=user,
+                tier=tier,
+                provider="gumroad",
+                order_id=request.data.get("sale_id") or request.data.get("subscription_id")
+            )
+            
+            logger.warning(f"Successfully activated subscription tier '{tier}' for user ID {user_id} via Gumroad webhook.")
+            return Response({"success": True})
+        except User.DoesNotExist:
+            logger.error(f"User with ID {user_id} not found during Gumroad webhook processing.")
+            return Response({"error": "User not found"}, status=404)
+        except Exception as exc:
+            logger.exception("Error processing Gumroad webhook")
+            return Response({"error": str(exc)}, status=500)

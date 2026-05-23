@@ -569,7 +569,7 @@
             {% if subscription and subscription.tier == 'free' %}
             <button class="btn-main btn-active">Active Plan ✓</button>
             {% else %}
-            <button class="btn-main btn-outline" onclick="selectPlan('free')">Get Started</button>
+            <button class="btn-main btn-outline" onclick="selectPlan('free', event)">Get Started</button>
             {% endif %}
         </div>
 
@@ -594,7 +594,7 @@
             {% if subscription and subscription.tier == 'starter' %}
             <button class="btn-main btn-active">Active Plan ✓</button>
             {% else %}
-            <button class="btn-main btn-gradient" onclick="selectPlan('starter')">Upgrade to Creator</button>
+            <button class="btn-main btn-gradient" onclick="selectPlan('starter', event)">Upgrade to Creator</button>
             {% endif %}
         </div>
 
@@ -613,7 +613,7 @@
             {% if subscription and subscription.tier == 'pro' %}
             <button class="btn-main btn-active">Active Plan ✓</button>
             {% else %}
-            <button class="btn-main btn-outline" onclick="selectPlan('pro')">Upgrade to Agency</button>
+            <button class="btn-main btn-outline" onclick="selectPlan('pro', event)">Upgrade to Agency</button>
             {% endif %}
         </div>
 
@@ -645,34 +645,71 @@
             return cookieValue;
         }
 
-        function selectPlan(tier) {
+        function selectPlan(tier, event) {
             const isAuth = "{{ user.is_authenticated }}" === "True";
             if (!isAuth) {
                 window.location.href = "/signup/?plan=" + tier;
                 return;
             }
 
-            fetch("/api/create-checkout/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({ tier: tier })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.checkout_url) {
-                    window.location.href = data.checkout_url;
-                } else if (data.success) {
-                    document.getElementById("modalTitle").innerText = "Plan Upgraded!";
-                    document.getElementById("modalDesc").innerText = data.message;
-                    document.getElementById("statusModal").style.display = "grid";
-                } else {
-                    alert("Error: " + (data.error || "Failed to upgrade plan"));
+            const clickedButton = event && event.currentTarget ? event.currentTarget : null;
+            const originalText = clickedButton ? clickedButton.innerText : "";
+
+            if (tier === "free") {
+                if (clickedButton) {
+                    clickedButton.disabled = true;
+                    clickedButton.innerText = "Activating...";
                 }
-            })
-            .catch(err => alert("Request failed: " + err));
+
+                fetch("/api/create-checkout/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({ tier: tier })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else if (data.success) {
+                        document.getElementById("modalTitle").innerText = "Plan Upgraded!";
+                        document.getElementById("modalDesc").innerText = data.message;
+                        document.getElementById("statusModal").style.display = "grid";
+                    } else {
+                        alert("Error: " + (data.error || "Failed to upgrade plan"));
+                        if (clickedButton) {
+                            clickedButton.disabled = false;
+                            clickedButton.innerText = originalText;
+                        }
+                    }
+                })
+                .catch(err => {
+                    alert("Request failed: " + err);
+                    if (clickedButton) {
+                        clickedButton.disabled = false;
+                        clickedButton.innerText = originalText;
+                    }
+                });
+            } else {
+                if (clickedButton) {
+                    clickedButton.disabled = true;
+                    clickedButton.innerText = "Opening Checkout...";
+                }
+
+                let gumroadBaseUrl = "";
+                if (tier === "starter") {
+                    gumroadBaseUrl = "{{ gumroad_creator_url }}";
+                } else if (tier === "pro") {
+                    gumroadBaseUrl = "{{ gumroad_agency_url }}";
+                }
+
+                const emailParam = encodeURIComponent("{{ user.email }}");
+                const userIdParam = encodeURIComponent("{{ user.id }}");
+                const checkoutUrl = `${gumroadBaseUrl}?email=${emailParam}&custom_fields[user_id]=${userIdParam}`;
+                window.location.href = checkoutUrl;
+            }
         }
     </script>
     <footer>
