@@ -3,7 +3,7 @@ import os
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-IS_AZURE = bool(os.getenv("WEBSITE_SITE_NAME"))
+IS_CLOUD = bool(os.getenv("RENDER") or os.getenv("RENDER_EXTERNAL_HOSTNAME") or os.getenv("WEBSITE_SITE_NAME"))
 
 try:
     from dotenv import load_dotenv
@@ -15,17 +15,19 @@ except ImportError:
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-w#vq%^4p^b3dl4@6rlxu0wo4ilwk=g@o@q6qha^th!o50g9&)l')
 
-DEBUG = os.getenv("DEBUG", "False" if IS_AZURE else "True").lower() == "true"
+DEBUG = os.getenv("DEBUG", "False" if IS_CLOUD else "True").lower() == "true"
 
 allowed_hosts = os.getenv("ALLOWED_HOSTS", "")
 if allowed_hosts:
     ALLOWED_HOSTS = [host.strip() for host in allowed_hosts.split(",") if host.strip()]
-elif IS_AZURE:
-    site_name = os.getenv("WEBSITE_SITE_NAME", "")
-    default_hosts = [".azurewebsites.net"]
-    if site_name:
-        default_hosts.append(f"{site_name}.azurewebsites.net")
-    ALLOWED_HOSTS = default_hosts
+elif IS_CLOUD:
+    ALLOWED_HOSTS = [".onrender.com", ".azurewebsites.net"]
+    render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+    azure_site_name = os.getenv("WEBSITE_SITE_NAME")
+    if render_host:
+        ALLOWED_HOSTS.append(render_host)
+    if azure_site_name:
+        ALLOWED_HOSTS.append(f"{azure_site_name}.azurewebsites.net")
 else:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 
@@ -34,8 +36,14 @@ if csrf_trusted_origins:
     CSRF_TRUSTED_ORIGINS = [
         origin.strip() for origin in csrf_trusted_origins.split(",") if origin.strip()
     ]
-elif IS_AZURE:
-    CSRF_TRUSTED_ORIGINS = ["https://*.azurewebsites.net"]
+elif IS_CLOUD:
+    CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com", "https://*.azurewebsites.net"]
+    render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+    azure_site_name = os.getenv("WEBSITE_SITE_NAME")
+    if render_host:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{render_host}")
+    if azure_site_name:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{azure_site_name}.azurewebsites.net")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -79,14 +87,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'social_help.wsgi.application'
 
 
-default_sqlite_path = BASE_DIR / "db.sqlite3"
-if IS_AZURE:
-    default_sqlite_path = Path(os.getenv("SQLITE_PATH", "/home/site/data/db.sqlite3"))
-    default_sqlite_path.parent.mkdir(parents=True, exist_ok=True)
-
 DATABASES = {
     "default": dj_database_url.config(
-        default=f"sqlite:///{default_sqlite_path}",
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
         conn_health_checks=True,
     )
@@ -115,7 +118,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 if DEBUG:
     STATICFILES_STORAGE_BACKEND = 'django.contrib.staticfiles.storage.StaticFilesStorage'
@@ -155,6 +158,8 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # PayPal Settings
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
