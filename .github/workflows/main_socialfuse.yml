@@ -73,30 +73,27 @@ jobs:
         with:
           app-name: 'SocialFuse'
           slot-name: 'Production'
-          startup-command: 'gunicorn --bind=0.0.0.0 --timeout 600 --chdir social_help social_help.wsgi'
+          startup-command: 'python social_help/manage.py migrate --noinput && gunicorn --bind=0.0.0.0:${PORT:-8000} --timeout 600 --chdir social_help social_help.wsgi:application'
 
       - name: Fetch Azure Web App Logs
+        continue-on-error: true
         run: |
           cat << 'EOF' > fetch_logs.py
           import sys, json, requests, subprocess
           try:
-              RG = subprocess.check_output("az webapp list --query \"[?name=='SocialFuse'].resourceGroup\" -o tsv", shell=True, text=True).strip()
-              print('RG:', RG)
-              creds_str = subprocess.check_output(f"az webapp deployment list-publishing-credentials --name SocialFuse --resource-group {RG}", shell=True, text=True)
-              creds = json.loads(creds_str)
-              username = creds['publishingUserName']
-              password = creds['publishingPassword']
+              token = subprocess.check_output("az account get-access-token --resource https://management.azure.com/ --query accessToken -o tsv", shell=True, text=True).strip()
+              headers = {"Authorization": f"Bearer {token}"}
           except Exception as e:
-              print('Failed to get credentials:', e)
-              sys.exit(1)
+              print('Failed to get token:', e)
+              sys.exit(0)
           
           url = "https://socialfuse-eybzczb3e8gcg0c2.scm.southeastasia-01.azurewebsites.net/api/vfs/LogFiles/StartupLogs/"
           try:
-              r = requests.get(url, auth=(username, password), timeout=30)
+              r = requests.get(url, headers=headers, timeout=30)
               print('Status:', r.status_code)
               if r.status_code != 200:
                   print('Error content:', r.text)
-                  sys.exit(1)
+                  sys.exit(0)
               
               files = r.json()
               file_names = [f['name'] for f in files]
@@ -106,7 +103,7 @@ jobs:
               if failure_files:
                   latest_failure = sorted(failure_files)[-1]
                   print('Latest failure log:', latest_failure)
-                  r_log = requests.get(url + latest_failure, auth=(username, password), timeout=30)
+                  r_log = requests.get(url + latest_failure, headers=headers, timeout=30)
                   print('=== FAILURE LOG CONTENT ===')
                   print(r_log.text)
                   print('===========================')
@@ -114,6 +111,6 @@ jobs:
                   print('No failure logs found.')
           except Exception as e:
               print('Request failed:', e)
-              sys.exit(1)
+              sys.exit(0)
           EOF
           python fetch_logs.py
