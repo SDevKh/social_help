@@ -74,3 +74,10 @@ jobs:
           app-name: 'SocialFuse'
           slot-name: 'Production'
           startup-command: 'gunicorn --bind=0.0.0.0 --timeout 600 --chdir social_help social_help.wsgi'
+
+      - name: Fetch Azure Web App Logs
+        run: |
+          sleep 15
+          RG=$(az webapp list --query "[?name=='SocialFuse'].resourceGroup" -o tsv)
+          echo "Resource Group: $RG"
+          timeout 30s az webapp log tail --name SocialFuse --resource-group $RG || true
