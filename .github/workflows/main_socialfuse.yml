@@ -80,4 +80,22 @@ jobs:
           sleep 15
           RG=$(az webapp list --query "[?name=='SocialFuse'].resourceGroup" -o tsv)
           echo "Resource Group: $RG"
-          timeout 30s az webapp log tail --name SocialFuse --resource-group $RG || true
+          
+          # Retrieve publishing credentials
+          creds=$(az webapp deployment list-publishing-credentials --name SocialFuse --resource-group $RG)
+          username=$(echo "$creds" | jq -r '.publishingUserName')
+          password=$(echo "$creds" | jq -r '.publishingPassword')
+          
+          # List files in StartupLogs
+          echo "Listing StartupLogs directory:"
+          curl -s -k -u "$username:$password" "https://socialfuse-eybzczb3e8gcg0c2.scm.southeastasia-01.azurewebsites.net/api/vfs/LogFiles/StartupLogs/" | jq -r '.[].name' || true
+          
+          # Download and print the latest failure log
+          latest_failure=$(curl -s -k -u "$username:$password" "https://socialfuse-eybzczb3e8gcg0c2.scm.southeastasia-01.azurewebsites.net/api/vfs/LogFiles/StartupLogs/" | jq -r '.[] | select(.name | contains("failure")) | .name' | tail -n 1)
+          echo "Latest failure log file: $latest_failure"
+          
+          if [ ! -z "$latest_failure" ]; then
+            echo "=== START OF FAILURE LOG ==="
+            curl -s -k -u "$username:$password" "https://socialfuse-eybzczb3e8gcg0c2.scm.southeastasia-01.azurewebsites.net/api/vfs/LogFiles/StartupLogs/$latest_failure"
+            echo "=== END OF FAILURE LOG ==="
+          fi
