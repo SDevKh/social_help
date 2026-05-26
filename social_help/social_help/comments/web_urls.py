@@ -15,10 +15,16 @@ from .views import (
     pricing_page,
     creators_page,
     brands_page,
+    pwa_manifest,
+    service_worker,
+    android_asset_links,
 )
 
 urlpatterns = [
     path("", landing),
+    path("manifest.webmanifest", pwa_manifest),
+    path("sw.js", service_worker),
+    path(".well-known/assetlinks.json", android_asset_links),
     path("dashboard/", dashboard),
     path("signup/", signup),
     path("login/", auth_views.LoginView.as_view(template_name="registration/login.html")),

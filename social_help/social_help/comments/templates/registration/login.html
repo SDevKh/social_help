@@ -4,7 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#e91e63">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SocialFuse">
     <title>SocialFuse - Login</title>
+    <link rel="manifest" href="/manifest.webmanifest">
     <style>
         * {
             margin: 0;
@@ -766,6 +771,12 @@
             loginBtn.classList.add('loading');
             loginBtn.disabled = true;
         });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+        }
     </script>
 </body>
 

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SocialFuse</string>
+    <string name="launch_url">https://social-fuse.app/login/?source=playstore</string>
+</resources>

@@ -4,6 +4,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
@@ -17,6 +18,7 @@ from .models import Comment, ModerationSetting, InstagramAccount, Subscription
 from .instagram_service import InstagramService
 
 import secrets
+import os
 import requests
 import logging
 import hmac
@@ -772,6 +774,104 @@ def creators_page(request):
 
 def brands_page(request):
     return render(request, "comments/brands.html")
+
+
+def pwa_manifest(request):
+    """Root-level PWA manifest used by browsers and the Android store wrapper."""
+    return JsonResponse({
+        "name": "SocialFuse",
+        "short_name": "SocialFuse",
+        "description": "AI-powered Instagram comment moderation for creators and brands.",
+        "id": "https://social-fuse.app/",
+        "start_url": "/login/?source=pwa",
+        "scope": "/",
+        "display": "standalone",
+        "display_override": ["window-controls-overlay", "standalone", "browser"],
+        "orientation": "portrait",
+        "background_color": "#faf9f6",
+        "theme_color": "#e91e63",
+        "categories": ["business", "productivity", "social"],
+        "icons": [
+            {
+                "src": "/static/comments/socialfuse-app-icon.svg",
+                "sizes": "any",
+                "type": "image/svg+xml",
+                "purpose": "any maskable"
+            }
+        ],
+        "shortcuts": [
+            {
+                "name": "Dashboard",
+                "short_name": "Dashboard",
+                "url": "/dashboard/",
+                "description": "Open your moderation dashboard"
+            },
+            {
+                "name": "Pricing",
+                "short_name": "Pricing",
+                "url": "/pricing/",
+                "description": "View SocialFuse plans"
+            }
+        ]
+    })
+
+
+def service_worker(request):
+    """Small service worker that keeps the app installable without caching private pages."""
+    content = """
+const STATIC_CACHE = 'socialfuse-static-v1';
+const STATIC_ASSETS = [
+  '/static/comments/socialfuse-logo.png',
+  '/static/comments/socialfuse-app-icon.svg'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== STATIC_CACHE).map((key) => caches.delete(key)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin || event.request.method !== 'GET') {
+    return;
+  }
+
+  if (requestUrl.pathname.startsWith('/static/')) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => cached || fetch(event.request))
+    );
+  }
+});
+"""
+    return HttpResponse(content.strip(), content_type="application/javascript")
+
+
+def android_asset_links(request):
+    """Digital Asset Links for Android Trusted Web Activity verification."""
+    package_name = os.getenv("ANDROID_TWA_PACKAGE_NAME", "app.socialfuse.twa")
+    fingerprint = os.getenv("ANDROID_CERT_SHA256", "")
+    statements = []
+    if fingerprint:
+        statements.append({
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": package_name,
+                "sha256_cert_fingerprints": [fingerprint],
+            },
+        })
+    return JsonResponse(statements, safe=False)
 
 
 class GumroadWebhook(APIView):
