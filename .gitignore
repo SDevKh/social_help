@@ -46,3 +46,9 @@ db.sqlite3-journal
 # OS
 .DS_Store
 Thumbs.db
+
+# Django static files and logs
+staticfiles/
+*.zip
+extracted_logs/
+fetch_current_logs.py
