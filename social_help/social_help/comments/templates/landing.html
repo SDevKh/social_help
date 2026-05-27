@@ -264,6 +264,14 @@
             text-decoration: none;
         }
 
+        .cta-text {
+            min-width: 0;
+        }
+
+        .cta-text-mobile {
+            display: none;
+        }
+
         .btn-gradient {
             background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand));
             color: #fff;
@@ -340,6 +348,10 @@
             color: var(--muted);
             font-size: 14px;
             line-height: 1.45;
+        }
+
+        .trust-item > div:last-child {
+            min-width: 0;
         }
 
         .demo-section {
@@ -532,6 +544,12 @@
         }
 
         @media (max-width: 640px) {
+            html,
+            body {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
             body {
                 background-image: none;
             }
@@ -550,8 +568,7 @@
             }
 
             .btn-main-action {
-                padding: 7px 12px;
-                font-size: 13px;
+                display: none;
             }
 
             .menu-toggle {
@@ -560,7 +577,7 @@
 
             .hero {
                 padding: 26px 16px 28px;
-                max-width: 100%;
+                max-width: 390px;
                 text-align: left;
             }
 
@@ -593,12 +610,25 @@
 
             .btn-main {
                 width: 100%;
+                max-width: 100%;
                 padding: 14px 14px;
                 border-radius: 10px;
                 font-size: 15px;
                 line-height: 1.25;
                 text-align: center;
                 gap: 10px;
+                display: grid;
+                grid-template-columns: 24px minmax(0, 1fr);
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+
+            .cta-text-full {
+                display: none;
+            }
+
+            .cta-text-mobile {
+                display: inline;
             }
 
             .meta-mark {
@@ -613,6 +643,7 @@
             }
 
             .trust-bar {
+                max-width: 390px;
                 padding: 0 14px;
                 gap: 10px;
                 margin-bottom: 42px;
@@ -639,6 +670,7 @@
             }
 
             .demo-section {
+                max-width: 390px;
                 padding: 0 14px;
                 margin-bottom: 54px;
             }
@@ -998,7 +1030,7 @@
             <div class="handwritten-badge">Built for brand safety teams</div>
             <h1>The Automated Content Moderation Shield for <span class="text-gradient-play">Instagram Brands.</span></h1>
             <p>Instantly hide toxic comments, delete spam links, and protect your brand's reputation on autopilot using the official Meta API flow.</p>
-            <a href="/signup/" class="btn-main btn-gradient"><span class="meta-mark">f</span> Connect Your Instagram - Free 14-Day Trial</a>
+            <a href="/signup/" class="btn-main btn-gradient"><span class="meta-mark">f</span><span class="cta-text cta-text-full">Connect Your Instagram - Free 14-Day Trial</span><span class="cta-text cta-text-mobile">Connect Instagram - Free Trial</span></a>
             <div class="hero-proof">No Instagram password required. Connect through Meta's secure login flow.</div>
         </section>
 
