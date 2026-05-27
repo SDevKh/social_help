@@ -35,7 +35,7 @@ After provisioning, set the Web App configuration App Settings:
 - `DEBUG` ("false" recommended for production)
 - `ALLOWED_HOSTS`
 - `DATABASE_URL` (optional; if omitted it falls back to SQLite)
-- Instagram / Stripe / PayPal secrets
+- Instagram / Facebook / Stripe / PayPal secrets
 
 Example values are in:
 - `appservice/appsettings.example.env`

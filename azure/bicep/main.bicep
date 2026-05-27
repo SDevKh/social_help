@@ -79,6 +79,11 @@ resource webAppConfig 'Microsoft.Web/sites/config@2023-12-01' = {
     'INSTAGRAM_PAGE_ACCESS_TOKEN': ''
     'INSTAGRAM_REDIRECT_URI': ''
 
+    // Facebook OAuth
+    'FACEBOOK_APP_ID': ''
+    'FACEBOOK_APP_SECRET': ''
+    'FACEBOOK_OAUTH_REDIRECT_URI': ''
+
     'STRIPE_PUBLIC_KEY': ''
     'STRIPE_SECRET_KEY': ''
     'STRIPE_WEBHOOK_SECRET': ''

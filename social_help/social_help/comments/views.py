@@ -177,9 +177,12 @@ def facebook_oauth_login(request):
     Start Facebook OAuth to connect Instagram Business / Creator account
     """
 
-    if not settings.FACEBOOK_APP_ID or not settings.INSTAGRAM_REDIRECT_URI:
+    facebook_app_id = (settings.FACEBOOK_APP_ID or "").strip()
+    facebook_redirect_uri = (settings.FACEBOOK_OAUTH_REDIRECT_URI or settings.INSTAGRAM_REDIRECT_URI or "").strip()
+
+    if not facebook_app_id.isdigit() or not facebook_redirect_uri:
         return render(request, "comments/connect_error.html", {
-            "error": "Facebook app is not configured correctly."
+            "error": "Facebook OAuth is not configured correctly. Please set FACEBOOK_APP_ID and FACEBOOK_OAUTH_REDIRECT_URI."
         })
 
     state = secrets.token_urlsafe(16)
@@ -195,8 +198,8 @@ def facebook_oauth_login(request):
 
     oauth_url = (
         "https://www.facebook.com/v20.0/dialog/oauth"
-        f"?client_id={settings.FACEBOOK_APP_ID}"
-        f"&redirect_uri={settings.INSTAGRAM_REDIRECT_URI}"
+        f"?client_id={facebook_app_id}"
+        f"&redirect_uri={facebook_redirect_uri}"
         f"&response_type=code"
         f"&scope={scope}"
         f"&state={state}"
@@ -229,14 +232,14 @@ def facebook_oauth_callback(request):
     # 1️⃣ Exchange code → user access token
     logger.warning("=== FACEBOOK OAUTH DEBUG ===")
     logger.warning("Using App ID: %s", settings.FACEBOOK_APP_ID)
-    logger.warning("Using Redirect URI: %s", settings.INSTAGRAM_REDIRECT_URI)
+    logger.warning("Using Redirect URI: %s", settings.FACEBOOK_OAUTH_REDIRECT_URI)
     
     token_res = requests.get(
         "https://graph.facebook.com/v20.0/oauth/access_token",
         params={
             "client_id": settings.FACEBOOK_APP_ID,
             "client_secret": settings.FACEBOOK_APP_SECRET,
-            "redirect_uri": settings.INSTAGRAM_REDIRECT_URI,
+            "redirect_uri": settings.FACEBOOK_OAUTH_REDIRECT_URI,
             "code": code,
         },
         timeout=10,
