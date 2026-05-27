@@ -74,3 +74,34 @@ class GumroadPaymentTests(TestCase):
         self.assertTrue(sub.is_active)
         self.assertEqual(sub.paypal_order_id, "gum_sub_456")
         self.assertEqual(sub.payment_provider, "gumroad")
+
+class UserProfileAndSignupTests(TestCase):
+    def test_signup_creates_profile(self):
+        from social_help.comments.models import UserProfile
+        from django.contrib.auth.models import User
+        
+        form_data = {
+            "username": "newuser",
+            "first_name": "New User",
+            "email": "newuser@example.com",
+            "role": "creator",
+            "instagram_handle": "@newuser",
+            "company_name": "",
+            "password1": "mypassword123",
+            "password2": "mypassword123",
+        }
+        
+        response = self.client.post("/signup/", data=form_data)
+        
+        # Should redirect to dashboard on successful signup
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/dashboard/")
+        
+        # Verify user and user profile were created
+        user = User.objects.get(username="newuser")
+        self.assertEqual(user.first_name, "New User")
+        self.assertEqual(user.email, "newuser@example.com")
+        
+        profile = UserProfile.objects.get(user=user)
+        self.assertEqual(profile.role, "creator")
+        self.assertEqual(profile.instagram_handle, "@newuser")

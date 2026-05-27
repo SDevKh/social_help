@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="SocialFuse">
-    <title>SocialFuse - AI Comment Moderation for Creators and Brands</title>
+    <title>SocialFuse - Instagram Moderation Shield for Brands</title>
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="icon" href="{% static 'comments/socialfuse-app-icon.svg' %}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{% static 'comments/socialfuse-logo.png' %}">
@@ -204,9 +204,9 @@
         /* Hero */
         .hero {
             text-align: center;
-            padding: 120px 20px 100px;
+            padding: 76px 20px 44px;
             position: relative;
-            max-width: 900px;
+            max-width: 980px;
             margin: 0 auto;
         }
 
@@ -220,7 +220,7 @@
         }
 
         .hero h1 {
-            font-size: clamp(48px, 8vw, 84px);
+            font-size: clamp(42px, 7vw, 78px);
             font-weight: 800;
             letter-spacing: -2px;
             line-height: 1.1;
@@ -244,8 +244,8 @@
         .hero p {
             font-size: 22px;
             color: var(--muted);
-            max-width: 600px;
-            margin: 0 auto 40px;
+            max-width: 760px;
+            margin: 0 auto 34px;
         }
 
         .btn-main {
@@ -257,7 +257,11 @@
             cursor: pointer;
             border: none;
             transition: 0.2s;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
         }
 
         .btn-gradient {
@@ -269,6 +273,303 @@
         .btn-gradient:hover {
             box-shadow: 0 15px 35px rgba(233, 30, 99, 0.5);
             transform: scale(1.05);
+        }
+
+        .meta-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #1877f2;
+            color: #fff;
+            font-weight: 800;
+            font-size: 19px;
+            line-height: 1;
+        }
+
+        .hero-proof {
+            color: var(--muted);
+            font-size: 15px;
+            margin-top: 14px;
+        }
+
+        .trust-bar {
+            max-width: 1120px;
+            margin: 0 auto 72px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        .trust-item {
+            min-height: 112px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 8px;
+            padding: 22px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.04);
+        }
+
+        .trust-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            background: #eff6ff;
+            color: #1877f2;
+            font-weight: 800;
+        }
+
+        .trust-item strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .trust-item span {
+            display: block;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .demo-section {
+            max-width: 1120px;
+            margin: 0 auto 110px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+            gap: 54px;
+            align-items: center;
+        }
+
+        .demo-copy h2 {
+            font-size: clamp(34px, 5vw, 54px);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -1px;
+            margin-bottom: 18px;
+        }
+
+        .demo-copy p {
+            color: var(--muted);
+            font-size: 20px;
+            margin-bottom: 26px;
+        }
+
+        .demo-shell {
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.12);
+        }
+
+        .demo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .demo-account {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .demo-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff8a00, #e91e63 45%, #673ab7);
+            flex: 0 0 auto;
+        }
+
+        .demo-account strong,
+        .comment-body strong {
+            display: block;
+            line-height: 1.2;
+        }
+
+        .demo-account span,
+        .comment-body small {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .demo-live {
+            color: var(--accent-success);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+        }
+
+        .comment-thread {
+            padding: 6px 20px 18px;
+        }
+
+        .thread-comment {
+            display: grid;
+            grid-template-columns: 42px 1fr auto;
+            gap: 12px;
+            align-items: start;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .thread-comment:last-child {
+            border-bottom: none;
+        }
+
+        .comment-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #e7e5e4;
+        }
+
+        .comment-body p {
+            margin-top: 5px;
+            color: #2a2a2a;
+            line-height: 1.35;
+        }
+
+        .comment-status {
+            align-self: center;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--muted);
+            white-space: nowrap;
+            background: #fafafa;
+        }
+
+        .thread-comment.flagged {
+            background: transparent;
+            margin-left: -10px;
+            margin-right: -10px;
+            padding-left: 10px;
+            padding-right: 10px;
+            border-radius: 8px;
+            transition: 0.25s ease;
+        }
+
+        .thread-comment.hidden {
+            background: rgba(213, 0, 0, 0.06);
+            border-bottom-color: transparent;
+        }
+
+        .thread-comment.hidden .comment-body {
+            opacity: 0.46;
+        }
+
+        .thread-comment.hidden .comment-status {
+            background: #111;
+            border-color: #111;
+            color: #fff;
+        }
+
+        .demo-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 20px 22px;
+            background: #faf9f6;
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .simulate-btn {
+            padding: 13px 18px;
+            border: none;
+            border-radius: 8px;
+            background: var(--ink);
+            color: #fff;
+            font-family: var(--font-main);
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .demo-note {
+            color: var(--muted);
+            font-size: 14px;
+            text-align: right;
+        }
+
+        @media (max-width: 900px) {
+            .trust-bar,
+            .demo-section {
+                grid-template-columns: 1fr;
+            }
+
+            .trust-bar {
+                margin-bottom: 54px;
+            }
+
+            .demo-section {
+                gap: 34px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero {
+                padding-top: 44px;
+            }
+
+            .hero h1 {
+                font-size: 40px;
+                letter-spacing: -1px;
+            }
+
+            .hero p,
+            .demo-copy p {
+                font-size: 18px;
+            }
+
+            .btn-main {
+                width: 100%;
+                padding: 16px 18px;
+                font-size: 17px;
+            }
+
+            .thread-comment {
+                grid-template-columns: 36px 1fr;
+            }
+
+            .comment-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .comment-status {
+                grid-column: 2;
+                justify-self: start;
+                margin-top: -4px;
+            }
+
+            .demo-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .demo-note {
+                text-align: left;
+            }
         }
 
         /* Split Section (Pain & Solution) */

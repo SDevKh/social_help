@@ -105,3 +105,29 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.tier.upper()} ({'Active' if self.is_active else 'Inactive'})"
+
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('creator', 'Creator (Individual)'),
+        ('brand', 'Brand or Agency'),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='creator')
+    instagram_handle = models.CharField(max_length=100, blank=True, null=True, help_text="Your primary Instagram handle (e.g. @username)")
+    company_name = models.CharField(max_length=100, blank=True, null=True, help_text="Company or Agency Name (optional)")
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    profile, created = UserProfile.objects.get_or_create(user=instance)
+    profile.save()

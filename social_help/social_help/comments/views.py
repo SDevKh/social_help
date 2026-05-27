@@ -16,6 +16,7 @@ from django.utils import timezone
 from .serializers import CommentSerializer
 from .models import Comment, ModerationSetting, InstagramAccount, Subscription
 from .instagram_service import InstagramService
+from .forms import SignUpForm
 
 import secrets
 import os
@@ -144,13 +145,13 @@ def dashboard(request):
 
 def signup(request):
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect("/dashboard/")
     else:
-        form = UserCreationForm()
+        form = SignUpForm()
     return render(request, "registration/signup.html", {"form": form})
 
 
