@@ -505,6 +505,11 @@
             cursor: pointer;
         }
 
+        .simulate-btn:disabled {
+            cursor: default;
+            background: var(--accent-success);
+        }
+
         .demo-note {
             color: var(--muted);
             font-size: 14px;
@@ -527,48 +532,187 @@
         }
 
         @media (max-width: 640px) {
+            body {
+                background-image: none;
+            }
+
+            .floating-graphic {
+                display: none;
+            }
+
+            .nav {
+                padding: 12px 14px;
+            }
+
+            .logo-mark {
+                width: 118px;
+                height: 42px;
+            }
+
+            .btn-main-action {
+                padding: 7px 12px;
+                font-size: 13px;
+            }
+
+            .menu-toggle {
+                font-size: 22px;
+            }
+
             .hero {
-                padding-top: 44px;
+                padding: 26px 16px 28px;
+                max-width: 100%;
+                text-align: left;
+            }
+
+            .handwritten-badge {
+                font-size: 22px;
+                transform: none;
+                margin-bottom: 8px;
             }
 
             .hero h1 {
-                font-size: 40px;
+                font-size: 34px;
                 letter-spacing: -1px;
+                line-height: 1.08;
+                margin-bottom: 16px;
+            }
+
+            .text-gradient-play {
+                display: inline;
             }
 
             .hero p,
             .demo-copy p {
-                font-size: 18px;
+                font-size: 16px;
+                line-height: 1.5;
+            }
+
+            .hero p {
+                margin-bottom: 20px;
             }
 
             .btn-main {
                 width: 100%;
-                padding: 16px 18px;
-                font-size: 17px;
+                padding: 14px 14px;
+                border-radius: 10px;
+                font-size: 15px;
+                line-height: 1.25;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .meta-mark {
+                width: 24px;
+                height: 24px;
+                font-size: 16px;
+            }
+
+            .hero-proof {
+                font-size: 13px;
+                margin-top: 10px;
+            }
+
+            .trust-bar {
+                padding: 0 14px;
+                gap: 10px;
+                margin-bottom: 42px;
+            }
+
+            .trust-item {
+                min-height: 0;
+                padding: 14px;
+                gap: 12px;
+            }
+
+            .trust-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
+            }
+
+            .trust-item strong {
+                font-size: 15px;
+            }
+
+            .trust-item span {
+                font-size: 13px;
+            }
+
+            .demo-section {
+                padding: 0 14px;
+                margin-bottom: 54px;
+            }
+
+            .demo-copy h2 {
+                font-size: 28px;
+                letter-spacing: -0.5px;
+                margin-bottom: 12px;
+            }
+
+            .demo-shell {
+                border-radius: 8px;
+                box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+            }
+
+            .demo-header {
+                padding: 14px;
+            }
+
+            .demo-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .demo-live {
+                font-size: 11px;
+            }
+
+            .comment-thread {
+                padding: 4px 14px 12px;
             }
 
             .thread-comment {
-                grid-template-columns: 36px 1fr;
+                grid-template-columns: 34px 1fr;
+                gap: 10px;
+                padding: 13px 0;
             }
 
             .comment-avatar {
-                width: 36px;
-                height: 36px;
+                width: 34px;
+                height: 34px;
+            }
+
+            .comment-body strong {
+                font-size: 14px;
+            }
+
+            .comment-body p {
+                font-size: 14px;
             }
 
             .comment-status {
                 grid-column: 2;
                 justify-self: start;
                 margin-top: -4px;
+                padding: 5px 8px;
+                font-size: 11px;
             }
 
             .demo-actions {
                 align-items: stretch;
                 flex-direction: column;
+                padding: 14px;
+                gap: 10px;
+            }
+
+            .simulate-btn {
+                width: 100%;
+                padding: 12px 14px;
             }
 
             .demo-note {
                 text-align: left;
+                font-size: 13px;
             }
         }
 
@@ -810,6 +954,11 @@
             color: var(--muted);
             font-size: 14px;
         }
+
+        main > .hero:not(:first-child),
+        main > .split-section {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -845,6 +994,97 @@
     </header>
 
     <main>
+        <section class="hero">
+            <div class="handwritten-badge">Built for brand safety teams</div>
+            <h1>The Automated Content Moderation Shield for <span class="text-gradient-play">Instagram Brands.</span></h1>
+            <p>Instantly hide toxic comments, delete spam links, and protect your brand's reputation on autopilot using the official Meta API flow.</p>
+            <a href="/signup/" class="btn-main btn-gradient"><span class="meta-mark">f</span> Connect Your Instagram - Free 14-Day Trial</a>
+            <div class="hero-proof">No Instagram password required. Connect through Meta's secure login flow.</div>
+        </section>
+
+        <section class="trust-bar" aria-label="SocialFuse trust and safety">
+            <div class="trust-item">
+                <div class="trust-icon">M</div>
+                <div>
+                    <strong>Official Meta API integration</strong>
+                    <span>Designed for Instagram Professional accounts using Meta's approved login and permissions flow.</span>
+                </div>
+            </div>
+            <div class="trust-item">
+                <div class="trust-icon">0</div>
+                <div>
+                    <strong>We never post on your behalf</strong>
+                    <span>SocialFuse only reviews and moderates comments. It does not publish content to your account.</span>
+                </div>
+            </div>
+            <div class="trust-item">
+                <div class="trust-icon">S</div>
+                <div>
+                    <strong>Encrypted and secure</strong>
+                    <span>Your account tokens and moderation data are protected with production-grade security settings.</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="demo-section">
+            <div class="demo-copy">
+                <span class="handwritten-badge" style="color: var(--accent-danger);">Show, don't tell</span>
+                <h2>Watch a toxic comment attack disappear before buyers see it.</h2>
+                <p>SocialFuse keeps normal customer questions visible while hiding spam, abuse, and reputation-damaging comments in real time.</p>
+                <a href="/brands/" style="font-weight: bold; color: var(--accent-brand);">See brand protection details &rarr;</a>
+            </div>
+
+            <div class="demo-shell" aria-label="Interactive Instagram moderation demo">
+                <div class="demo-header">
+                    <div class="demo-account">
+                        <div class="demo-avatar"></div>
+                        <div>
+                            <strong>@yourbrand</strong>
+                            <span>New campaign post</span>
+                        </div>
+                    </div>
+                    <div class="demo-live">LIVE SCAN</div>
+                </div>
+
+                <div class="comment-thread">
+                    <div class="thread-comment">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #a7f3d0, #60a5fa);"></div>
+                        <div class="comment-body">
+                            <strong>@maya_shop</strong>
+                            <small>12 seconds ago</small>
+                            <p>How much is shipping to Mumbai?</p>
+                        </div>
+                        <div class="comment-status">Visible</div>
+                    </div>
+
+                    <div class="thread-comment flagged" id="toxicComment">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #fecdd3, #fda4af);"></div>
+                        <div class="comment-body">
+                            <strong>@angrythrowaway</strong>
+                            <small>8 seconds ago</small>
+                            <p>This brand is a scam. Nobody buy from them.</p>
+                        </div>
+                        <div class="comment-status" id="toxicStatus">Needs review</div>
+                    </div>
+
+                    <div class="thread-comment flagged" id="spamComment">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #fde68a, #fb7185);"></div>
+                        <div class="comment-body">
+                            <strong>@crypto_fast_cash</strong>
+                            <small>3 seconds ago</small>
+                            <p>Win free crypto today. Tap my profile link now.</p>
+                        </div>
+                        <div class="comment-status" id="spamStatus">Needs review</div>
+                    </div>
+                </div>
+
+                <div class="demo-actions">
+                    <button class="simulate-btn" type="button" id="simulateAttack">Simulate Toxic Attack</button>
+                    <div class="demo-note" id="demoNote">Customer questions stay visible. Toxicity and spam get flagged.</div>
+                </div>
+            </div>
+        </section>
+
         <section class="hero">
             <div class="handwritten-badge">Say goodbye to trolls!</div>
             <h1>Your comment section, <br><span class="text-gradient-play">finally clean.</span></h1>
@@ -973,6 +1213,23 @@
 
 </body>
 <script>
+    const simulateButton = document.getElementById('simulateAttack');
+    if (simulateButton) {
+        simulateButton.addEventListener('click', () => {
+            document.getElementById('toxicComment')?.classList.add('hidden');
+            document.getElementById('spamComment')?.classList.add('hidden');
+            const toxicStatus = document.getElementById('toxicStatus');
+            const spamStatus = document.getElementById('spamStatus');
+            const demoNote = document.getElementById('demoNote');
+
+            if (toxicStatus) toxicStatus.textContent = 'Hidden by AI';
+            if (spamStatus) spamStatus.textContent = 'Hidden by AI';
+            if (demoNote) demoNote.textContent = '2 risky comments hidden. The shipping question stayed visible.';
+            simulateButton.textContent = 'Attack Neutralized';
+            simulateButton.disabled = true;
+        });
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js').catch(() => {});
