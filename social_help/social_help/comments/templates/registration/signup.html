@@ -309,14 +309,30 @@
             }
 
             .art-panel {
-                min-height: 260px;
-                border-radius: 0 0 22px 22px;
+                display: none;
             }
         }
 
         @media (max-width: 540px) {
+            body {
+                padding: 12px;
+            }
+
+            .auth-shell {
+                padding: 12px;
+                border-radius: 22px;
+            }
+
             .auth-form {
-                padding: 32px 24px;
+                padding: 28px 20px;
+            }
+
+            .auth-form p {
+                margin-bottom: 22px;
+            }
+
+            .social-row {
+                flex-direction: column;
             }
         }
     </style>
