@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
     landing,
+    react_frontend,
     dashboard,
     signup,
     logout_view,
@@ -22,6 +23,16 @@ from .views import (
 
 urlpatterns = [
     path("", landing),
+    # React frontend pages (client-side routed)
+    path("features/", react_frontend),
+    path("how-it-works/", react_frontend),
+    path("use-cases/", react_frontend),
+    path("demo/", react_frontend),
+    path("pricing/", react_frontend),
+    path("testimonials/", react_frontend),
+    path("blog/", react_frontend),
+    path("contact/", react_frontend),
+
     path("manifest.webmanifest", pwa_manifest),
     path("sw.js", service_worker),
     path(".well-known/assetlinks.json", android_asset_links),
@@ -36,8 +47,6 @@ urlpatterns = [
     path("privacy-policy/", privacy_policy),
     path("terms-of-service/", terms_of_service),
     path("terms/", terms_of_service),
-    path("contact/", contact),
-    path("pricing/", pricing_page),
     path("creators/", creators_page),
     path("brands/", brands_page),
 ]

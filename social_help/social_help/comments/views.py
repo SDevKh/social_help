@@ -501,7 +501,11 @@ def landing(request):
     """Landing page for unauthenticated users, redirect dashboard for authenticated."""
     if request.user.is_authenticated:
         return redirect("/dashboard/")
-    return render(request, "landing.html")
+    return render(request, "index.html")
+
+def react_frontend(request):
+    """Serve React frontend for SPA routes without redirecting authenticated users."""
+    return render(request, "index.html")
 
 def privacy_policy(request):
     """Serve the static Privacy Policy page required by Meta App Review."""
