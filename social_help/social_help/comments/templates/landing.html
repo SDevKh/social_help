@@ -42,15 +42,68 @@
             font-family: var(--font-main);
             color: var(--ink);
             background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 90% 70%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 50% 10%, rgba(249, 115, 22, 0.05) 0%, transparent 35%);
             min-height: 100vh;
             line-height: 1.6;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+        }
+
+        /* Glowing background blobs */
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: -1;
+            will-change: transform;
+        }
+
+        .blob-1 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-brand);
+            top: -100px;
+            left: -100px;
+            animation: move-blob-1 25s ease-in-out infinite alternate;
+        }
+
+        .blob-2 {
+            width: 450px;
+            height: 450px;
+            background: var(--accent-grape);
+            bottom: 10%;
+            right: -100px;
+            animation: move-blob-2 20s ease-in-out infinite alternate;
+        }
+
+        .blob-3 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-orange);
+            top: 30%;
+            left: 35%;
+            animation: move-blob-3 30s ease-in-out infinite alternate;
+            opacity: 0.06;
+        }
+
+        @keyframes move-blob-1 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, 60px) scale(1.1); }
+            100% { transform: translate(-40px, 100px) scale(0.95); }
+        }
+
+        @keyframes move-blob-2 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-100px, -50px) scale(0.9); }
+            100% { transform: translate(50px, 80px) scale(1.05); }
+        }
+
+        @keyframes move-blob-3 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(60px, -80px) scale(1.15); }
+            100% { transform: translate(-80px, 40px) scale(0.9); }
         }
 
         a {
@@ -869,6 +922,10 @@
     </style>
 </head>
 <body>
+    <!-- Glowing background blobs -->
+    <div class="bg-blob blob-1" aria-hidden="true"></div>
+    <div class="bg-blob blob-2" aria-hidden="true"></div>
+    <div class="bg-blob blob-3" aria-hidden="true"></div>
 
     <header class="nav">
         <a href="/" class="logo">
