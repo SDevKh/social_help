@@ -10,8 +10,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
     <title>SocialFuse | AI-Powered Social Media Moderation & Engagement Shield</title>
-    <script type="module" crossorigin src="/static/assets/index-CtiAibPl.js"></script>
-    <link rel="stylesheet" crossorigin href="/static/assets/index-BL55QoDb.css">
+    <script>
+      window.DjangoUser = {
+        isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %},
+        id: "{{ user.id|default:'' }}",
+        email: "{{ user.email|default:'' }}"
+      };
+    </script>
+    <script type="module" crossorigin src="/static/assets/index-BxcZq8Tz.js"></script>
+    <link rel="stylesheet" crossorigin href="/static/assets/index-6X7qSNv-.css">
   </head>
   <body>
     <div id="root"></div>

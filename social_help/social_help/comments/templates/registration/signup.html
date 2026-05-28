@@ -355,6 +355,9 @@
 
                 <form method="post">
                     {% csrf_token %}
+                    {% if plan %}
+                    <input type="hidden" name="plan" value="{{ plan }}">
+                    {% endif %}
                     {% for field in form %}
                         <div class="field">
                             <label for="{{ field.id_for_label }}">{{ field.label }}</label>

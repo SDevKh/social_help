@@ -144,15 +144,26 @@ def dashboard(request):
 
 
 def signup(request):
+    plan = request.GET.get("plan")
     if request.method == "POST":
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
+            
+            plan_post = request.POST.get("plan") or request.GET.get("plan")
+            if plan_post in ["starter", "pro"]:
+                gumroad_base = getattr(settings, "GUMROAD_CREATOR_PLAN_URL" if plan_post == "starter" else "GUMROAD_AGENCY_PLAN_URL")
+                import urllib.parse
+                email_param = urllib.parse.quote(user.email)
+                user_id_param = urllib.parse.quote(str(user.id))
+                checkout_url = f"{gumroad_base}?email={email_param}&custom_fields[user_id]={user_id_param}"
+                return redirect(checkout_url)
+                
             return redirect("/dashboard/")
     else:
         form = SignUpForm()
-    return render(request, "registration/signup.html", {"form": form})
+    return render(request, "registration/signup.html", {"form": form, "plan": plan})
 
 
 def logout_view(request):
