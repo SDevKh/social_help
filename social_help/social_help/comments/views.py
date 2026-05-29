@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
@@ -135,6 +135,10 @@ def activate_subscription(user, tier, provider="", order_id=None, capture_id=Non
 
 @login_required
 def dashboard(request):
+    if not request.user.is_superuser and not request.user.is_staff:
+        sub = get_subscription(request.user)
+        if not sub or sub.tier == 'free' or not sub.is_active:
+            return redirect('/pricing/?reason=subscription_required')
     account = InstagramAccount.objects.filter(user=request.user).first()
     sub = get_subscription(request.user)
     return render(request, "comments/dashboard.html", {
@@ -160,7 +164,7 @@ def signup(request):
                 checkout_url = f"{gumroad_base}?email={email_param}&custom_fields[user_id]={user_id_param}"
                 return redirect(checkout_url)
                 
-            return redirect("/dashboard/")
+            return redirect("/pricing/")
     else:
         form = SignUpForm()
     return render(request, "registration/signup.html", {"form": form, "plan": plan})
@@ -391,9 +395,21 @@ def instagram_connect_direct(request):
 # COMMENTS / MODERATION APIs (UNCHANGED LOGIC)
 # -------------------------------------------------------------------
 
+class HasActivePaidSubscription(BasePermission):
+    message = "You must have an active paid subscription to access this feature."
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser or request.user.is_staff:
+            return True
+        sub = get_subscription(request.user)
+        return sub is not None and sub.tier in ['starter', 'pro'] and sub.is_active
+
+
 class RecentComments(ListAPIView):
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
 
     def get_queryset(self):
         return Comment.objects.filter(
@@ -402,7 +418,7 @@ class RecentComments(ListAPIView):
 
 
 class DeleteComment(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
 
     def delete(self, request, comment_id):
         comment = get_object_or_404(Comment, id=comment_id, user=request.user)
@@ -411,7 +427,7 @@ class DeleteComment(APIView):
 
 
 class DeleteInstagramComment(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
 
     def post(self, request):
         comment_id = request.data.get("comment_id")
@@ -431,7 +447,7 @@ class DeleteInstagramComment(APIView):
 
 
 class ClearAllComments(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
 
     def post(self, request):
         count = Comment.objects.filter(user=request.user).count()
@@ -440,7 +456,7 @@ class ClearAllComments(APIView):
 
 
 class ModerationSettingsAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
 
     def get(self, request):
         s = get_settings(request.user)
@@ -468,7 +484,7 @@ class ModerationSettingsAPI(APIView):
 
 
 class ScanInstagramPost(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
 
     def post(self, request):
         post_id = request.data.get("post_id")
