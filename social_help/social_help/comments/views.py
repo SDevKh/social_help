@@ -24,6 +24,7 @@ import requests
 import logging
 import hmac
 import hashlib
+from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
 import stripe
@@ -51,6 +52,31 @@ GUMROAD_PRODUCT_TIER_MAP = {
     "creator_plan": "starter",
     "agency_plan": "pro",
 }
+
+
+def build_gumroad_checkout_url(base_url, user):
+    return_url = getattr(
+        settings,
+        "GUMROAD_REDIRECT_URL",
+        f"{settings.DOMAIN_URL}/dashboard/?payment=success",
+    )
+    parsed_url = urlsplit(base_url)
+    query_params = dict(parse_qsl(parsed_url.query, keep_blank_values=True))
+    query_params.update({
+        "email": user.email,
+        "custom_fields[user_id]": str(user.id),
+        "wanted": "true",
+        "success_url": return_url,
+        "return_url": return_url,
+        "redirect_url": return_url,
+    })
+    return urlunsplit((
+        parsed_url.scheme,
+        parsed_url.netloc,
+        parsed_url.path,
+        urlencode(query_params, doseq=True),
+        parsed_url.fragment,
+    ))
 
 
 def get_signed_state(user_id, state_val):
@@ -158,11 +184,7 @@ def signup(request):
             plan_post = request.POST.get("plan") or request.GET.get("plan")
             if plan_post in ["starter", "pro"]:
                 gumroad_base = getattr(settings, "GUMROAD_CREATOR_PLAN_URL" if plan_post == "starter" else "GUMROAD_AGENCY_PLAN_URL")
-                import urllib.parse
-                email_param = urllib.parse.quote(user.email)
-                user_id_param = urllib.parse.quote(str(user.id))
-                checkout_url = f"{gumroad_base}?email={email_param}&custom_fields[user_id]={user_id_param}"
-                return redirect(checkout_url)
+                return redirect(build_gumroad_checkout_url(gumroad_base, user))
                 
             return redirect("/pricing/")
     else:
@@ -559,6 +581,11 @@ def pricing_page(request):
         "subscription": sub,
         "gumroad_creator_url": getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://gumroad.com/l/creator_plan"),
         "gumroad_agency_url": getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://gumroad.com/l/agency_plan"),
+        "gumroad_return_url": getattr(
+            settings,
+            "GUMROAD_REDIRECT_URL",
+            f"{settings.DOMAIN_URL}/dashboard/?payment=success",
+        ),
     })
 
 

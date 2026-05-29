@@ -709,10 +709,15 @@
                     gumroadBaseUrl = "{{ gumroad_agency_url }}";
                 }
 
-                const emailParam = encodeURIComponent("{{ user.email }}");
-                const userIdParam = encodeURIComponent("{{ user.id }}");
-                const checkoutUrl = `${gumroadBaseUrl}?email=${emailParam}&custom_fields[user_id]=${userIdParam}`;
-                window.location.href = checkoutUrl;
+                const gumroadReturnUrl = "{{ gumroad_return_url }}";
+                const checkoutUrl = new URL(gumroadBaseUrl);
+                checkoutUrl.searchParams.set("email", "{{ user.email }}");
+                checkoutUrl.searchParams.set("custom_fields[user_id]", "{{ user.id }}");
+                checkoutUrl.searchParams.set("wanted", "true");
+                checkoutUrl.searchParams.set("success_url", gumroadReturnUrl);
+                checkoutUrl.searchParams.set("return_url", gumroadReturnUrl);
+                checkoutUrl.searchParams.set("redirect_url", gumroadReturnUrl);
+                window.location.href = checkoutUrl.toString();
             }
         }
     </script>

@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from social_help.comments.models import Subscription
 
@@ -74,6 +74,32 @@ class GumroadPaymentTests(TestCase):
         self.assertTrue(sub.is_active)
         self.assertEqual(sub.paypal_order_id, "gum_sub_456")
         self.assertEqual(sub.payment_provider, "gumroad")
+
+    @override_settings(
+        DOMAIN_URL="https://example.com",
+        GUMROAD_CREATOR_PLAN_URL="https://gumroad.com/l/creator_plan",
+        GUMROAD_REDIRECT_URL="https://example.com/dashboard/?payment=success",
+    )
+    def test_signup_paid_plan_redirects_to_gumroad_with_dashboard_return_url(self):
+        form_data = {
+            "username": "newpaiduser",
+            "first_name": "Paid User",
+            "email": "newpaiduser@example.com",
+            "role": "creator",
+            "instagram_handle": "@newpaiduser",
+            "company_name": "",
+            "password1": "mypassword123",
+            "password2": "mypassword123",
+            "plan": "starter",
+        }
+
+        response = self.client.post("/signup/?plan=starter", data=form_data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("https://gumroad.com/l/creator_plan", response.url)
+        self.assertIn("success_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
+        self.assertIn("return_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
+        self.assertIn("redirect_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
 
 class UserProfileAndSignupTests(TestCase):
     def test_signup_creates_profile(self):

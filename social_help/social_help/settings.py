@@ -179,3 +179,4 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 # Gumroad Settings
 GUMROAD_CREATOR_PLAN_URL = os.getenv("GUMROAD_CREATOR_PLAN_URL", "https://gumroad.com/l/creator_plan")
 GUMROAD_AGENCY_PLAN_URL = os.getenv("GUMROAD_AGENCY_PLAN_URL", "https://gumroad.com/l/agency_plan")
+GUMROAD_REDIRECT_URL = os.getenv("GUMROAD_REDIRECT_URL", f"{DOMAIN_URL}/dashboard/?payment=success")
