@@ -926,9 +926,11 @@ class GumroadWebhook(APIView):
         if not user_id:
             user_id = request.data.get("custom_fields[user_id]")
             
-        if not user_id:
-            logger.error("Gumroad webhook missing user_id custom field.")
-            return Response({"error": "user_id is required in custom_fields"}, status=400)
+        email = request.data.get("email")
+            
+        if not user_id and not email:
+            logger.error("Gumroad webhook missing user_id custom field and email.")
+            return Response({"error": "user_id or email is required"}, status=400)
 
         # Map product to subscription tier
         product_name = request.data.get("product_name", "").lower()
@@ -942,7 +944,10 @@ class GumroadWebhook(APIView):
 
         try:
             from django.contrib.auth.models import User
-            user = User.objects.get(id=user_id)
+            if user_id:
+                user = User.objects.get(id=user_id)
+            else:
+                user = User.objects.get(email=email)
             
             # Activate the subscription in the database
             activate_subscription(
@@ -952,10 +957,11 @@ class GumroadWebhook(APIView):
                 order_id=request.data.get("sale_id") or request.data.get("subscription_id")
             )
             
-            logger.warning(f"Successfully activated subscription tier '{tier}' for user ID {user_id} via Gumroad webhook.")
+            logger.warning(f"Successfully activated subscription tier '{tier}' for user '{user.username}' via Gumroad webhook.")
             return Response({"success": True})
         except User.DoesNotExist:
-            logger.error(f"User with ID {user_id} not found during Gumroad webhook processing.")
+            lookup_val = user_id if user_id else email
+            logger.error(f"User with ID/Email '{lookup_val}' not found during Gumroad webhook processing.")
             return Response({"error": "User not found"}, status=404)
         except Exception as exc:
             logger.exception("Error processing Gumroad webhook")
