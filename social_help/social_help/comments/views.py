@@ -547,9 +547,7 @@ class ScanInstagramPost(APIView):
 # -------------------------------------------------------------------
 
 def landing(request):
-    """Landing page for unauthenticated users, redirect dashboard for authenticated."""
-    if request.user.is_authenticated:
-        return redirect("/dashboard/")
+    """Serve landing page."""
     return render(request, "index.html")
 
 def react_frontend(request):
