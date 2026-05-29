@@ -579,8 +579,8 @@ def pricing_page(request):
         sub = get_subscription(request.user)
     return render(request, "comments/pricing.html", {
         "subscription": sub,
-        "gumroad_creator_url": getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://gumroad.com/l/creator_plan"),
-        "gumroad_agency_url": getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://gumroad.com/l/agency_plan"),
+        "gumroad_creator_url": getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/creator_plan"),
+        "gumroad_agency_url": getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/agency_plan"),
         "gumroad_return_url": getattr(
             settings,
             "GUMROAD_REDIRECT_URL",

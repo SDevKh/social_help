@@ -10,72 +10,112 @@
             font-family: 'Manrope', sans-serif;
             line-height: 1.6;
             margin: 0;
-            padding: 40px;
-            background-color: #f6f8fc;
-            color: #151826;
+            padding: 40px 20px;
+            background-color: #080b11;
+            /* Subtle triadic background radial glows */
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.04) 0%, transparent 35%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
 
         .container {
             max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            border-radius: 28px;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
         }
 
         h1, h2 {
-            color: #1d4ed8;
+            background: linear-gradient(135deg, #06b6d4 0%, #6366f1 50%, #f43f5e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            margin-top: 0;
         }
 
         p {
             margin-bottom: 20px;
-            color: #5e667a;
+            color: #94a3b8;
         }
 
         .contact-info {
-            background-color: #f8fafc;
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 16px;
             margin-bottom: 30px;
         }
 
         .contact-info p {
             margin: 5px 0;
+            color: #e2e8f0;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 14px;
         }
 
         .form-group input, .form-group textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            box-sizing: border-box;
+            padding: 12px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 9999px; /* Pill shaped inputs */
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            outline: none;
             font-family: inherit;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            border-radius: 20px; /* Better for textareas */
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
         }
 
         button {
-            background-color: #1d4ed8;
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
             color: #fff;
-            padding: 12px 20px;
+            padding: 14px 20px;
             border: none;
-            border-radius: 6px;
+            border-radius: 9999px; /* Pill shaped button */
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             width: 100%;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
         }
 
         button:hover {
-            background-color: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 
+                0 10px 25px rgba(6, 182, 212, 0.4),
+                0 0 15px rgba(99, 102, 241, 0.2);
         }
     </style>
 </head>

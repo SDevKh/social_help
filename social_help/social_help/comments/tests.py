@@ -77,7 +77,7 @@ class GumroadPaymentTests(TestCase):
 
     @override_settings(
         DOMAIN_URL="https://example.com",
-        GUMROAD_CREATOR_PLAN_URL="https://gumroad.com/l/creator_plan",
+        GUMROAD_CREATOR_PLAN_URL="https://socialfuse.gumroad.com/l/creator_plan",
         GUMROAD_REDIRECT_URL="https://example.com/dashboard/?payment=success",
     )
     def test_signup_paid_plan_redirects_to_gumroad_with_dashboard_return_url(self):
@@ -96,7 +96,7 @@ class GumroadPaymentTests(TestCase):
         response = self.client.post("/signup/?plan=starter", data=form_data)
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("https://gumroad.com/l/creator_plan", response.url)
+        self.assertIn("https://socialfuse.gumroad.com/l/creator_plan", response.url)
         self.assertIn("success_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
         self.assertIn("return_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
         self.assertIn("redirect_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
@@ -119,9 +119,9 @@ class UserProfileAndSignupTests(TestCase):
         
         response = self.client.post("/signup/", data=form_data)
         
-        # Should redirect to dashboard on successful signup
+        # Should redirect to pricing on successful signup if no plan is specified
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/dashboard/")
+        self.assertEqual(response.url, "/pricing/")
         
         # Verify user and user profile were created
         user = User.objects.get(username="newuser")
