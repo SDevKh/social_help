@@ -50,11 +50,11 @@ GUMROAD_PRODUCT_TIER_MAP = {
     "starter": "starter",
     "pro": "pro",
     "creator": "starter",
-    "agency": "pro",
+    "agency": "agency",
     "creator_plan": "starter",
-    "agency_plan": "pro",
-    "kokch": "starter",
-    "bjlpkj": "pro",
+    "crsfx": "starter",
+    "kokch": "pro",
+    "bjlpkj": "agency",
 }
 
 
@@ -1069,10 +1069,12 @@ class GumroadCheckoutURL(APIView):
 
     def get(self, request):
         plan = request.GET.get("plan", "starter")
-        if plan == "pro":
+        if plan == "agency":
             base_url = getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj")
+        elif plan == "pro":
+            base_url = getattr(settings, "GUMROAD_PRO_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch")
         else:
-            base_url = getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch")
+            base_url = getattr(settings, "GUMROAD_STARTER_PLAN_URL", "https://socialfuse.gumroad.com/l/crsfx")
 
         # Build success URL with plan param so gumroad_success knows which tier
         domain = getattr(settings, "DOMAIN_URL", "http://localhost:8000")
