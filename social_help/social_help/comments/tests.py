@@ -119,9 +119,9 @@ class UserProfileAndSignupTests(TestCase):
         
         response = self.client.post("/signup/", data=form_data)
         
-        # Should redirect to pricing on successful signup if no plan is specified
+        # Should redirect to landing page on successful signup if no plan is specified
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/pricing/")
+        self.assertEqual(response.url, "/")
         
         # Verify user and user profile were created
         user = User.objects.get(username="newuser")
@@ -131,3 +131,41 @@ class UserProfileAndSignupTests(TestCase):
         profile = UserProfile.objects.get(user=user)
         self.assertEqual(profile.role, "creator")
         self.assertEqual(profile.instagram_handle, "@newuser")
+
+    def test_dashboard_redirects_non_subscriber_to_landing(self):
+        user = User.objects.create_user(username="freeuser", password="password123")
+        self.client.login(username="freeuser", password="password123")
+        
+        response = self.client.get("/dashboard/")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
+
+    def test_moderation_api_blocks_non_subscriber(self):
+        user = User.objects.create_user(username="freeuser2", password="password123")
+        self.client.login(username="freeuser2", password="password123")
+        
+        response = self.client.get("/api/settings/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_dashboard_accessible_to_subscriber(self):
+        user = User.objects.create_user(username="paiduser", password="password123")
+        self.client.login(username="paiduser", password="password123")
+        
+        # Activate subscription
+        Subscription.objects.update_or_create(user=user, defaults={'tier': 'starter', 'is_active': True})
+        
+        response = self.client.get("/dashboard/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Comment Moderation")
+
+    def test_moderation_api_accessible_to_subscriber(self):
+        user = User.objects.create_user(username="paiduser2", password="password123")
+        self.client.login(username="paiduser2", password="password123")
+        
+        # Activate subscription
+        Subscription.objects.update_or_create(user=user, defaults={'tier': 'pro', 'is_active': True})
+        
+        response = self.client.get("/api/settings/")
+        self.assertEqual(response.status_code, 200)
+
+

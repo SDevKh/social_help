@@ -19,6 +19,8 @@ from .views import (
     pwa_manifest,
     service_worker,
     android_asset_links,
+    gumroad_success,
+    gumroad_webhook,
 )
 
 urlpatterns = [
@@ -38,6 +40,8 @@ urlpatterns = [
     path(".well-known/assetlinks.json", android_asset_links),
     path("dashboard/", dashboard),
     path("signup/", signup),
+    path("gumroad/success/", gumroad_success),
+    path("webhooks/gumroad/", gumroad_webhook),
     path("login/", auth_views.LoginView.as_view(template_name="registration/login.html")),
     path("logout/", logout_view),
     path("instagram/disconnect/", instagram_disconnect),

@@ -11,6 +11,8 @@ from .views import (
     CreateCheckoutSession,
     StripeWebhook,
     GumroadWebhook,
+    SubscriptionStatus,
+    GumroadCheckoutURL,
 )
 
 urlpatterns = [
@@ -25,4 +27,6 @@ urlpatterns = [
     path("create-checkout/", CreateCheckoutSession.as_view()),
     path("stripe/webhook/", StripeWebhook.as_view()),
     path("gumroad/webhook/", GumroadWebhook.as_view()),
+    path("subscription/status/", SubscriptionStatus.as_view()),
+    path("gumroad/checkout-url/", GumroadCheckoutURL.as_view()),
 ]

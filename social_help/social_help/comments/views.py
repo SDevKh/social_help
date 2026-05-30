@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
@@ -24,10 +25,11 @@ import requests
 import logging
 import hmac
 import hashlib
-from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl
+from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl, quote
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
 import stripe
+from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -51,15 +53,22 @@ GUMROAD_PRODUCT_TIER_MAP = {
     "agency": "pro",
     "creator_plan": "starter",
     "agency_plan": "pro",
+    "kokch": "starter",
+    "bjlpkj": "pro",
 }
 
 
-def build_gumroad_checkout_url(base_url, user):
-    return_url = getattr(
+def build_gumroad_checkout_url(base_url, user, plan="starter"):
+    base_redirect = getattr(
         settings,
         "GUMROAD_REDIRECT_URL",
-        f"{settings.DOMAIN_URL}/dashboard/?payment=success",
+        f"{settings.DOMAIN_URL}/gumroad/success/",
     )
+    # Ensure the success URL contains the plan so gumroad_success knows which tier
+    if '?' in base_redirect:
+        return_url = f"{base_redirect}&plan={plan}"
+    else:
+        return_url = f"{base_redirect}?plan={plan}"
     parsed_url = urlsplit(base_url)
     query_params = dict(parse_qsl(parsed_url.query, keep_blank_values=True))
     query_params.update({
@@ -155,22 +164,86 @@ def activate_subscription(user, tier, provider="", order_id=None, capture_id=Non
     return sub
 
 
+@csrf_exempt
+def gumroad_webhook(request):
+    """Handle Gumroad webhooks to activate subscriptions.
+
+    Expects a secret token as a query parameter: /webhooks/gumroad/?token=SECRET
+    """
+    token = request.GET.get('token')
+    if not token or token != getattr(settings, 'GUMROAD_WEBHOOK_SECRET', None):
+        return HttpResponse(status=403)
+
+    # Gumroad may POST form-encoded data or JSON. Handle both.
+    try:
+        if request.content_type == 'application/json':
+            payload = json.loads(request.body.decode('utf-8'))
+        else:
+            # request.POST is populated for form-encoded bodies
+            payload = {k: v for k, v in request.POST.items()}
+    except Exception:
+        return HttpResponse(status=400)
+
+    # Try to extract common fields
+    email = payload.get('email') or payload.get(' purchaser_email') or payload.get('purchaser_email')
+    product_permalink = payload.get('product_permalink') or payload.get('product') or ''
+    sale_id = payload.get('sale_id') or payload.get('sale') or payload.get('purchase_id')
+
+    # Normalize permalink (last segment)
+    permalink_key = ''
+    if product_permalink:
+        try:
+            # product_permalink may be full URL or short slug
+            permalink_key = product_permalink.rstrip('/').split('/')[-1]
+        except Exception:
+            permalink_key = product_permalink
+
+    # Map permalink to tier
+    tier = GUMROAD_PRODUCT_TIER_MAP.get(permalink_key) or GUMROAD_PRODUCT_TIER_MAP.get(product_permalink) or 'starter'
+
+    if not email:
+        # Nothing we can do without buyer email
+        return HttpResponse(status=200)
+
+    try:
+        user, created = User.objects.get_or_create(email=email, defaults={
+            'username': email.split('@')[0] + secrets.token_hex(3)
+        })
+    except Exception:
+        return HttpResponse(status=500)
+
+    # Activate subscription record
+    try:
+        activate_subscription(user, tier, provider='gumroad', order_id=sale_id)
+    except Exception:
+        logger.exception('Failed to activate subscription for %s', email)
+
+    return HttpResponse(status=200)
+
+
 # -------------------------------------------------------------------
 # Auth / Dashboard
 # -------------------------------------------------------------------
 
 @login_required
 def dashboard(request):
-    if not request.user.is_superuser and not request.user.is_staff:
-        sub = get_subscription(request.user)
-        if not sub or sub.tier == 'free' or not sub.is_active:
-            return redirect('/pricing/?reason=subscription_required')
-    account = InstagramAccount.objects.filter(user=request.user).first()
+    # Payment providers may activate the subscription slightly after the redirect.
+    # If user landed here with ?payment=success, don't bounce them back to pricing immediately.
+    payment_success = request.GET.get("payment") == "success"
+
+    # If the user is not a subscriber (and not superuser/staff) and didn't just pay, redirect to landing page
     sub = get_subscription(request.user)
+    is_subscriber = sub and sub.tier in ['starter', 'pro'] and sub.is_active
+    if not request.user.is_superuser and not request.user.is_staff and not is_subscriber and not payment_success:
+        return redirect('/')
+
+    account = InstagramAccount.objects.filter(user=request.user).first()
     return render(request, "comments/dashboard.html", {
         "account": account,
         "subscription": sub,
+        "payment_success": payment_success,
     })
+
 
 
 def signup(request):
@@ -184,9 +257,9 @@ def signup(request):
             plan_post = request.POST.get("plan") or request.GET.get("plan")
             if plan_post in ["starter", "pro"]:
                 gumroad_base = getattr(settings, "GUMROAD_CREATOR_PLAN_URL" if plan_post == "starter" else "GUMROAD_AGENCY_PLAN_URL")
-                return redirect(build_gumroad_checkout_url(gumroad_base, user))
+                return redirect(build_gumroad_checkout_url(gumroad_base, user, plan=plan_post))
                 
-            return redirect("/pricing/")
+            return redirect("/")
     else:
         form = SignUpForm()
     return render(request, "registration/signup.html", {"form": form, "plan": plan})
@@ -546,9 +619,52 @@ class ScanInstagramPost(APIView):
 # Landing Page
 # -------------------------------------------------------------------
 
+def gumroad_success(request):
+    """
+    Gumroad redirects the buyer here after payment.
+    Gumroad appends ?sale_id=...&product_permalink=... to the URL.
+    We activate the subscription immediately so the user gets dashboard access
+    without waiting for the async webhook.
+    """
+    if not request.user.is_authenticated:
+        # URL-encode the entire next path so query params (sale_id, plan, etc.) aren't
+        # split apart and lost when Django's LoginView parses the 'next' parameter.
+        next_path = f'/gumroad/success/?{request.GET.urlencode()}'
+        return redirect(f'/login/?next={quote(next_path, safe="")}')
+
+    sale_id = request.GET.get('sale_id', '')
+    permalink = request.GET.get('product_permalink', '').lower()
+    product_name = request.GET.get('product_name', '').lower()
+
+    # Determine tier from permalink or product name
+    tier = 'starter'
+    for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
+        if key in permalink or key in product_name:
+            tier = val
+            break
+    # Also check the plan param we pass in the checkout URL
+    plan_param = request.GET.get('plan', '').lower()
+    if plan_param == 'pro':
+        tier = 'pro'
+    elif plan_param == 'starter':
+        tier = 'starter'
+
+    activate_subscription(
+        user=request.user,
+        tier=tier,
+        provider='gumroad',
+        order_id=sale_id or None,
+    )
+    logger.warning(f"gumroad_success: activated '{tier}' for user '{request.user.username}' sale_id={sale_id}")
+    return redirect('/dashboard/?payment=success')
+
+
+
+
 def landing(request):
-    """Serve landing page."""
+    """Landing page."""
     return render(request, "index.html")
+
 
 def react_frontend(request):
     """Serve React frontend for SPA routes without redirecting authenticated users."""
@@ -577,8 +693,8 @@ def pricing_page(request):
         sub = get_subscription(request.user)
     return render(request, "comments/pricing.html", {
         "subscription": sub,
-        "gumroad_creator_url": getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/creator_plan"),
-        "gumroad_agency_url": getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/agency_plan"),
+        "gumroad_creator_url": getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch"),
+        "gumroad_agency_url": getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj"),
         "gumroad_return_url": getattr(
             settings,
             "GUMROAD_REDIRECT_URL",
@@ -932,6 +1048,54 @@ def android_asset_links(request):
             },
         })
     return JsonResponse(statements, safe=False)
+
+
+class SubscriptionStatus(APIView):
+    """Return current user's subscription tier and active status."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sub = get_subscription(request.user)
+        return Response({
+            "tier": sub.tier if sub else "free",
+            "is_active": sub.is_active if sub else False,
+            "is_paid": sub.tier in ["starter", "pro"] and sub.is_active if sub else False,
+        })
+
+
+class GumroadCheckoutURL(APIView):
+    """Return a Gumroad checkout URL with user_id embedded so the webhook can identify the user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        plan = request.GET.get("plan", "starter")
+        if plan == "pro":
+            base_url = getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj")
+        else:
+            base_url = getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch")
+
+        # Build success URL with plan param so gumroad_success knows which tier
+        domain = getattr(settings, "DOMAIN_URL", "http://localhost:8000")
+        success_url = f"{domain}/gumroad/success/?plan={plan}"
+
+        parsed_url = urlsplit(base_url)
+        query_params = dict(parse_qsl(parsed_url.query, keep_blank_values=True))
+        query_params.update({
+            "email": request.user.email,
+            "custom_fields[user_id]": str(request.user.id),
+            "wanted": "true",
+            "success_url": success_url,
+            "return_url": success_url,
+            "redirect_url": success_url,
+        })
+        url = urlunsplit((
+            parsed_url.scheme,
+            parsed_url.netloc,
+            parsed_url.path,
+            urlencode(query_params, doseq=True),
+            parsed_url.fragment,
+        ))
+        return Response({"checkout_url": url})
 
 
 class GumroadWebhook(APIView):

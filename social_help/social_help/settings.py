@@ -8,7 +8,7 @@ IS_CLOUD = bool(os.getenv("RENDER") or os.getenv("RENDER_EXTERNAL_HOSTNAME") or 
 try:
     from dotenv import load_dotenv
 
-    load_dotenv(BASE_DIR.parent / ".env")
+    load_dotenv(BASE_DIR.parent / ".env", override=True)
     load_dotenv(BASE_DIR / ".env", override=True)
 except ImportError:
     pass
@@ -177,6 +177,7 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 # Gumroad Settings
-GUMROAD_CREATOR_PLAN_URL = os.getenv("GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/creator_plan")
-GUMROAD_AGENCY_PLAN_URL = os.getenv("GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/agency_plan")
+GUMROAD_CREATOR_PLAN_URL = os.getenv("GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch")
+GUMROAD_AGENCY_PLAN_URL = os.getenv("GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj")
 GUMROAD_REDIRECT_URL = os.getenv("GUMROAD_REDIRECT_URL", f"{DOMAIN_URL}/dashboard/?payment=success")
+GUMROAD_WEBHOOK_SECRET = os.getenv("GUMROAD_WEBHOOK_SECRET", "replace-with-secure-value")

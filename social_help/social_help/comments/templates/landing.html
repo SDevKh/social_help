@@ -984,6 +984,8 @@
             <div class="cta-buttons">
                 <a href="/signup/" class="btn-main btn-gradient">Get Started Now</a>
                 <a href="#live-demo" class="btn-main btn-outline">Try Live Demo</a>
+                <!-- Use signup flow so server builds the correct Gumroad checkout URL -->
+                <a class="gumroad-button btn-main btn-outline" href="/signup/?plan=starter">Buy Starter</a>
             </div>
             
             <div class="hero-proof">
@@ -1223,4 +1225,5 @@
         });
     }
 </script>
+    <script src="https://gumroad.com/js/gumroad.js"></script>
 </html>
