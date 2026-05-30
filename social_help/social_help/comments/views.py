@@ -52,9 +52,8 @@ GUMROAD_PRODUCT_TIER_MAP = {
     "creator": "starter",
     "agency": "agency",
     "creator_plan": "starter",
-    "crsfx": "starter",
-    "kokch": "pro",
-    "bjlpkj": "agency",
+    "kokch": "starter",
+    "bjlpkj": "pro",
 }
 
 
