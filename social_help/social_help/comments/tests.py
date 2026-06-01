@@ -76,6 +76,20 @@ class GumroadPaymentTests(TestCase):
         self.assertEqual(sub.payment_provider, "gumroad")
 
     @override_settings(
+        GUMROAD_CREATOR_PLAN_URL="https://socialfuse.gumroad.com/l/creator_plan",
+        GUMROAD_AGENCY_PLAN_URL="https://socialfuse.gumroad.com/l/agency_plan",
+    )
+    def test_gumroad_checkout_url_uses_expected_plan_slug(self):
+        starter_response = self.client.get("/api/gumroad/checkout-url/?plan=starter")
+        self.assertEqual(starter_response.status_code, 200)
+        self.assertIn("https://socialfuse.gumroad.com/l/creator_plan", starter_response.json()["checkout_url"])
+        self.assertNotIn("crsfx", starter_response.json()["checkout_url"])
+
+        pro_response = self.client.get("/api/gumroad/checkout-url/?plan=pro")
+        self.assertEqual(pro_response.status_code, 200)
+        self.assertIn("https://socialfuse.gumroad.com/l/agency_plan", pro_response.json()["checkout_url"])
+
+    @override_settings(
         DOMAIN_URL="https://example.com",
         GUMROAD_CREATOR_PLAN_URL="https://socialfuse.gumroad.com/l/creator_plan",
         GUMROAD_REDIRECT_URL="https://example.com/dashboard/?payment=success",

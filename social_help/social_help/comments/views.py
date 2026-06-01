@@ -57,6 +57,12 @@ GUMROAD_PRODUCT_TIER_MAP = {
 }
 
 
+def get_gumroad_base_url_for_plan(plan):
+    if plan == "pro":
+        return getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj")
+    return getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch")
+
+
 def build_gumroad_checkout_url(base_url, user, plan="starter"):
     base_redirect = getattr(
         settings,
@@ -625,28 +631,36 @@ def gumroad_success(request):
     We activate the subscription immediately so the user gets dashboard access
     without waiting for the async webhook.
     """
-    if not request.user.is_authenticated:
-        # URL-encode the entire next path so query params (sale_id, plan, etc.) aren't
-        # split apart and lost when Django's LoginView parses the 'next' parameter.
-        next_path = f'/gumroad/success/?{request.GET.urlencode()}'
-        return redirect(f'/login/?next={quote(next_path, safe="")}')
-
+    # Always read tier from Gumroad callback params first.
+    # Gumroad may send product_permalink/product_name and we also pass ?plan=starter
     sale_id = request.GET.get('sale_id', '')
     permalink = request.GET.get('product_permalink', '').lower()
     product_name = request.GET.get('product_name', '').lower()
 
-    # Determine tier from permalink or product name
     tier = 'starter'
     for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
         if key in permalink or key in product_name:
             tier = val
             break
-    # Also check the plan param we pass in the checkout URL
+
     plan_param = request.GET.get('plan', '').lower()
-    if plan_param == 'pro':
-        tier = 'pro'
-    elif plan_param == 'starter':
-        tier = 'starter'
+    if plan_param in ['starter', 'pro']:
+        tier = plan_param
+
+    logger.warning(
+        "gumroad_success: params tier=%s plan=%s permalink=%s product_name=%s sale_id=%s user=%s",
+        tier,
+        plan_param,
+        permalink,
+        product_name,
+        sale_id,
+        request.user.username if request.user.is_authenticated else None,
+    )
+
+    if not request.user.is_authenticated:
+        # Keep all Gumroad query params so after login we can activate using the same tier.
+        next_path = f'/gumroad/success/?{request.GET.urlencode()}'
+        return redirect(f'/login/?next={quote(next_path, safe="")}')
 
     activate_subscription(
         user=request.user,
@@ -654,8 +668,14 @@ def gumroad_success(request):
         provider='gumroad',
         order_id=sale_id or None,
     )
-    logger.warning(f"gumroad_success: activated '{tier}' for user '{request.user.username}' sale_id={sale_id}")
+    logger.warning(
+        "gumroad_success: activated '%s' for user '%s' sale_id=%s",
+        tier,
+        request.user.username,
+        sale_id,
+    )
     return redirect('/dashboard/?payment=success')
+
 
 
 
@@ -1068,12 +1088,7 @@ class GumroadCheckoutURL(APIView):
 
     def get(self, request):
         plan = request.GET.get("plan", "starter")
-        if plan == "agency":
-            base_url = getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj")
-        elif plan == "pro":
-            base_url = getattr(settings, "GUMROAD_PRO_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch")
-        else:
-            base_url = getattr(settings, "GUMROAD_STARTER_PLAN_URL", "https://socialfuse.gumroad.com/l/crsfx")
+        base_url = get_gumroad_base_url_for_plan(plan)
 
         # Build success URL with plan param so gumroad_success knows which tier
         domain = getattr(settings, "DOMAIN_URL", "http://localhost:8000")
