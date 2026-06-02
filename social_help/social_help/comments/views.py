@@ -35,25 +35,15 @@ logger = logging.getLogger(__name__)
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-PAYPAL_PLAN_CONFIG = {
-    "starter": {
-        "label": "SocialFuse Creator Plan",
-        "amount": "15.00",
-    },
-    "pro": {
-        "label": "SocialFuse Agency Plan",
-        "amount": "49.00",
-    },
-}
 
 GUMROAD_PRODUCT_TIER_MAP = {
-    "starter": "starter",
-    "pro": "pro",
-    "creator": "starter",
-    "agency": "agency",
-    "creator_plan": "starter",
-    "kokch": "starter",
     "bjlpkj": "pro",
+    "kokch": "starter",
+    "agency": "agency",
+    "pro": "pro",
+    "starter": "starter",
+    "creator": "starter",
+    "creator_plan": "starter",
 }
 
 
@@ -61,6 +51,10 @@ def get_gumroad_base_url_for_plan(plan):
     if plan == "pro":
         return getattr(settings, "GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj")
     return getattr(settings, "GUMROAD_CREATOR_PLAN_URL", "https://socialfuse.gumroad.com/l/kokch")
+
+
+def normalize_gumroad_tier(tier):
+    return "pro" if tier == "agency" else tier
 
 
 def build_gumroad_checkout_url(base_url, user, plan="starter"):
@@ -79,6 +73,7 @@ def build_gumroad_checkout_url(base_url, user, plan="starter"):
     query_params.update({
         "email": user.email,
         "custom_fields[user_id]": str(user.id),
+        "custom_fields[plan]": plan,
         "wanted": "true",
         "success_url": return_url,
         "return_url": return_url,
@@ -121,39 +116,6 @@ def get_subscription(user):
     return sub
 
 
-def get_paypal_api_base():
-    if settings.PAYPAL_MODE == "live":
-        return "https://api-m.paypal.com"
-    return "https://api-m.sandbox.paypal.com"
-
-
-def get_paypal_access_token():
-    if not settings.PAYPAL_CLIENT_ID or not settings.PAYPAL_CLIENT_SECRET:
-        raise ValueError("PayPal client ID and secret are not configured.")
-
-    response = requests.post(
-        f"{get_paypal_api_base()}/v1/oauth2/token",
-        data={"grant_type": "client_credentials"},
-        auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET),
-        headers={"Accept": "application/json", "Accept-Language": "en_US"},
-        timeout=20,
-    )
-    response.raise_for_status()
-    return response.json()["access_token"]
-
-
-def paypal_headers():
-    return {
-        "Authorization": f"Bearer {get_paypal_access_token()}",
-        "Content-Type": "application/json",
-    }
-
-
-def get_requested_paid_tier(request):
-    tier = request.data.get("tier", "starter")
-    if tier not in PAYPAL_PLAN_CONFIG:
-        raise ValueError("Choose either the Creator or Agency plan.")
-    return tier
 
 
 def activate_subscription(user, tier, provider="", order_id=None, capture_id=None):
@@ -167,6 +129,9 @@ def activate_subscription(user, tier, provider="", order_id=None, capture_id=Non
     sub.current_period_end = timezone.now() + timedelta(days=30)
     sub.save()
     return sub
+
+
+
 
 
 @csrf_exempt
@@ -193,6 +158,13 @@ def gumroad_webhook(request):
     email = payload.get('email') or payload.get(' purchaser_email') or payload.get('purchaser_email')
     product_permalink = payload.get('product_permalink') or payload.get('product') or ''
     sale_id = payload.get('sale_id') or payload.get('sale') or payload.get('purchase_id')
+    custom_fields = payload.get('custom_fields', {}) if isinstance(payload.get('custom_fields', {}), dict) else {}
+    plan_field = (
+        custom_fields.get('plan')
+        or payload.get('custom_fields[plan]')
+        or payload.get('custom_fields%5Bplan%5D')
+        or payload.get('plan')
+    )
 
     # Normalize permalink (last segment)
     permalink_key = ''
@@ -204,7 +176,12 @@ def gumroad_webhook(request):
             permalink_key = product_permalink
 
     # Map permalink to tier
-    tier = GUMROAD_PRODUCT_TIER_MAP.get(permalink_key) or GUMROAD_PRODUCT_TIER_MAP.get(product_permalink) or 'starter'
+    tier = 'starter'
+    if plan_field in {'starter', 'pro', 'agency'}:
+        tier = normalize_gumroad_tier(plan_field)
+    else:
+        tier = GUMROAD_PRODUCT_TIER_MAP.get(permalink_key, GUMROAD_PRODUCT_TIER_MAP.get(product_permalink, 'starter'))
+    tier = normalize_gumroad_tier(tier)
 
     if not email:
         # Nothing we can do without buyer email
@@ -258,13 +235,7 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            
-            plan_post = request.POST.get("plan") or request.GET.get("plan")
-            if plan_post in ["starter", "pro"]:
-                gumroad_base = getattr(settings, "GUMROAD_CREATOR_PLAN_URL" if plan_post == "starter" else "GUMROAD_AGENCY_PLAN_URL")
-                return redirect(build_gumroad_checkout_url(gumroad_base, user, plan=plan_post))
-                
-            return redirect("/")
+            return redirect("/dashboard/")
     else:
         form = SignUpForm()
     return render(request, "registration/signup.html", {"form": form, "plan": plan})
@@ -637,15 +608,24 @@ def gumroad_success(request):
     permalink = request.GET.get('product_permalink', '').lower()
     product_name = request.GET.get('product_name', '').lower()
 
+    custom_plan = (
+        request.GET.get('custom_fields[plan]')
+        or request.GET.get('custom_fields%5Bplan%5D')
+        or request.GET.get('plan', '')
+    ).lower()
+
     tier = 'starter'
+    if custom_plan in ['starter', 'pro', 'agency']:
+        tier = normalize_gumroad_tier(custom_plan)
+
     for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
         if key in permalink or key in product_name:
             tier = val
             break
 
     plan_param = request.GET.get('plan', '').lower()
-    if plan_param in ['starter', 'pro']:
-        tier = plan_param
+    if plan_param in ['starter', 'pro', 'agency']:
+        tier = normalize_gumroad_tier(plan_param)
 
     logger.warning(
         "gumroad_success: params tier=%s plan=%s permalink=%s product_name=%s sale_id=%s user=%s",
@@ -658,6 +638,49 @@ def gumroad_success(request):
     )
 
     if not request.user.is_authenticated:
+        # Try to activate using Gumroad query params when session wasn't preserved.
+        # Gumroad may include custom_fields[user_id] or email in the query string.
+        user_ident = (
+            request.GET.get('custom_fields[user_id]')
+            or request.GET.get('custom_fields')
+            or request.GET.get('user_id')
+            or request.GET.get('custom_fields%5Buser_id%5D')
+        )
+        email_ident = request.GET.get('email')
+
+        if user_ident or email_ident:
+            try:
+                from django.contrib.auth.models import User
+                user = None
+                if user_ident:
+                    # user_ident may be numeric or a UUID string depending on setup
+                    user = User.objects.filter(id=user_ident).first()
+                if not user and email_ident:
+                    user = User.objects.filter(email=email_ident).first()
+
+                if user:
+                    try:
+                        activate_subscription(
+                            user=request.user if request.user.is_authenticated else user,
+                            tier=tier,
+                            provider='gumroad',
+                            order_id=sale_id or None,
+                        )
+                        logger.warning(
+                            "gumroad_success: activated (via callback params) '%s' for user '%s' sale_id=%s",
+                            tier,
+                            user.username,
+                            sale_id,
+                        )
+                    except Exception:
+                        logger.exception('gumroad_success: failed to activate subscription using callback params')
+
+                    # Ask the buyer to sign in to access dashboard if not already
+                    next_path = '/dashboard/?payment=success'
+                    return redirect(f'/login/?next={quote(next_path, safe="")}')
+            except Exception:
+                logger.exception('gumroad_success: error while resolving user from callback params')
+
         # Keep all Gumroad query params so after login we can activate using the same tier.
         next_path = f'/gumroad/success/?{request.GET.urlencode()}'
         return redirect(f'/login/?next={quote(next_path, safe="")}')
@@ -740,31 +763,7 @@ class CreateCheckoutSession(APIView):
             if tier not in PAYPAL_PLAN_CONFIG:
                 return Response({"error": "Choose either the Creator or Agency plan."}, status=400)
 
-            plan = PAYPAL_PLAN_CONFIG[tier]
-            
-            # Create Stripe Checkout Session
-            checkout_session = stripe.checkout.Session.create(
-                payment_method_types=['card', 'link'],
-                line_items=[
-                    {
-                        'price_data': {
-                            'currency': 'usd',
-                            'product_data': {
-                                'name': plan['label'],
-                            },
-                            'unit_amount': int(float(plan['amount']) * 100),
-                        },
-                        'quantity': 1,
-                    },
-                ],
-                mode='payment',
-                client_reference_id=str(request.user.id),
-                metadata={
-                    'tier': tier,
-                },
-                success_url=settings.DOMAIN_URL + '/dashboard/?payment=success',
-                cancel_url=settings.DOMAIN_URL + '/pricing/?payment=cancelled',
-            )
+            checkout_session = create_stripe_checkout_session(request.user, tier)
 
             return Response({
                 "checkout_url": checkout_session.url,
@@ -1078,7 +1077,7 @@ class SubscriptionStatus(APIView):
         return Response({
             "tier": sub.tier if sub else "free",
             "is_active": sub.is_active if sub else False,
-            "is_paid": sub.tier in ["starter", "pro"] and sub.is_active if sub else False,
+            "is_paid": sub.tier in ["starter", "pro", "agency"] and sub.is_active if sub else False,
         })
 
 
@@ -1139,13 +1138,23 @@ class GumroadWebhook(APIView):
 
         # Map product to subscription tier
         product_name = request.data.get("product_name", "").lower()
-        permalink = request.data.get("permalink", "").lower()
+        permalink = request.data.get("product_permalink", request.data.get("permalink", "")).lower()
+        custom_fields = request.data.get("custom_fields", {})
+        plan_field = None
+        if isinstance(custom_fields, dict):
+            plan_field = custom_fields.get("plan")
+        if not plan_field:
+            plan_field = request.data.get("custom_fields[plan]") or request.data.get("plan")
         
         tier = "starter" # Default fallback
-        for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
-            if key in product_name or key in permalink:
-                tier = val
-                break
+        if plan_field in {"starter", "pro", "agency"}:
+            tier = normalize_gumroad_tier(plan_field)
+        else:
+            for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
+                if key in permalink or key in product_name:
+                    tier = val
+                    break
+        tier = normalize_gumroad_tier(tier)
 
         try:
             from django.contrib.auth.models import User

@@ -85,6 +85,8 @@ class Subscription(models.Model):
     payment_provider = models.CharField(max_length=30, blank=True, default="")
     paypal_order_id = models.CharField(max_length=100, blank=True, null=True)
     paypal_capture_id = models.CharField(max_length=100, blank=True, null=True)
+    polar_subscription_id = models.CharField(max_length=100, blank=True, null=True)
+    polar_customer_id = models.CharField(max_length=100, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     comments_processed_this_month = models.IntegerField(default=0)
     current_period_end = models.DateTimeField(null=True, blank=True)

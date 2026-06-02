@@ -712,22 +712,44 @@
                     clickedButton.innerText = "Opening Checkout...";
                 }
 
-                let gumroadBaseUrl = "";
-                if (tier === "starter") {
-                    gumroadBaseUrl = "{{ gumroad_creator_url }}";
-                } else if (tier === "pro") {
-                    gumroadBaseUrl = "{{ gumroad_agency_url }}";
-                }
-
-                const gumroadReturnUrl = "{{ gumroad_return_url }}";
-                const checkoutUrl = new URL(gumroadBaseUrl);
-                checkoutUrl.searchParams.set("email", "{{ user.email }}");
-                checkoutUrl.searchParams.set("custom_fields[user_id]", "{{ user.id }}");
-                checkoutUrl.searchParams.set("wanted", "true");
-                checkoutUrl.searchParams.set("success_url", gumroadReturnUrl);
-                checkoutUrl.searchParams.set("return_url", gumroadReturnUrl);
-                checkoutUrl.searchParams.set("redirect_url", gumroadReturnUrl);
-                window.location.href = checkoutUrl.toString();
+                fetch("/api/create-checkout/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({ tier: tier })
+                })
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        window.location.href = "/signup/?plan=" + tier;
+                        return null;
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data) return;
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                        return;
+                    }
+                    if (data.checkout_url) {
+                        window.location.href = data.checkout_url;
+                        return;
+                    }
+                    alert("Error: Failed to start Stripe checkout");
+                    if (clickedButton) {
+                        clickedButton.disabled = false;
+                        clickedButton.innerText = originalText;
+                    }
+                })
+                .catch(err => {
+                    alert("Request failed: " + err);
+                    if (clickedButton) {
+                        clickedButton.disabled = false;
+                        clickedButton.innerText = originalText;
+                    }
+                });
             }
         }
     </script>

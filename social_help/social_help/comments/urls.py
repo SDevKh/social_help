@@ -6,14 +6,13 @@ from .views import (
     DeleteComment,
     DeleteInstagramComment,
     ClearAllComments,
-    PayPalCheckout,
-    PayPalExecute,
     CreateCheckoutSession,
     StripeWebhook,
     GumroadWebhook,
     SubscriptionStatus,
     GumroadCheckoutURL,
 )
+from .polar_views import PolarCheckoutURL, PolarWebhookAPI
 
 urlpatterns = [
     path("scan-instagram/", ScanInstagramPost.as_view()),
@@ -22,11 +21,11 @@ urlpatterns = [
     path("comments/<int:comment_id>/", DeleteComment.as_view()),
     path("delete-instagram-comment/", DeleteInstagramComment.as_view()),
     path("settings/", ModerationSettingsAPI.as_view()),
-    path("paypal/checkout/", PayPalCheckout.as_view()),
-    path("paypal/execute/", PayPalExecute.as_view()),
     path("create-checkout/", CreateCheckoutSession.as_view()),
     path("stripe/webhook/", StripeWebhook.as_view()),
     path("gumroad/webhook/", GumroadWebhook.as_view()),
     path("subscription/status/", SubscriptionStatus.as_view()),
     path("gumroad/checkout-url/", GumroadCheckoutURL.as_view()),
+    path("polar/checkout/", PolarCheckoutURL.as_view()),
+    path("polar/webhook/", PolarWebhookAPI.as_view()),
 ]

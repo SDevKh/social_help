@@ -1,6 +1,7 @@
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from social_help.comments.models import Subscription
+from unittest.mock import Mock, patch
 
 class GumroadPaymentTests(TestCase):
     def setUp(self):
@@ -75,26 +76,36 @@ class GumroadPaymentTests(TestCase):
         self.assertEqual(sub.paypal_order_id, "gum_sub_456")
         self.assertEqual(sub.payment_provider, "gumroad")
 
-    @override_settings(
-        GUMROAD_CREATOR_PLAN_URL="https://socialfuse.gumroad.com/l/creator_plan",
-        GUMROAD_AGENCY_PLAN_URL="https://socialfuse.gumroad.com/l/agency_plan",
-    )
-    def test_gumroad_checkout_url_uses_expected_plan_slug(self):
-        starter_response = self.client.get("/api/gumroad/checkout-url/?plan=starter")
+    @patch("social_help.comments.views.stripe.checkout.Session.create")
+    def test_create_checkout_session_returns_stripe_checkout_url(self, mock_create_session):
+        mock_create_session.return_value = Mock(
+            url="https://checkout.stripe.com/c/pay/cs_test_123",
+            id="cs_test_123",
+        )
+
+        starter_response = self.client.post(
+            "/api/create-checkout/",
+            data={"tier": "starter"},
+            content_type="application/json",
+        )
         self.assertEqual(starter_response.status_code, 200)
-        self.assertIn("https://socialfuse.gumroad.com/l/creator_plan", starter_response.json()["checkout_url"])
-        self.assertNotIn("crsfx", starter_response.json()["checkout_url"])
+        self.assertEqual(starter_response.json()["checkout_url"], "https://checkout.stripe.com/c/pay/cs_test_123")
+        mock_create_session.assert_called_once()
 
-        pro_response = self.client.get("/api/gumroad/checkout-url/?plan=pro")
+        mock_create_session.reset_mock()
+        pro_response = self.client.post(
+            "/api/create-checkout/",
+            data={"tier": "pro"},
+            content_type="application/json",
+        )
         self.assertEqual(pro_response.status_code, 200)
-        self.assertIn("https://socialfuse.gumroad.com/l/agency_plan", pro_response.json()["checkout_url"])
+        self.assertEqual(pro_response.json()["checkout_url"], "https://checkout.stripe.com/c/pay/cs_test_123")
+        mock_create_session.assert_called_once()
 
-    @override_settings(
-        DOMAIN_URL="https://example.com",
-        GUMROAD_CREATOR_PLAN_URL="https://socialfuse.gumroad.com/l/creator_plan",
-        GUMROAD_REDIRECT_URL="https://example.com/dashboard/?payment=success",
-    )
-    def test_signup_paid_plan_redirects_to_gumroad_with_dashboard_return_url(self):
+    @patch("social_help.comments.views.create_stripe_checkout_session")
+    def test_signup_paid_plan_redirects_to_stripe_checkout(self, mock_create_session):
+        mock_create_session.return_value = Mock(url="https://checkout.stripe.com/c/pay/cs_test_456")
+
         form_data = {
             "username": "newpaiduser",
             "first_name": "Paid User",
@@ -110,10 +121,8 @@ class GumroadPaymentTests(TestCase):
         response = self.client.post("/signup/?plan=starter", data=form_data)
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("https://socialfuse.gumroad.com/l/creator_plan", response.url)
-        self.assertIn("success_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
-        self.assertIn("return_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
-        self.assertIn("redirect_url=https%3A%2F%2Fexample.com%2Fdashboard%2F%3Fpayment%3Dsuccess", response.url)
+        self.assertEqual(response.url, "https://checkout.stripe.com/c/pay/cs_test_456")
+        mock_create_session.assert_called_once()
 
 class UserProfileAndSignupTests(TestCase):
     def test_signup_creates_profile(self):

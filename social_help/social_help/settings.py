@@ -165,10 +165,6 @@ if not DEBUG:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# PayPal Settings
-PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
-PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "")
-PAYPAL_MODE = os.getenv("PAYPAL_MODE", "sandbox")  # or "live"
 DOMAIN_URL = os.getenv("DOMAIN_URL", "http://localhost:8000")
 
 # Stripe Settings
@@ -181,3 +177,8 @@ GUMROAD_CREATOR_PLAN_URL = os.getenv("GUMROAD_CREATOR_PLAN_URL", "https://social
 GUMROAD_AGENCY_PLAN_URL = os.getenv("GUMROAD_AGENCY_PLAN_URL", "https://socialfuse.gumroad.com/l/bjlpkj")
 GUMROAD_REDIRECT_URL = os.getenv("GUMROAD_REDIRECT_URL", f"{DOMAIN_URL}/dashboard/?payment=success")
 GUMROAD_WEBHOOK_SECRET = os.getenv("GUMROAD_WEBHOOK_SECRET", "replace-with-secure-value")
+
+# Polar.sh Settings
+POLAR_ACCESS_TOKEN = os.getenv("POLAR_ACCESS_TOKEN", "")
+POLAR_ORGANIZATION_ID = os.getenv("POLAR_ORGANIZATION_ID", "")
+POLAR_WEBHOOK_SECRET = os.getenv("POLAR_WEBHOOK_SECRET", "")
