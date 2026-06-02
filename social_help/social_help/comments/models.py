@@ -74,7 +74,7 @@ class InstagramAccount(models.Model):
 class Subscription(models.Model):
     TIER_CHOICES = [
         ('free', 'Free Tier (50 comments/mo)'),
-        ('starter', 'Starter ($15/mo - 1,500 comments)'),
+        ('starter', 'Starter ($15/mo - 5,000 comments)'),
         ('pro', 'Pro ($49/mo - Unlimited & Multi-Account)'),
     ]
 
@@ -95,14 +95,14 @@ class Subscription(models.Model):
         if self.tier == 'pro':
             return "Unlimited"
         elif self.tier == 'starter':
-            return 1500
+            return 5000
         return 50
 
     def can_process_more(self):
         if self.tier == 'pro':
             return True
         elif self.tier == 'starter':
-            return self.comments_processed_this_month < 1500
+            return self.comments_processed_this_month < 5000
         return self.comments_processed_this_month < 50
 
     def __str__(self):

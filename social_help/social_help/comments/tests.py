@@ -142,9 +142,9 @@ class UserProfileAndSignupTests(TestCase):
         
         response = self.client.post("/signup/", data=form_data)
         
-        # Should redirect to landing page on successful signup if no plan is specified
+        # Should redirect to dashboard page on successful signup if no plan is specified
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "/")
+        self.assertEqual(response.url, "/dashboard/")
         
         # Verify user and user profile were created
         user = User.objects.get(username="newuser")
@@ -155,17 +155,23 @@ class UserProfileAndSignupTests(TestCase):
         self.assertEqual(profile.role, "creator")
         self.assertEqual(profile.instagram_handle, "@newuser")
 
-    def test_dashboard_redirects_non_subscriber_to_landing(self):
+    def test_dashboard_redirects_inactive_subscriber_to_landing(self):
         user = User.objects.create_user(username="freeuser", password="password123")
         self.client.login(username="freeuser", password="password123")
+        
+        # Set subscription to inactive
+        sub = Subscription.objects.update_or_create(user=user, defaults={'tier': 'free', 'is_active': False})[0]
         
         response = self.client.get("/dashboard/")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/")
 
-    def test_moderation_api_blocks_non_subscriber(self):
+    def test_moderation_api_blocks_inactive_subscriber(self):
         user = User.objects.create_user(username="freeuser2", password="password123")
         self.client.login(username="freeuser2", password="password123")
+        
+        # Set subscription to inactive
+        Subscription.objects.update_or_create(user=user, defaults={'tier': 'free', 'is_active': False})
         
         response = self.client.get("/api/settings/")
         self.assertEqual(response.status_code, 403)

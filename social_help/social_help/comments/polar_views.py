@@ -1,5 +1,6 @@
 import json
 import logging
+import requests
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.views import APIView
@@ -27,21 +28,22 @@ class PolarCheckoutURL(APIView):
         if not product_id:
             return JsonResponse({"error": "Invalid tier"}, status=400)
 
-        # Create Checkout Session using Polar API
-        # Using requests directly instead of polar-sdk for simplicity if SDK is not yet stable/configured,
-        # but the standard way via HTTP is:
-        import requests
-        
-        url = "https://api.polar.sh/v1/checkouts/custom/"
+        base_url = getattr(settings, "POLAR_API_BASE_URL", "https://api.polar.sh/v1").rstrip("/")
+        url = f"{base_url}/checkouts/"
         
         headers = {
             "Authorization": f"Bearer {settings.POLAR_ACCESS_TOKEN}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json",
         }
         
+        from .views import get_signed_state
+        sig = get_signed_state(request.user.id, tier)
+        
         payload = {
-            "product_id": product_id,
-            "success_url": f"{settings.DOMAIN_URL}/dashboard/?payment=success",
+            "products": [product_id],
+            "success_url": f"{settings.DOMAIN_URL}/dashboard/?payment=success&tier={tier}&sig={sig}",
+            "return_url": f"{settings.DOMAIN_URL}/pricing/",
             "metadata": {
                 "user_id": str(request.user.id),
                 "tier": tier
@@ -49,13 +51,42 @@ class PolarCheckoutURL(APIView):
         }
         
         try:
-            response = requests.post(url, json=payload, headers=headers)
-            response.raise_for_status()
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            if not response.ok:
+                try:
+                    error_detail = response.json()
+                except ValueError:
+                    error_detail = response.text
+
+                logger.error(
+                    "Polar checkout failed: status=%s body=%s",
+                    response.status_code,
+                    error_detail,
+                )
+                return JsonResponse(
+                    {
+                        "error": "Failed to create Polar checkout session",
+                        "detail": error_detail,
+                    },
+                    status=response.status_code,
+                )
+
             data = response.json()
-            return JsonResponse({"checkout_url": data.get("url")})
+            checkout_url = data.get("url")
+            if not checkout_url:
+                logger.error("Polar checkout response missing url: %s", data)
+                return JsonResponse(
+                    {"error": "Failed to create Polar checkout session"},
+                    status=502,
+                )
+
+            return JsonResponse({"checkout_url": checkout_url})
         except requests.exceptions.RequestException as e:
-            logger.error(f"Polar Checkout Error: {e}")
-            return JsonResponse({"error": "Failed to create Polar checkout session"}, status=500)
+            logger.exception("Polar checkout request failed")
+            return JsonResponse(
+                {"error": "Failed to create Polar checkout session"},
+                status=502,
+            )
 
 
 class PolarWebhookAPI(APIView):
@@ -76,14 +107,16 @@ class PolarWebhookAPI(APIView):
                 try:
                     sub = Subscription.objects.get(user_id=user_id)
                     
-                    # Reliable way: Check product_id first
-                    product_id = data.get("product_id")
-                    if product_id == "9486b5ad-a9fc-4a2e-a805-e8dd4ec547d6":
-                        tier = "pro"
-                    elif product_id == "296f1492-5a03-4f09-ae08-c9e02b27a14a":
-                        tier = "starter"
-                    else:
-                        tier = metadata.get("tier", "starter")
+                    # Reliable way: Use metadata since it's set securely by our backend
+                    tier = metadata.get("tier")
+                    if not tier:
+                        product_id = data.get("product_id")
+                        if product_id == "9486b5ad-a9fc-4a2e-a805-e8dd4ec547d6":
+                            tier = "pro"
+                        elif product_id == "296f1492-5a03-4f09-ae08-c9e02b27a14a":
+                            tier = "starter"
+                        else:
+                            tier = "starter"
                         
                     sub.tier = tier
                     sub.is_active = data.get("status") in ["active", "trialing"]

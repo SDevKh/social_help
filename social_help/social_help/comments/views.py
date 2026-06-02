@@ -36,10 +36,24 @@ logger = logging.getLogger(__name__)
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+PAYPAL_PLAN_CONFIG = {
+    "starter": {
+        "label": "SocialFuse Creator Plan",
+        "amount": "15.00",
+    },
+    "pro": {
+        "label": "SocialFuse Agency Plan",
+        "amount": "49.00",
+    },
+}
+
+
 GUMROAD_PRODUCT_TIER_MAP = {
+    "xrjgqu": "pro",
+    "crsfx": "starter",
     "bjlpkj": "pro",
     "kokch": "starter",
-    "agency": "agency",
+    "agency": "pro",
     "pro": "pro",
     "starter": "starter",
     "creator": "starter",
@@ -95,6 +109,34 @@ def get_signed_state(user_id, state_val):
     """
     message = f"{user_id}:{state_val}".encode()
     return hmac.new(settings.SECRET_KEY.encode(), message, hashlib.sha256).hexdigest()
+
+
+def create_stripe_checkout_session(user, tier):
+    plan = PAYPAL_PLAN_CONFIG[tier]
+    sig = get_signed_state(user.id, tier)
+    checkout_session = stripe.checkout.Session.create(
+        payment_method_types=['card', 'link'],
+        line_items=[
+            {
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': plan['label'],
+                    },
+                    'unit_amount': int(float(plan['amount']) * 100),
+                },
+                'quantity': 1,
+            },
+        ],
+        mode='payment',
+        client_reference_id=str(user.id),
+        metadata={
+            'tier': tier,
+        },
+        success_url=settings.DOMAIN_URL + f'/dashboard/?payment=success&tier={tier}&sig={sig}',
+        cancel_url=settings.DOMAIN_URL + '/pricing/?payment=cancelled',
+    )
+    return checkout_session
 
 
 # -------------------------------------------------------------------
@@ -212,10 +254,19 @@ def dashboard(request):
     # Payment providers may activate the subscription slightly after the redirect.
     # If user landed here with ?payment=success, don't bounce them back to pricing immediately.
     payment_success = request.GET.get("payment") == "success"
+    tier_param = request.GET.get("tier")
+    sig_param = request.GET.get("sig")
+
+    sub = get_subscription(request.user)
+
+    if payment_success and tier_param and sig_param:
+        expected_sig = get_signed_state(request.user.id, tier_param)
+        if hmac.compare_digest(sig_param, expected_sig):
+            sub = activate_subscription(request.user, tier_param, provider="polar_stripe_redirect")
+            logger.info(f"Safely activated subscription tier '{tier_param}' for user '{request.user.username}' via signed success redirect.")
 
     # If the user is not a subscriber (and not superuser/staff) and didn't just pay, redirect to landing page
-    sub = get_subscription(request.user)
-    is_subscriber = sub and sub.tier in ['starter', 'pro'] and sub.is_active
+    is_subscriber = sub and sub.tier in ['free', 'starter', 'pro', 'agency'] and sub.is_active
     if not request.user.is_superuser and not request.user.is_staff and not is_subscriber and not payment_success:
         return redirect('/')
 
@@ -235,6 +286,12 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+            
+            plan_post = request.POST.get("plan") or request.GET.get("plan")
+            if plan_post in ["starter", "pro"]:
+                checkout_session = create_stripe_checkout_session(user, plan_post)
+                return redirect(checkout_session.url)
+                
             return redirect("/dashboard/")
     else:
         form = SignUpForm()
@@ -475,7 +532,7 @@ class HasActivePaidSubscription(BasePermission):
         if request.user.is_superuser or request.user.is_staff:
             return True
         sub = get_subscription(request.user)
-        return sub is not None and sub.tier in ['starter', 'pro'] and sub.is_active
+        return sub is not None and sub.tier in ['free', 'starter', 'pro', 'agency'] and sub.is_active
 
 
 class RecentComments(ListAPIView):
@@ -598,43 +655,33 @@ class ScanInstagramPost(APIView):
 def gumroad_success(request):
     """
     Gumroad redirects the buyer here after payment.
-    Gumroad appends ?sale_id=...&product_permalink=... to the URL.
-    We activate the subscription immediately so the user gets dashboard access
-    without waiting for the async webhook.
+    We activate the subscription immediately using the ?plan= param
+    we embedded in the success_url, which is the most reliable source.
     """
-    # Always read tier from Gumroad callback params first.
-    # Gumroad may send product_permalink/product_name and we also pass ?plan=starter
     sale_id = request.GET.get('sale_id', '')
     permalink = request.GET.get('product_permalink', '').lower()
-    product_name = request.GET.get('product_name', '').lower()
 
-    custom_plan = (
-        request.GET.get('custom_fields[plan]')
-        or request.GET.get('custom_fields%5Bplan%5D')
-        or request.GET.get('plan', '')
-    ).lower()
-
-    tier = 'starter'
-    if custom_plan in ['starter', 'pro', 'agency']:
-        tier = normalize_gumroad_tier(custom_plan)
-
-    for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
-        if key in permalink or key in product_name:
-            tier = val
-            break
-
+    # Priority 1: ?plan= param we explicitly set in the checkout URL
     plan_param = request.GET.get('plan', '').lower()
-    if plan_param in ['starter', 'pro', 'agency']:
-        tier = normalize_gumroad_tier(plan_param)
+    if plan_param in ('starter', 'pro'):
+        tier = plan_param
+    # Priority 2: permalink from Gumroad callback
+    elif 'xrjgqu' in permalink:
+        tier = 'pro'
+    elif 'crsfx' in permalink:
+        tier = 'starter'
+    # Priority 3: map any other known keys
+    else:
+        tier = 'starter'
+        for key, val in GUMROAD_PRODUCT_TIER_MAP.items():
+            if key in permalink:
+                tier = val
+                break
 
     logger.warning(
-        "gumroad_success: params tier=%s plan=%s permalink=%s product_name=%s sale_id=%s user=%s",
-        tier,
-        plan_param,
-        permalink,
-        product_name,
-        sale_id,
-        request.user.username if request.user.is_authenticated else None,
+        "gumroad_success: tier=%s plan_param=%s permalink=%s sale_id=%s user=%s",
+        tier, plan_param, permalink, sale_id,
+        request.user.username if request.user.is_authenticated else 'anonymous',
     )
 
     if not request.user.is_authenticated:
