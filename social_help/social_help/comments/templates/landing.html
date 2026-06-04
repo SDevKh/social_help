@@ -4,1226 +4,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#a855f7">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="SocialFuse">
-    <title>SocialFuse | AI Content Operating System & Social Growth Platform</title>
-    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#b5ff66">
+    <title>SocialFuse | Stop Toxic Comments Before They Damage Your Brand</title>
     <link rel="icon" href="{% static 'comments/socialfuse-app-icon.svg' %}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{% static 'comments/socialfuse-logo.png' %}">
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&family=Inter:wght@400;500;750;700&family=Outfit:wght@700;900&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Space Grotesk', 'Outfit', 'sans-serif'],
+                        serif: ['Georgia', 'Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        :root {
-            --bg-dark: #080b11; 
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --bg-card-hover: rgba(255, 255, 255, 0.06);
-            --ink: #e2e8f0; 
-            --muted: #94a3b8;
-            --accent-brand: #6366f1; /* Royal Purple */
-            --accent-grape: #06b6d4; /* Cyan */
-            --accent-orange: #f43f5e; /* Soft Coral */
-            --accent-success: #10b981;
-            --accent-danger: #ef4444;
-            
-            --font-main: 'Inter', sans-serif;
-            --font-display: 'Space Grotesk', sans-serif;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: var(--font-main);
-            color: var(--ink);
-            background-color: var(--bg-dark);
-            min-height: 100vh;
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Inter', system-ui, sans-serif;
             overflow-x: hidden;
-            /* Subtle triadic background radial glows */
-            background-image: 
-              radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.06) 0%, transparent 40%),
-              radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 45%),
-              radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.04) 0%, transparent 35%);
         }
 
-        /* Glowing background blobs */
-        .bg-blob {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(120px);
-            opacity: 0.12;
+        .landing-blob {
+            background-color: #b5ff66;
+            border-radius: 9999px;
+            opacity: 0.60;
+            filter: blur(80px);
+            position: absolute;
             pointer-events: none;
-            z-index: -1;
-            will-change: transform;
+            z-index: 0;
         }
 
-        .blob-1 {
-            width: 500px;
-            height: 500px;
-            background: var(--accent-brand);
-            top: -100px;
-            left: -100px;
-            animation: move-blob-1 25s ease-in-out infinite alternate;
-        }
-
-        .blob-2 {
-            width: 450px;
-            height: 450px;
-            background: var(--accent-grape);
-            bottom: 10%;
-            right: -100px;
-            animation: move-blob-2 20s ease-in-out infinite alternate;
-        }
-
-        .blob-3 {
-            width: 400px;
-            height: 400px;
-            background: var(--accent-orange);
-            top: 30%;
-            left: 35%;
-            animation: move-blob-3 30s ease-in-out infinite alternate;
-            opacity: 0.06;
-        }
-
-        @keyframes move-blob-1 {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(80px, 60px) scale(1.1); }
-            100% { transform: translate(-40px, 100px) scale(0.95); }
-        }
-
-        @keyframes move-blob-2 {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-100px, -50px) scale(0.9); }
-            100% { transform: translate(50px, 80px) scale(1.05); }
-        }
-
-        @keyframes move-blob-3 {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(60px, -80px) scale(1.15); }
-            100% { transform: translate(-80px, 40px) scale(0.9); }
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        /* Nav */
-        .nav {
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 24px;
-            position: relative;
-            z-index: 100;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-mark {
-            width: 180px;
-            height: 60px;
-            object-fit: contain;
-            display: block;
-            filter: brightness(0) invert(1);
-            transition: transform 0.3s;
-        }
-
-        .logo-mark:hover {
-            transform: scale(1.03);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 6px;
-            border-radius: 99px;
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(8px);
-        }
-
-        .nav-links a {
-            padding: 8px 18px;
-            border-radius: 99px;
-            font-weight: 500;
-            font-size: 14px;
-            color: var(--muted);
-            transition: all 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .nav-main-action {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--ink);
-            padding: 0;
-            line-height: 1;
-        }
-
-        .btn-main-action {
-            padding: 10px 22px;
-            border-radius: 99px;
-            font-weight: 600;
-            transition: 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.04);
-            color: #fff;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        
-        .btn-main-action:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-ghost {
-            padding: 10px 22px;
-            border-radius: 99px;
-            font-weight: 600;
-            transition: 0.2s;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .btn-ghost:hover {
-            color: #fff;
-        }
-
-        /* Hero */
-        .hero {
+        .hero-header-text {
+            font-family: 'Outfit', 'Space Grotesk', sans-serif;
+            font-weight: 900;
+            font-size: clamp(2.25rem, 5.5vw, 6.25rem);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            color: #000000;
             text-align: center;
-            padding: 100px 20px 60px;
-            position: relative;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .badge-premium {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(168, 85, 247, 0.1);
-            border: 1px solid rgba(168, 85, 247, 0.25);
-            padding: 6px 14px;
-            border-radius: 99px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #d8b4fe;
-            margin-bottom: 24px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
-        .hero h1 {
-            font-family: var(--font-display);
-            font-size: clamp(40px, 6.5vw, 76px);
-            font-weight: 700;
-            letter-spacing: -2px;
-            line-height: 1.08;
-            margin-bottom: 28px;
-            color: #fff;
+        .trusted-serif-text {
+            font-family: 'Georgia', 'Playfair Display', serif;
+            font-size: 1.25rem;
+            color: #1a1a1a;
         }
 
-        .text-gradient {
-            background: linear-gradient(135deg, #06b6d4 0%, #6366f1 50%, #f43f5e 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            font-size: 20px;
-            color: var(--muted);
-            max-width: 740px;
-            margin: 0 auto 38px;
-            line-height: 1.6;
-        }
-
-        .cta-buttons {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-        }
-
-        .btn-main {
-            padding: 16px 36px;
-            border-radius: 99px;
-            font-family: var(--font-main);
-            font-size: 16px;
-            font-weight: 700;
+        .btn-start-now {
+            color: #000;
+            width: 17vw;
             cursor: pointer;
-            border: none;
-            transition: all 0.25s ease;
-            display: inline-flex;
+            background-color: #b5ff66;
+            border: 1px solid #000000;
+            border-radius: 9999px;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-decoration: none;
+            gap: 1.5rem;
+            padding: .60rem .60rem .60rem 2rem;
+            font-family: Outfit, sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            transition: all .25s cubic-bezier(.4, 0, .2, 1);
+            display: inline-flex;
+            box-shadow: 0 10px 25px -5px #b5ff6666;
+        }
+        @media (max-width: 768px) {
+            .btn-start-now {
+                width: 57vw;
+            }
         }
 
-        .btn-gradient {
-            background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand));
-            color: #fff;
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        .btn-start-now:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 15px 30px -5px rgba(181, 255, 102, 0.6);
+            background-color: #b9ff6d;
         }
 
-        .btn-gradient:hover {
-            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #fff;
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .hero-proof {
-            color: var(--muted);
-            font-size: 14px;
-            margin-top: 18px;
-        }
-
-        /* Trust Bar */
-        .trust-bar {
-            max-width: 1120px;
-            margin: 0 auto 80px;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-
-        .trust-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 24px;
+        .btn-start-now .arrow-circle {
+            background-color: #000000;
+            color: #ffffff;
+            border-radius: 9999px;
+            width: 5.5rem;
+            height: 3.5rem;
             display: flex;
-            gap: 16px;
-            align-items: flex-start;
-            transition: all 0.3s;
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.25s ease;
+        }
+        @media (max-width: 768px) {
+            .btn-start-now .arrow-circle {
+                width: 3.5rem;
+            }
         }
 
-        .trust-item:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.15);
+        .btn-start-now:hover .arrow-circle {
+            transform: rotate(45deg);
         }
 
-        .trust-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+        .btn-live-demo-pill {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            padding: 1.25rem 3.5rem;
+            border-radius: 9999px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            flex: 0 0 auto;
-            background: rgba(99, 102, 241, 0.1);
-            color: #818cf8;
-            font-size: 18px;
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
         }
 
-        .trust-item strong {
-            display: block;
-            margin-bottom: 4px;
-            font-size: 16px;
-            color: #fff;
+        .btn-live-demo-pill:hover {
+            transform: translateY(-2px) scale(1.02);
+            background-color: #111111;
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.35);
         }
 
-        .trust-item span {
-            display: block;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        /* Why We Exist Section */
-        .why-exist-section {
-            max-width: 1120px;
-            margin: 0 auto 100px;
-            padding: 0 20px;
-            text-align: center;
-        }
-
-        .exist-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 32px;
-            padding: 60px 40px;
+        .highlight-brush {
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            display: inline-block;
+            white-space: nowrap;
         }
 
-        .exist-card::after {
+        .highlight-brush::after {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 250px;
-            height: 250px;
-            background: var(--accent-brand);
-            opacity: 0.06;
-            filter: blur(100px);
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-        }
-
-        .exist-card h2 {
-            font-family: var(--font-display);
-            font-size: clamp(28px, 4vw, 46px);
-            font-weight: 700;
-            line-height: 1.15;
-            color: #fff;
-            max-width: 800px;
-            margin: 0 auto 20px;
-        }
-
-        .exist-card p {
-            font-size: 18px;
-            color: var(--muted);
-            max-width: 680px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        /* ICP target sections */
-        .icp-section {
-            max-width: 1200px;
-            margin: 0 auto 120px;
-            padding: 0 20px;
-        }
-
-        .icp-title {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .icp-title h2 {
-            font-family: var(--font-display);
-            font-size: 38px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .icp-title p {
-            color: var(--muted);
-            margin-top: 10px;
-            font-size: 16px;
-        }
-
-        .icp-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-        }
-
-        .icp-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 40px 32px;
-            transition: all 0.3s ease;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
-
-        .icp-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(99, 102, 241, 0.3);
-            transform: translateY(-4px);
-            box-shadow: 
-                0 20px 40px -15px rgba(0, 0, 0, 0.6),
-                0 0 30px 0 rgba(99, 102, 241, 0.1);
-        }
-
-        .icp-tag {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--accent-brand);
-            margin-bottom: 12px;
-        }
-
-        .icp-card h3 {
-            font-family: var(--font-display);
-            font-size: 24px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 16px;
-        }
-
-        .icp-card p {
-            color: var(--muted);
-            font-size: 15px;
-            line-height: 1.6;
-            margin-bottom: 24px;
-            flex-grow: 1;
-        }
-
-        .icp-benefit {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .icp-benefit span {
-            color: var(--accent-success);
-        }
-
-        /* Demo Section (Interactive Simulation) */
-        .demo-section {
-            max-width: 1120px;
-            margin: 0 auto 120px;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
-            gap: 60px;
-            align-items: center;
-        }
-
-        .demo-copy {
-            text-align: left;
-        }
-
-        .demo-copy h2 {
-            font-family: var(--font-display);
-            font-size: clamp(32px, 4vw, 50px);
-            font-weight: 700;
-            line-height: 1.15;
-            letter-spacing: -1px;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-
-        .demo-copy p {
-            color: var(--muted);
-            font-size: 18px;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .demo-shell {
-            background: #0b0b14;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
-        }
-
-        .demo-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.01);
-        }
-
-        .demo-account {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .demo-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff8a00, #e91e63 45%, #673ab7);
-            flex: 0 0 auto;
-        }
-
-        .demo-account strong {
-            display: block;
-            line-height: 1.2;
-            color: #fff;
-            font-size: 14px;
-        }
-
-        .demo-account span {
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .demo-live {
-            color: var(--accent-success);
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 4px 10px;
-            border-radius: 99px;
-            border: 1px solid rgba(16, 185, 129, 0.25);
-        }
-
-        .comment-thread {
-            padding: 8px 20px 20px;
-        }
-
-        .thread-comment {
-            display: grid;
-            grid-template-columns: 36px 1fr auto;
-            gap: 12px;
-            align-items: start;
-            padding: 14px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-
-        .thread-comment:last-child {
-            border-bottom: none;
-        }
-
-        .comment-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-        }
-
-        .comment-body strong {
-            display: inline-block;
-            color: #fff;
-            font-size: 13px;
-        }
-
-        .comment-body small {
-            color: var(--muted);
-            font-size: 11px;
-            margin-left: 6px;
-        }
-
-        .comment-body p {
-            margin-top: 4px;
-            color: #d1d5db;
-            font-size: 13px;
-            line-height: 1.4;
-        }
-
-        .comment-status {
-            align-self: center;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 999px;
-            padding: 4px 10px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--muted);
-            white-space: nowrap;
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .thread-comment.flagged {
-            transition: all 0.3s ease;
-        }
-
-        .thread-comment.hidden {
-            background: rgba(239, 68, 68, 0.05);
-            border-radius: 8px;
-            padding-left: 8px;
-            padding-right: 8px;
-        }
-
-        .thread-comment.hidden .comment-body {
-            opacity: 0.35;
-        }
-
-        .thread-comment.hidden .comment-status {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #f87171;
-        }
-
-        .demo-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 16px 20px;
-            background: rgba(255, 255, 255, 0.01);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .simulate-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            background: var(--ink);
-            color: #030206;
-            font-family: var(--font-main);
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .simulate-btn:hover {
-            background: #fff;
-        }
-
-        .simulate-btn:disabled {
-            cursor: default;
-            background: var(--accent-success);
-            color: #fff;
-        }
-
-        .demo-note {
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        /* 3-Step Workflow Section */
-        .workflow-section {
-            max-width: 1200px;
-            margin: 0 auto 100px;
-            padding: 0 20px;
-        }
-
-        .workflow-title {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .workflow-title h2 {
-            font-family: var(--font-display);
-            font-size: 38px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .workflow-title p {
-            color: var(--muted);
-            margin-top: 10px;
-            font-size: 16px;
-        }
-
-        .workflow-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-        }
-
-        .workflow-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 40px;
-            position: relative;
-            transition: all 0.3s;
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
-
-        .workflow-card:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.15);
-        }
-
-        .workflow-num {
-            font-family: var(--font-display);
-            font-size: 52px;
-            font-weight: 700;
-            color: rgba(168, 85, 247, 0.25);
-            line-height: 1;
-            margin-bottom: 20px;
-        }
-
-        .workflow-card h3 {
-            font-family: var(--font-display);
-            font-size: 20px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 12px;
-        }
-
-        .workflow-card p {
-            color: var(--muted);
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        /* Large Footer */
-        footer {
-            background: #07060b;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 80px 20px 40px;
-            margin-top: 100px;
-        }
-
-        .footer-grid {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 40px;
-        }
-
-        .footer-brand h3 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 24px;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            left: -4px;
+            right: -4px;
+            bottom: 2px;
+            height: 0.35em;
+            background-color: #b5ff66;
+            z-index: -1;
+            border-radius: 9999px;
+            opacity: 0.95;
+            transform: rotate(-0.5deg);
         }
         
-        .footer-brand p {
-            color: var(--muted);
-            max-width: 320px;
-            margin-bottom: 24px;
-            font-size: 14px;
-        }
-
-        .footer-col h4 {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 16px;
-            color: #fff;
-            margin-bottom: 20px;
-        }
-
-        .footer-col ul {
-            list-style: none;
-        }
-
-        .footer-col ul li {
-            margin-bottom: 12px;
-        }
-
-        .footer-col ul li a {
-            color: var(--muted);
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .footer-col ul li a:hover {
-            color: #fff;
-        }
-
-        .footer-bottom {
-            max-width: 1200px;
-            margin: 60px auto 0;
-            padding-top: 24px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            display: flex;
-            justify-content: space-between;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        /* Responsive Layouts */
-        @media (max-width: 1100px) {
-            .nav-links {
-                display: none !important;
-            }
-            .menu-toggle {
-                display: block;
-            }
-            .nav-links.show {
-                display: flex !important;
-                position: absolute;
-                top: 100%;
-                left: 20px;
-                right: 20px;
-                background: #09080f;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                padding: 16px;
-                border-radius: 16px;
-                flex-direction: column;
-                align-items: stretch;
-                z-index: 50;
-            }
-            .nav-links.show a {
-                text-align: center;
-                padding: 12px;
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 900px) {
-            .trust-bar,
-            .icp-grid,
-            .demo-section,
-            .workflow-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .demo-section {
-                gap: 40px;
-            }
-
-            .icp-grid, .workflow-grid {
-                gap: 20px;
-            }
-
-            .exist-card {
-                padding: 40px 24px;
-            }
-
-            .hero {
-                padding-top: 60px;
-            }
-            
-            .cta-buttons {
-                flex-direction: column;
-                width: 100%;
-                max-width: 320px;
-                margin: 0 auto;
-            }
-
-            .btn-main {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .footer-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .footer-grid > div:first-child {
-                grid-column: 1 / -1;
-            }
+        .mobile-nav-show {
+            display: flex !important;
         }
     </style>
 </head>
-<body>
-    <!-- Glowing background blobs -->
-    <div class="bg-blob blob-1" aria-hidden="true"></div>
-    <div class="bg-blob blob-2" aria-hidden="true"></div>
-    <div class="bg-blob blob-3" aria-hidden="true"></div>
+<body class="relative min-h-screen flex flex-col justify-between py-6">
 
-    <header class="nav">
-        <a href="/" class="logo">
-            <img class="logo-mark" src="{% static 'comments/socialfuse-logo.png' %}?v=3" alt="SocialFuse logo">
-        </a>
-        
-        <div class="nav-links" id="navLinks">
-            <a href="/brands/">For Brands</a>
-            <a href="/creators/">For Creators</a>
-            <a href="/pricing/">Pricing</a>
-            {% if not user.is_authenticated %}
-            <a href="/login/">Log in</a>
-            {% endif %}
-        </div>
+    <!-- Decorative Green Blobs -->
+    <div class="landing-blob top-[8%] -left-[10%] w-[320px] h-[320px] sm:w-[480px] sm:h-[480px]"></div>
+    <div class="landing-blob bottom-[12%] -right-[15%] w-[320px] h-[320px] sm:w-[480px] sm:h-[480px]"></div>
 
-        <div class="nav-main-action">
-            {% if user.is_authenticated %}
-            <a href="/dashboard/" class="btn-main-action">Dashboard</a>
-            {% else %}
-            <a href="/signup/" class="btn-main-action">Get Started</a>
-            {% endif %}
-            <button class="menu-toggle" onclick="document.getElementById('navLinks').classList.toggle('show')">☰</button>
+    <!-- Header Navigation -->
+    <header class="w-full relative z-50 transition-all duration-200">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 sm:h-20">
+            <!-- Logo -->
+            <a href="/" class="flex items-center gap-2 group">
+                <svg width="100" height="32" viewBox="0 0 100 32" xmlns="http://www.w3.org/2000/svg" class="h-10 sm:h-12 w-auto">
+                    <g fillRule="evenodd" stroke="black" stroke-width="2" stroke-linejoin="miter">
+                        <path d="M 6 6 H 22 V 14 H 12 V 18 H 22 V 26 H 6 V 20 H 16 V 16 H 6 Z" fill="white" />
+                        <path d="M 18 6 H 34 V 26 H 18 Z M 24 12 H 28 V 20 H 24 Z" fill="white" />
+                        <path d="M 46 6 H 30 V 26 H 46 V 20 H 36 V 12 H 46 Z" fill="white" />
+                        <path d="M 43 6 H 49 V 26 H 43 Z" fill="white" />
+                        <path d="M 57 6 L 47 26 H 53 L 55 21 H 59 L 61 26 H 67 Z M 57 12 L 55 16 H 59 Z" fill="white" />
+                        <path d="M 63 6 H 69 V 20 H 79 V 26 H 63 Z" fill="white" />
+                        <path d="M 6 26 L 79 26 L 85 29 L 85 30 L 6 30 Z" fill="black" />
+                    </g>
+                </svg>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <div class="hidden lg:flex items-center gap-1">
+                <a href="/features/" class="px-4 py-2 text-sm font-bold rounded-full border border-transparent text-slate-700 hover:border-black/10 hover:bg-black/5 hover:text-black transition-all">Features</a>
+                <a href="/use-cases/" class="px-4 py-2 text-sm font-bold rounded-full border border-transparent text-slate-700 hover:border-black/10 hover:bg-black/5 hover:text-black transition-all">Use Cases</a>
+                <a href="/pricing/" class="px-4 py-2 text-sm font-bold rounded-full border border-transparent text-slate-700 hover:border-black/10 hover:bg-black/5 hover:text-black transition-all">Pricing</a>
+                <a href="/demo/" class="px-4 py-2 text-sm font-bold rounded-full border border-transparent text-slate-700 hover:border-black/10 hover:bg-black/5 hover:text-black transition-all">Live Demo</a>
+                <a href="/blog/" class="px-4 py-2 text-sm font-bold rounded-full border border-transparent text-slate-700 hover:border-black/10 hover:bg-black/5 hover:text-black transition-all">Blog</a>
+            </div>
+
+            <!-- Right side Auth actions -->
+            <div class="hidden lg:flex items-center gap-4">
+                {% if user.is_authenticated %}
+                <span class="text-sm font-semibold px-3 py-1.5 rounded-full font-display border border-slate-200 text-slate-800 bg-slate-100">
+                    👤 {{ user.email|default:user.username }}
+                </span>
+                <a href="/dashboard/" class="bg-[#b5ff66] hover:bg-[#b9ff6d] text-black border border-[#9ade4f] px-5 py-2.5 text-sm font-display rounded-full font-bold shadow-sm transition-all duration-200">
+                    Go to Dashboard
+                </a>
+                <a href="/logout/" class="text-sm font-bold text-slate-700 hover:text-rose-600 transition-colors">
+                    Sign Out
+                </a>
+                {% else %}
+                <a href="/login/" class="text-sm font-bold text-slate-800 hover:text-black transition-colors">
+                    Sign In
+                </a>
+                <a href="/signup/" class="bg-[#b5ff66] hover:bg-[#b9ff6d] text-black border border-[#9ade4f] px-5 py-2.5 text-sm font-display rounded-full font-bold shadow-sm transition-all duration-200">
+                    Get Started
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Mobile menu button -->
+            <div class="flex lg:hidden items-center">
+                <button id="mobileMenuBtn" class="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 text-slate-850 flex items-center justify-center focus:outline-none">
+                    ☰
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Drawer -->
+        <div id="mobileDrawer" class="hidden lg:hidden absolute top-full left-0 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-lg p-5 flex-col gap-3 shadow-lg z-50">
+            <a href="/features/" class="block px-4 py-3 rounded-xl border border-slate-200/60 bg-slate-50 text-slate-700 font-bold hover:bg-slate-100 transition-all">Features</a>
+            <a href="/use-cases/" class="block px-4 py-3 rounded-xl border border-slate-200/60 bg-slate-50 text-slate-700 font-bold hover:bg-slate-100 transition-all">Use Cases</a>
+            <a href="/pricing/" class="block px-4 py-3 rounded-xl border border-slate-200/60 bg-slate-50 text-slate-700 font-bold hover:bg-slate-100 transition-all">Pricing</a>
+            <a href="/demo/" class="block px-4 py-3 rounded-xl border border-slate-200/60 bg-slate-50 text-slate-700 font-bold hover:bg-slate-100 transition-all">Live Demo</a>
+            <a href="/blog/" class="block px-4 py-3 rounded-xl border border-slate-200/60 bg-slate-50 text-slate-700 font-bold hover:bg-slate-100 transition-all">Blog</a>
+            
+            <div class="pt-3 flex flex-col gap-3 border-t border-slate-250">
+                {% if user.is_authenticated %}
+                <span class="text-center py-2 text-sm font-semibold text-slate-800 font-display">
+                    👤 {{ user.email|default:user.username }}
+                </span>
+                <a href="/dashboard/" class="bg-[#b5ff66] text-black text-center py-3.5 text-sm font-display rounded-full font-bold shadow-sm border border-[#9ade4f]">
+                    Go to Dashboard
+                </a>
+                <a href="/logout/" class="text-center py-3 text-sm font-bold text-slate-650 hover:text-rose-600">
+                    Sign Out
+                </a>
+                {% else %}
+                <a href="/login/" class="text-center py-3 text-sm font-bold text-slate-850 hover:text-black">
+                    Sign In
+                </a>
+                <a href="/signup/" class="bg-[#b5ff66] text-black text-center py-3.5 text-sm font-display rounded-full font-bold shadow-sm border border-[#9ade4f]">
+                    Get Started
+                </a>
+                {% endif %}
+            </div>
         </div>
     </header>
 
-    <main>
-        <!-- Hero Section -->
-        <section class="hero">
-            <div class="badge-premium">
-                ⚡ Premium AI Content OS
-            </div>
-            <h1>Run your entire social media <br><span class="text-gradient">workflow with AI.</span></h1>
-            <p>Create, schedule, analyze, and automate content across every platform from one intelligent command center. Built for modern brands that buy growth, consistency, and absolute peace of mind.</p>
-            
-            <div class="cta-buttons">
-                <a href="/signup/" class="btn-main btn-gradient">Get Started Now</a>
-                <a href="#live-demo" class="btn-main btn-outline">Try Live Demo</a>
-                <!-- Use signup flow so server builds the correct Gumroad checkout URL -->
-                <a class="gumroad-button btn-main btn-outline" href="/signup/?plan=starter">Buy Starter</a>
-            </div>
-            
-            <div class="hero-proof">
-                <span>Trusted by creators, startups, and growing brands.</span>
-            </div>
-        </section>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center items-center text-center relative z-10 py-12 space-y-10">
+        
+        <!-- Main Headline -->
+        <h1 class="hero-header-text max-w-5xl tracking-tighter">
+            STOP TOXIC COMMENTS<br />BEFORE THEY DAMAGE YOUR BRAND
+        </h1>
 
-        <!-- Trust Bar -->
-        <section class="trust-bar" aria-label="SocialFuse trust and safety">
-            <div class="trust-item">
-                <div class="trust-icon">🔑</div>
-                <div>
-                    <strong>Official Meta Partner</strong>
-                    <span>Built securely on official Instagram and Facebook Meta Graph APIs.</span>
+        <!-- Subtitle -->
+        <p class="text-base sm:text-lg md:text-xl text-slate-800 max-w-3xl leading-relaxed mx-auto font-medium font-sans">
+            AI-powered social media moderation that detects spam, hate speech, and harmful comments in real time—so creators and brands can focus on growing their audience.
+        </p>
+
+        <!-- Trust line -->
+        <p class="trusted-serif-text">
+            Trusted by: <span class="font-bold">Creators, Startups, and Growing Brands.</span>
+        </p>
+
+        <!-- Centered CTA Action Buttons -->
+        <div class="flex flex-col items-center gap-5 pt-4">
+            <!-- Start Now Pill Button -->
+            <a href="/signup/" class="btn-start-now group">
+                <span class="text-lg md:text-xl">Start Now</span>
+                <div class="arrow-circle">
+                    <!-- Custom SVG ArrowUpRight to match Lucide icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
                 </div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-icon">🛡️</div>
-                <div>
-                    <strong>Absolute Brand Safety</strong>
-                    <span>24/7 protection hiding toxicity and spam before they hurt conversion.</span>
-                </div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-icon">⚡</div>
-                <div>
-                    <strong>Growth-Driven Automation</strong>
-                    <span>Not just a posting tool. SocialFuse is tuned to save time and scale reach.</span>
-                </div>
-            </div>
-        </section>
+            </a>
 
-        <!-- Why We Exist Section -->
-        <section class="why-exist-section">
-            <div class="exist-card">
-                <h2>Social media tools were built for posting.<br><span class="text-gradient">SocialFuse was built for growth.</span></h2>
-                <p>Instead of manually coordinating posts, writing copy, and fighting moderation chaos across multiple channels, SocialFuse serves as your automated AI marketing team. We help you stay consistent, protect your ad campaigns, and unlock organic growth with less effort.</p>
-            </div>
-        </section>
+            <!-- Live Demo Pill Button -->
+            <a href="/demo/" class="btn-live-demo-pill text-lg md:text-xl">
+                Live Demo
+            </a>
+        </div>
 
-        <!-- Target ICP Sections -->
-        <section class="icp-section">
-            <div class="icp-title">
-                <h2>Designed for those who scale</h2>
-                <p>Tailored workflows to match how you build your audience.</p>
-            </div>
-            <div class="icp-grid">
-                <!-- For Creators -->
-                <div class="icp-card">
-                    <div>
-                        <div class="icp-tag">Creators</div>
-                        <h3>For Creators</h3>
-                        <p>Generate consistent content ideas, repurpose across platforms, and keep your inbox safe from trolls so you can focus on building your brand.</p>
-                    </div>
-                    <div class="icp-benefit">
-                        <span>✓</span> Create 30 days of content in 10 minutes
-                    </div>
-                </div>
-
-                <!-- For Agencies -->
-                <div class="icp-card">
-                    <div>
-                        <div class="icp-tag">Agencies</div>
-                        <h3>For Agencies</h3>
-                        <p>Streamline client approvals, automate comment response templates, and orchestrate all social profiles from one unified dashboard.</p>
-                    </div>
-                    <div class="icp-benefit">
-                        <span>✓</span> Manage all clients from one AI workflow
-                    </div>
-                </div>
-
-                <!-- For Brands -->
-                <div class="icp-card">
-                    <div>
-                        <div class="icp-tag">Startups & Brands</div>
-                        <h3>For Brands</h3>
-                        <p>Ensure compliance, shield high-performing ad campaigns from comment spam, and scale consistent publishing schedules without hiring a large social team.</p>
-                    </div>
-                    <div class="icp-benefit">
-                        <span>✓</span> Maintain consistent content across channels
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Live Demo / Interactive Simulation -->
-        <section class="demo-section" id="live-demo">
-            <div class="demo-copy">
-                <h2>Watch your growth engine stay safe.</h2>
-                <p>Keep real customer inquiries and valuable sales leads visible, while toxic bots, crypto link spam, and offensive comments are instantly hidden in the background by our deep-learning AI.</p>
-                <a href="/brands/" style="font-weight: 600; color: var(--accent-brand); display: inline-flex; align-items: center; gap: 6px;">
-                    Explore brand protection features &rarr;
-                </a>
-            </div>
-
-            <div class="demo-shell" aria-label="Interactive Instagram moderation demo">
-                <div class="demo-header">
-                    <div class="demo-account">
-                        <div class="demo-avatar"></div>
-                        <div>
-                            <strong>@yourbrand</strong>
-                            <span>Live Campaign Monitor</span>
-                        </div>
-                    </div>
-                    <div class="demo-live">SCAN ACTIVE</div>
-                </div>
-
-                <div class="comment-thread">
-                    <div class="thread-comment">
-                        <div class="comment-avatar" style="background: linear-gradient(135deg, #a7f3d0, #60a5fa);"></div>
-                        <div class="comment-body">
-                            <strong>@maya_shop</strong>
-                            <small>12 seconds ago</small>
-                            <p>How much is shipping to Mumbai? Do you guys deliver by Friday?</p>
-                        </div>
-                        <div class="comment-status">Visible</div>
-                    </div>
-
-                    <div class="thread-comment" id="toxicComment">
-                        <div class="comment-avatar" style="background: linear-gradient(135deg, #fecdd3, #fda4af);"></div>
-                        <div class="comment-body">
-                            <strong>@angrythrowaway</strong>
-                            <small>8 seconds ago</small>
-                            <p>This brand is a scam. Nobody buy from them. Terrible quality.</p>
-                        </div>
-                        <div class="comment-status" id="toxicStatus">Active</div>
-                    </div>
-
-                    <div class="thread-comment" id="spamComment">
-                        <div class="comment-avatar" style="background: linear-gradient(135deg, #fde68a, #fb7185);"></div>
-                        <div class="comment-body">
-                            <strong>@crypto_fast_cash</strong>
-                            <small>3 seconds ago</small>
-                            <p>Win free cash now! Tap my bio profile link before it gets deleted!</p>
-                        </div>
-                        <div class="comment-status" id="spamStatus">Active</div>
-                    </div>
-                </div>
-
-                <div class="demo-actions">
-                    <button class="simulate-btn" type="button" id="simulateAttack">Activate AI Defense</button>
-                    <div class="demo-note" id="demoNote">Customer questions remain. Spam and abuse get flagged instantly.</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 3-Step Workflow Section -->
-        <section class="workflow-section">
-            <div class="workflow-title">
-                <h2>Simple, autonomous execution</h2>
-                <p>Get up and running as an AI Content Command Center in 3 simple phases.</p>
-            </div>
-            <div class="workflow-grid">
-                <!-- Step 1 -->
-                <div class="workflow-card">
-                    <div class="workflow-num">01</div>
-                    <h3>Connect Accounts</h3>
-                    <p>Securely link your social media profiles using official Meta authentication. No passwords requested, fully compliant.</p>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="workflow-card">
-                    <div class="workflow-num">02</div>
-                    <h3>Automate & Schedule</h3>
-                    <p>Use our AI workspace to draft content, schedule posts, and activate automatic comment moderation engines.</p>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="workflow-card">
-                    <div class="workflow-num">03</div>
-                    <h3>Track Growth</h3>
-                    <p>Watch your reach expand and monitor automated actions in real-time through an intuitive, data-packed analytics dashboard.</p>
-                </div>
-            </div>
-        </section>
     </main>
 
-    <footer>
-        <div class="footer-grid">
-            <div class="footer-brand">
-                <h3>SocialFuse</h3>
-                <p>The AI-powered social media operating system designed for modern growth and brand safety.</p>
+    <!-- Three point features strip at the very bottom -->
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10 mt-12 mb-8">
+        <div class="flex flex-col md:flex-row items-center justify-center gap-y-5 md:gap-x-16 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-center text-black">
+            <div>
+                Protect your <span class="highlight-brush">community.</span>
             </div>
-            <div class="footer-col">
-                <h4>Product</h4>
-                <ul>
-                    <li><a href="/pricing/">Pricing</a></li>
-                    <li><a href="/creators/">For Creators</a></li>
-                    <li><a href="/brands/">For Brands</a></li>
-                    <li><a href="/login/">Log in</a></li>
-                </ul>
+            <div>
+                Save hours <span class="highlight-brush">every week.</span>
             </div>
-            <div class="footer-col">
-                <h4>Legal</h4>
-                <ul>
-                    <li><a href="/privacy-policy/">Privacy Policy</a></li>
-                    <li><a href="/terms/">Terms of Service</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Company</h4>
-                <ul>
-                    <li><a href="/contact/">Contact Us</a></li>
-                    <li><a href="https://twitter.com/">Twitter</a></li>
-                    <li><a href="https://instagram.com/">Instagram</a></li>
-                </ul>
+            <div>
+                <span class="highlight-brush">Respond</span> faster with AI.
             </div>
         </div>
-        <div class="footer-bottom">
-            <span>&copy; 2026 SocialFuse. All rights reserved.</span>
-            <span>AI Content Operating System</span>
-        </div>
-    </footer>
+    </div>
 
+    <!-- JS for Mobile Drawer -->
+    <script>
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileDrawer = document.getElementById('mobileDrawer');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileDrawer.classList.toggle('hidden');
+            mobileDrawer.classList.toggle('mobile-nav-show');
+            if (mobileDrawer.classList.contains('mobile-nav-show')) {
+                mobileMenuBtn.innerHTML = '✕';
+            } else {
+                mobileMenuBtn.innerHTML = '☰';
+            }
+        });
+    </script>
 </body>
-<script>
-    const simulateButton = document.getElementById('simulateAttack');
-    if (simulateButton) {
-        simulateButton.addEventListener('click', () => {
-            document.getElementById('toxicComment')?.classList.add('hidden');
-            document.getElementById('spamComment')?.classList.add('hidden');
-            const toxicStatus = document.getElementById('toxicStatus');
-            const spamStatus = document.getElementById('spamStatus');
-            const demoNote = document.getElementById('demoNote');
-
-            if (toxicStatus) toxicStatus.textContent = 'Hidden by AI';
-            if (spamStatus) spamStatus.textContent = 'Hidden by AI';
-            if (demoNote) demoNote.textContent = 'AI Defense active. 2 reputation-damaging comments hidden.';
-            simulateButton.textContent = 'Safe & Secure';
-            simulateButton.disabled = true;
-        });
-    }
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-    }
-</script>
-    <script src="https://gumroad.com/js/gumroad.js"></script>
 </html>
