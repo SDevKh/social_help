@@ -3,6 +3,9 @@ import os
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIST_DIR = BASE_DIR.parent / 'frontend' / 'dist'
+if not FRONTEND_DIST_DIR.exists():
+    FRONTEND_DIST_DIR = BASE_DIR / 'frontend' / 'dist'
 IS_CLOUD = bool(os.getenv("RENDER") or os.getenv("RENDER_EXTERNAL_HOSTNAME") or os.getenv("WEBSITE_SITE_NAME"))
 
 try:
@@ -72,7 +75,7 @@ ROOT_URLCONF = 'social_help.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR.parent / 'frontend' / 'dist'],
+        'DIRS': [FRONTEND_DIST_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -121,7 +124,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    BASE_DIR.parent / 'frontend' / 'dist',
+    FRONTEND_DIST_DIR,
 ]
 if DEBUG:
     STATICFILES_STORAGE_BACKEND = 'django.contrib.staticfiles.storage.StaticFilesStorage'
