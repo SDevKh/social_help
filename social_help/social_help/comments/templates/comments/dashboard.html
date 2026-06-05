@@ -15,10 +15,13 @@
             --panel: rgba(255, 255, 255, 0.03);
             --ink: #e2e8f0;
             --muted: #94a3b8;
-            --brand: #6366f1; /* Royal Purple */
-            --brand-strong: #06b6d4; /* Cyan */
+            --brand: #6366f1;
+            /* Royal Purple */
+            --brand-strong: #06b6d4;
+            /* Cyan */
             --success: #10b981;
-            --danger: #f43f5e; /* Soft Coral */
+            --danger: #f43f5e;
+            /* Soft Coral */
             --warning: #f59e0b;
             --line: rgba(255, 255, 255, 0.07);
             --shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
@@ -34,7 +37,7 @@
             font-family: "Manrope", sans-serif;
             background-color: var(--bg);
             /* Subtle triadic background radial glows */
-            background-image: 
+            background-image:
                 radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.06) 0%, transparent 40%),
                 radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 45%),
                 radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.04) 0%, transparent 35%);
@@ -137,7 +140,8 @@
             background: linear-gradient(135deg, #6366f1, #06b6d4);
             color: #fff;
             border: none;
-            border-radius: 9999px; /* Pill shaped */
+            border-radius: 9999px;
+            /* Pill shaped */
             cursor: pointer;
             text-decoration: none;
             font-size: 13px;
@@ -215,7 +219,8 @@
             color: #fff;
             padding: 10px 20px;
             border: none;
-            border-radius: 9999px; /* Pill shaped */
+            border-radius: 9999px;
+            /* Pill shaped */
             cursor: pointer;
             font-size: 14px;
             font-weight: 700;
@@ -428,7 +433,8 @@
             width: 100%;
             padding: 12px 24px;
             border: 1px solid var(--line);
-            border-radius: 9999px; /* Pill shaped inputs */
+            border-radius: 9999px;
+            /* Pill shaped inputs */
             margin: 8px 0;
             box-sizing: border-box;
             background: rgba(255, 255, 255, 0.03);
@@ -450,7 +456,8 @@
             color: #fff;
             padding: 10px 20px;
             border: none;
-            border-radius: 9999px; /* Pill shaped */
+            border-radius: 9999px;
+            /* Pill shaped */
             cursor: pointer;
             font-weight: 700;
             font-size: 14px;
@@ -460,7 +467,7 @@
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 
+            box-shadow:
                 0 10px 25px rgba(6, 182, 212, 0.4),
                 0 0 15px rgba(99, 102, 241, 0.2);
         }
@@ -619,12 +626,328 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes scaleIn {
-            to { transform: scale(1); }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        /* Dashboard Redesign (Not Connected) Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 3fr 1.2fr;
+            gap: 24px;
+            margin-bottom: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Premium Lime-Glowing Sidebar Card */
+        .sidebar-card {
+            background: linear-gradient(135deg, rgba(181, 255, 102, 0.06) 0%, rgba(8, 11, 17, 0.6) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(181, 255, 102, 0.25);
+            border-radius: 28px;
+            padding: 30px 24px;
+            box-shadow:
+                0 20px 40px -15px rgba(0, 0, 0, 0.4),
+                0 0 25px rgba(181, 255, 102, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-card:hover {
+            border-color: rgba(181, 255, 102, 0.45);
+            box-shadow:
+                0 25px 45px -15px rgba(0, 0, 0, 0.5),
+                0 0 35px rgba(181, 255, 102, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .sidebar-username {
+            font-size: 16px;
+            color: var(--muted);
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .sidebar-link {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--ink);
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            display: inline-block;
+            letter-spacing: 0.05em;
+        }
+
+        .sidebar-link:hover {
+            color: #b5ff66;
+            transform: translateX(6px);
+        }
+
+        .sidebar-link.logout {
+            color: var(--danger);
+        }
+
+        .sidebar-link.logout:hover {
+            color: #ff6b8b;
+            filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.4));
+        }
+
+        /* Not Connected Callout Box */
+        .not-connected-status {
+            background: rgba(244, 63, 94, 0.06);
+            border: 2px solid rgba(244, 63, 94, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            margin-top: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            box-shadow: 0 4px 20px rgba(244, 63, 94, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .not-connected-status:hover {
+            border-color: rgba(244, 63, 94, 0.5);
+            box-shadow: 0 6px 24px rgba(244, 63, 94, 0.15);
+        }
+
+        .not-connected-icon {
+            font-size: 24px;
+            color: var(--danger);
+            line-height: 1;
+            padding-top: 2px;
+        }
+
+        .not-connected-title {
+            color: var(--danger);
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            letter-spacing: -0.01em;
+        }
+
+        .not-connected-desc {
+            color: #fecdd3;
+            font-size: 14px;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        /* Branded Connection Action Buttons */
+        .btn-facebook-oauth {
+            background: linear-gradient(135deg, #1877f2, #3b82f6);
+            color: #fff;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(24, 119, 242, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+        }
+
+        .btn-facebook-oauth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(24, 119, 242, 0.45);
+            color: #fff;
+        }
+
+        .btn-direct-token {
+            background: linear-gradient(135deg, #b5ff66, #8ee633);
+            color: #080b11;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(181, 255, 102, 0.25);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+        }
+
+        .btn-direct-token:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(181, 255, 102, 0.45);
+            color: #080b11;
+        }
+
+        /* Full-Width Bottom Notice Banner Capsule */
+        .bottom-banner-capsule {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 9999px;
+            padding: 24px 40px;
+            text-align: center;
+            margin-top: 32px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .bottom-banner-capsule:hover {
+            border-color: rgba(181, 255, 102, 0.2);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 20px rgba(181, 255, 102, 0.04);
+        }
+
+        .bottom-banner-text {
+            color: var(--ink);
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        /* Navbar Layout Refactoring Styles */
+        .navbar-brand {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            color: #fff;
+            font-family: inherit;
+        }
+
+        .navbar-center-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .navbar-dashboard-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.01em;
+        }
+
+        .navbar-plan-pill {
+            background: rgba(181, 255, 102, 0.1);
+            border: 1px solid rgba(181, 255, 102, 0.3);
+            color: #b5ff66;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @media(max-width: 500px) {
+            .navbar-plan-pill {
+                font-size: 8px;
+            }
+        }
+
+        .navbar-profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .navbar-profile-avatar:hover {
+            border-color: rgba(181, 255, 102, 0.4);
+            background: rgba(181, 255, 102, 0.05);
+            box-shadow: 0 0 12px rgba(181, 255, 102, 0.15);
+        }
+
+        .navbar-profile-icon {
+            font-size: 20px;
+            color: var(--ink);
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: rgba(15, 23, 26, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            width: 200px;
+            padding: 8px 0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .profile-dropdown.show {
+            display: flex;
+        }
+
+        .dropdown-header {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 4px;
+            text-align: left;
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: var(--ink);
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #b5ff66;
+        }
+
+        .dropdown-item.danger {
+            color: var(--danger);
+        }
+
+        .dropdown-item.danger:hover {
+            background: rgba(244, 63, 94, 0.08);
+            color: #ff6b8b;
         }
     </style>
 </head>
@@ -632,29 +955,87 @@
 <body>
 
     <div class="navbar">
-        <h1 class="page-title">Comment Moderation</h1>
-        <div class="navbar-actions">
-            <button class="hamburger" id="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-            <nav class="nav-links" id="nav-links">
-                <a href="/pricing/" style="background: #eef2ff; color: #3b82f6; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px; border: 1px solid #bfdbfe; display: inline-block;">
-                    💎 Plan: {{ subscription.tier|default:"free"|upper }} ({{ subscription.comments_processed_this_month|default:0 }} / {{ subscription.max_comments|default:50 }})
-                </a>
-                <a href="/pricing/" style="background: var(--brand); color: #fff; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 13px; display: inline-block;">⚡ Upgrade</a>
-                <a href="#" class="navbar-user">👤 {{ user.username }}</a>
-                <a href="/logout/" class="btn-danger" style="text-align: center; display: inline-flex; align-items: center;" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
-                <a href="/" class="btn-danger" style="text-align: center; display: inline-flex; align-items: center;">Home</a>
-            </nav>
+        <div class="navbar-brand">SOCIAL FUSE</div>
+        <div class="navbar-center-group">
+            <span class="navbar-dashboard-title">Dashboard</span>
+            {% with p=subscription.comments_processed_this_month %}
+            {% with l=subscription.max_comments %}
+            {% with t=subscription.tier|default:"free"|upper %}
+            <span class="navbar-plan-pill">
+                💎 Plan: {{ t }} ({{ p|default:0 }} / {{ l|default:50 }})
+            </span>
+            {% endwith %}
+            {% endwith %}
+            {% endwith %}
+        </div>
+        <div class="navbar-profile-avatar" id="profile-avatar-btn">
+            <span class="navbar-profile-icon">👤</span>
+            <div class="profile-dropdown" id="profile-dropdown">
+                <div class="dropdown-header">👤 {{ user.username }}</div>
+                <a href="/" class="dropdown-item">Home</a>
+                <a href="/pricing/" class="dropdown-item">Upgrade Plan</a>
+                <a href="/logout/" class="dropdown-item danger"
+                    onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+            </div>
         </div>
     </div>
 
     <div class="page">
+        {% if not account %}
+        <div class="dashboard-grid">
+            <!-- Left Column: Instagram Connection Card -->
+            <div class="instagram-section" style="margin-bottom: 0;">
+                <h2>📱 Instagram Account</h2>
+
+                <div class="not-connected-status">
+                    <span class="not-connected-icon">❌</span>
+                    <div>
+                        <div class="not-connected-title">Not Connected</div>
+                        <div class="not-connected-desc">You need to connect your Instagram business account to start
+                            moderation.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 16px; margin-top: 24px; flex-wrap: wrap;">
+                    <a href="/instagram/connect/" class="btn-facebook-oauth">
+                        🔗 Connect Instagram (Facebook OAuth)
+                    </a>
+                    <a href="/instagram/connect-direct/" class="btn-direct-token">
+                        🔑 Direct Token
+                    </a>
+                </div>
+
+                <div class="info-box" style="margin-top: 24px;">
+                    <strong>Which method should I use?</strong><br>
+                    • <strong>Facebook OAuth:</strong> Required by Instagram Graph API for business/creator accounts<br>
+                    • <strong>Direct Token:</strong> If you already have a valid access token
+                </div>
+            </div>
+
+            <!-- Right Column: Sidebar Navigation -->
+            <div class="sidebar-card">
+                <div class="sidebar-username">👤 ({{ user.username }})</div>
+                <div class="sidebar-nav">
+                    <a href="/" class="sidebar-link">Home</a>
+                    <a href="#" class="sidebar-link">Profile</a>
+                    <a href="#" class="sidebar-link">Settings</a>
+                    <a href="/pricing/" class="sidebar-link">Upgrade</a>
+                    <a href="/logout/" class="sidebar-link logout"
+                        onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Notice Banner -->
+        <div class="bottom-banner-capsule">
+            <div class="bottom-banner-text">
+                Please connect your instagram account above to access the features
+            </div>
+        </div>
+        {% else %}
+        <!-- Original Connected State Layout -->
         <div class="instagram-section">
             <h2>📱 Instagram Account</h2>
-            {% if account %}
             <div class="instagram-status connected">
                 ✅ <strong>Connected!</strong><br>
                 Business Account ID: {{ account.ig_business_id }}<br>
@@ -668,26 +1049,8 @@
                     <button class="connect-button disconnect" type="submit">🧹 Disconnect Instagram</button>
                 </form>
             </div>
-            {% else %}
-            <div class="instagram-status not-connected">
-                ❌ <strong>Not Connected</strong><br>
-                You need to connect your Instagram business account to start moderation.
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
-                <a href="/instagram/connect/" class="connect-button facebook"
-                    style="text-decoration: none; display: inline-block;">🔗 Connect Instagram (Facebook OAuth)</a>
-                <a href="/instagram/connect-direct/" class="connect-button token"
-                    style="text-decoration: none; display: inline-block;">🔑 Direct Token</a>
-            </div>
-            <div class="info-box">
-                <strong>Which method should I use?</strong><br>
-                • <strong>Facebook OAuth:</strong> Required by Instagram Graph API for business/creator accounts<br>
-                • <strong>Direct Token:</strong> If you already have a valid access token
-            </div>
-            {% endif %}
         </div>
 
-        {% if account %}
         <div class="section">
             <h3>⚙️ Moderation Settings</h3>
             <label>Toxicity Threshold:</label>
@@ -703,7 +1066,8 @@
             </label>
             <br><br>
             <label>Sarcasm Threshold:</label>
-            <input type="range" id="sarcasmThresholdSlider" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+            <input type="range" id="sarcasmThresholdSlider" min="0" max="1" step="0.05" value="0.5"
+                style="width: 100%;">
             <div class="help-text">Sarcasm Threshold: <span id="sarcasmThresholdValue">0.5</span></div>
             <br>
             <button onclick="saveSettings()">💾 Save Settings</button>
@@ -733,7 +1097,8 @@
             <div class="comment-toolbar">
                 <button class="btn-danger" onclick="autoDeleteBadComments()">Auto delete bad</button>
                 <button class="btn-outline" onclick="deleteSelectedComments()">Delete selected</button>
-                <button class="btn-danger" id="deleteSearchedBtn" onclick="deleteSearchedComments()" style="display: none;">Delete matching</button>
+                <button class="btn-danger" id="deleteSearchedBtn" onclick="deleteSearchedComments()"
+                    style="display: none;">Delete matching</button>
                 <div class="filter-group" role="group" aria-label="Comment filter">
                     <button type="button" class="filter-btn active" data-filter="default">Default</button>
                     <button type="button" class="filter-btn" data-filter="negative">Negative first</button>
@@ -742,19 +1107,13 @@
                 </div>
             </div>
             <div style="margin-bottom: 12px;">
-                <input type="text" id="searchInput" placeholder="Search comments by word..." onkeyup="renderComments()" style="width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; box-sizing: border-box; font-family: inherit;">
+                <input type="text" id="searchInput" placeholder="Search comments by word..." onkeyup="renderComments()"
+                    style="width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; box-sizing: border-box; font-family: inherit;">
             </div>
             <p id="statusMsg"></p>
             <div id="comments"></div>
         </div>
-        {% else %}
-        <div class="section">
-            <p style="text-align: center; color: #666;">
-                Please connect your Instagram account above to access moderation features.
-            </p>
-        </div>
         {% endif %}
-
     </div>
 
     <div id="popupOverlay" class="popup-overlay" aria-hidden="true">
@@ -776,9 +1135,11 @@
             <h2 class="success-title">Plan Activated!</h2>
             <p id="successMessage" class="success-desc">
                 {% if subscription.tier == 'free' or not subscription.tier %}
-                Payment received! We are activating your subscription. If your new plan benefits do not show up immediately, please refresh in a moment.
+                Payment received! We are activating your subscription. If your new plan benefits do not show up
+                immediately, please refresh in a moment.
                 {% else %}
-                Thank you for upgrading! Your <strong>{{ subscription.tier|upper }} Plan</strong> is now active. You now have access to higher comment limits and advanced features.
+                Thank you for upgrading! Your <strong>{{ subscription.tier|upper }} Plan</strong> is now active. You now
+                have access to higher comment limits and advanced features.
                 {% endif %}
             </p>
             <button class="btn-success-close" onclick="dismissSuccessModal()">Let's Go!</button>
@@ -1049,9 +1410,26 @@
                 });
             });
 
-            hamburger.addEventListener('click', function () {
-                navLinks.classList.toggle('active');
-            });
+            if (hamburger && navLinks) {
+                hamburger.addEventListener('click', function () {
+                    navLinks.classList.toggle('active');
+                });
+            }
+
+            // Profile Avatar Dropdown Interactivity
+            const profileAvatarBtn = document.getElementById('profile-avatar-btn');
+            const profileDropdown = document.getElementById('profile-dropdown');
+
+            if (profileAvatarBtn && profileDropdown) {
+                profileAvatarBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    profileDropdown.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function () {
+                    profileDropdown.classList.remove('show');
+                });
+            }
         });
 
         loadComments();
@@ -1223,7 +1601,7 @@
         function checkPaymentSuccess() {
             // Read template context variable passed from views.py
             const paymentSuccess = "{{ payment_success|yesno:'true,false' }}" === "true";
-            
+
             if (paymentSuccess) {
                 const overlay = document.getElementById("successOverlay");
                 if (overlay) {
@@ -1239,13 +1617,13 @@
                 overlay.style.display = "none";
                 overlay.setAttribute("aria-hidden", "true");
             }
-            
+
             // Clean up the URL parameter ?payment=success without re-triggering page reload
             const url = new URL(window.location.href);
             url.searchParams.delete("payment");
             window.history.replaceState({}, document.title, url.pathname + url.search);
         }
-        
+
         // Call checkPaymentSuccess after page load
         document.addEventListener('DOMContentLoaded', checkPaymentSuccess);
     </script>
