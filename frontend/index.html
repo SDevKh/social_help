@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/socialfuse-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SocialFuse - AI-Powered comment moderation for Instagram brands. Automatically hide toxic comments, detect spam, and protect your brand reputation on autopilot." />
+    <meta name="theme-color" content="#a855f7" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Epunda+Slab:wght@300..900&family=Stack+Sans+Headline:wght@300..900&family=Sura:wght@400;700&family=Berkshire+Swash&family=Doppio+One&display=swap" rel="stylesheet">
+    <title>SocialFuse | AI-Powered Social Media Moderation & Engagement Shield</title>
+    <script>
+      window.DjangoUser = {
+        isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %},
+        id: "{{ user.id|default:'' }}",
+        email: "{{ user.email|default:'' }}",
+        tier: "{{ user.subscription.tier|default:'free' }}"
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -88,6 +88,12 @@ resource webAppConfig 'Microsoft.Web/sites/config@2023-12-01' = {
     'STRIPE_SECRET_KEY': ''
     'STRIPE_WEBHOOK_SECRET': ''
 
+    // Polar
+    'POLAR_ACCESS_TOKEN': ''
+    'POLAR_ORGANIZATION_ID': ''
+    'POLAR_WEBHOOK_SECRET': ''
+    'POLAR_API_BASE_URL': 'https://api.polar.sh/v1'
+
     'PAYPAL_CLIENT_ID': ''
     'PAYPAL_CLIENT_SECRET': ''
     'PAYPAL_MODE': 'sandbox'

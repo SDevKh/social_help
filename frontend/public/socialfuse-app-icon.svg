@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SocialFuse app icon</title>
+  <desc id="desc">A pink and purple SocialFuse shield with a clean comment mark.</desc>
+  <defs>
+    <linearGradient id="bg" x1="88" y1="70" x2="424" y2="442" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#673ab7"/>
+      <stop offset="0.5" stop-color="#e91e63"/>
+      <stop offset="1" stop-color="#ff5722"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#1a1a1a" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#faf9f6"/>
+  <path d="M256 68 414 128v116c0 96-62 166-158 202C160 410 98 340 98 244V128L256 68Z" fill="url(#bg)" filter="url(#shadow)"/>
+  <path d="M170 202c0-34 28-62 62-62h56c34 0 62 28 62 62v30c0 34-28 62-62 62h-24l-58 46c-10 8-25 1-25-12v-41c-8-5-11-10-11-10V202Z" fill="#fff"/>
+  <path d="M213 212h94M213 250h64" stroke="#673ab7" stroke-width="24" stroke-linecap="round"/>
+  <path d="M326 328c28-16 47-45 47-80" stroke="#00c853" stroke-width="28" stroke-linecap="round" fill="none"/>
+</svg>
