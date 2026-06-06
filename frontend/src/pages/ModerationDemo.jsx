@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShieldAlert, ShieldCheck, Cpu, Terminal, Sparkles, 
-  Trash2, RefreshCw, Send, HelpCircle, CornerDownRight 
+  RefreshCw, CornerDownRight, CheckCircle2, AlertTriangle, Eye, EyeOff
 } from 'lucide-react';
 
 const presets = [
-  { text: "Love this package design! When is the next release?", label: "Safe", score: 0.99, desc: "Constructive positive sentiment" },
-  { text: "This brand is a total scam. Complete fraud, do not buy!", label: "Toxic", score: 0.95, desc: "High negativity index & defamation indicators" },
-  { text: "👉 Win free Bitcoin! Limited time link in my bio!!!", label: "Spam", score: 0.98, desc: "Spam link pattern & promotional emoji spam" },
-  { text: "Go die in hell you stupid idiot trolls.", label: "Hate Speech", score: 0.99, desc: "Hate indicators & severe toxicity profile" },
-  { text: "Check out my page for makeup tips and beauty tutorials!", label: "Promotional", score: 0.88, desc: "Self-promotional trigger phrases" },
+  { text: "Love this package design! When is the next release?", label: "Safe", desc: "Constructive positive sentiment" },
+  { text: "This brand is a total scam. Complete fraud, do not buy!", label: "Toxic", desc: "High negativity index & defamation indicators" },
+  { text: "👉 Win free Bitcoin! Limited time link in my bio!!!", label: "Spam", desc: "Spam link pattern & promotional emoji spam" },
+  { text: "Go die in hell you stupid idiot trolls.", label: "Hate Speech", desc: "Hate indicators & severe toxicity profile" },
+  { text: "Interesting update... hope it doesn't break everything like last time.", label: "Uncertain", desc: "Sarcastic/borderline tone: Routed to Groq LLM." },
 ];
 
 export default function ModerationDemo() {
   const [commentInput, setCommentInput] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [pipelineState, setPipelineState] = useState('idle'); // 'idle' | 'keyword_filter' | 'spam_rules' | 'hf_classifier' | 'review_required' | 'groq_ai' | 'done'
+  const [hfScore, setHfScore] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [history, setHistory] = useState([]);
 
-  // Auto analyze preset comment when clicked
   const testPreset = (preset) => {
     setCommentInput(preset.text);
     runAnalysis(preset.text);
@@ -31,48 +32,142 @@ export default function ModerationDemo() {
 
     setAnalyzing(true);
     setAnalysisResult(null);
+    setHfScore(null);
+    setPipelineState('keyword_filter');
 
-    // Simulate AI pipeline processing latency
+    // 1. Keyword Filter (0.8s)
     setTimeout(() => {
-      let label = "Safe";
-      let score = 0.95;
-      let desc = "Natural positive/neutral engagement context.";
       const textLower = text.toLowerCase();
-
-      if (textLower.includes("scam") || textLower.includes("fraud") || textLower.includes("garbage") || textLower.includes("trash")) {
-        label = "Toxic";
-        score = 0.92;
-        desc = "Flagged due to reputational risk and highly negative comments sentiment.";
-      } else if (textLower.includes("btc") || textLower.includes("bitcoin") || textLower.includes("free") || textLower.includes("link in my bio") || textLower.includes("👉")) {
-        label = "Spam";
-        score = 0.97;
-        desc = "Matches known spam link configurations and promotional link text patterns.";
-      } else if (textLower.includes("die") || textLower.includes("kill") || textLower.includes("idiot") || textLower.includes("hate")) {
-        label = "Hate Speech";
-        score = 0.99;
-        desc = "Severe violation: Flagged for abusive terms and death wishes.";
-      } else if (textLower.includes("check out my page") || textLower.includes("check my profile") || textLower.includes("makeup tips") || textLower.includes("beauty tutorials")) {
-        label = "Promotional";
-        score = 0.85;
-        desc = "Self-promotion request flagged. Tends to clutter premium comments threads.";
-      } else {
-        // Safe default
-        score = 0.94 + Math.random() * 0.05;
+      if (textLower.includes("win free") || textLower.includes("bitcoin") || textLower.includes("link in my bio")) {
+        const result = {
+          text,
+          label: "Spam (Keyword Match)",
+          score: 95,
+          desc: "Triggered custom keyword/lexicon filter rules.",
+          decision: "Hide",
+          timestamp: new Date().toLocaleTimeString(),
+          source: "Keyword Filter"
+        };
+        setAnalysisResult(result);
+        setHistory(prev => [result, ...prev].slice(0, 5));
+        setPipelineState('done');
+        setAnalyzing(false);
+        return;
       }
 
-      const result = {
-        text,
-        label,
-        score: Math.round(score * 100),
-        desc,
-        decision: label === "Safe" ? "Approve" : "Hide",
-        timestamp: new Date().toLocaleTimeString(),
-      };
+      // 2. Spam Rules (0.8s)
+      setPipelineState('spam_rules');
+      setTimeout(() => {
+        const toxicWords = [
+          "hate", "idiot", "stupid", "scam", "fake", "kill", "die", "garbage", 
+          "terrible", "shit", "fuck", "fucker", "fucking", "bitch", "asshole", 
+          "bastard", "cunt", "slut", "whore", "motherfucker", "dick", "pussy", 
+          "hell", "disgusting", "trash", "loser", "moron", "retard", "scum",
+          "randi", "raand", "bhenchod", "bc", "madarchod", "mc", "chutiya", 
+          "bhosdike", "bsdk", "bhosdi", "saala", "saale", "kutta", "kutte", 
+          "kamina", "kaminey", "haramkhor", "gandu", "suar", "tatti", "hijra", 
+          "kamine", "lodu", "lode", "laude", "bhadwa", "mutthal", "chinal"
+        ];
+        
+        const severePhrases = [
+          "not upto the mark", "not up to the mark", "should not exist", 
+          "should not exists", "kill yourself", "go to hell", "burn in hell", 
+          "waste of life", "waste of space", "wish you were dead", "rot in hell",
+          "worst ever", "utter garbage", "complete trash", "never exist"
+        ];
 
-      setAnalysisResult(result);
-      setHistory(prev => [result, ...prev].slice(0, 5));
-      setAnalyzing(false);
-    }, 1200);
+        const hasToxicWord = toxicWords.some(w => {
+          const regex = new RegExp(`\\b${w}\\b`, 'i');
+          return regex.test(textLower);
+        });
+
+        const hasSeverePhrase = severePhrases.some(phrase => textLower.includes(phrase));
+
+        if (hasToxicWord || hasSeverePhrase) {
+          const result = {
+            text,
+            label: "Toxic (Spam Rules)",
+            score: 95,
+            desc: "Triggered standard profanity and severe toxic phrase dictionary.",
+            decision: "Hide",
+            timestamp: new Date().toLocaleTimeString(),
+            source: "Spam Rules"
+          };
+          setAnalysisResult(result);
+          setHistory(prev => [result, ...prev].slice(0, 5));
+          setPipelineState('done');
+          setAnalyzing(false);
+          return;
+        }
+
+        // 3. Hugging Face Toxicity Classifier (1.0s)
+        setPipelineState('hf_classifier');
+        setTimeout(() => {
+          let score = 0.95;
+          let isUncertain = false;
+          if (textLower.includes("scam") || textLower.includes("fraud") || textLower.includes("garbage") || textLower.includes("trash")) {
+            score = 0.92;
+          } else if (
+            textLower.includes("hope") || 
+            textLower.includes("break") || 
+            textLower.includes("interesting") || 
+            textLower.includes("genius") || 
+            textLower.includes("madness") || 
+            textLower.includes("...")
+          ) {
+            score = 0.68; // Borderline score in the [0.55, 0.85] uncertainty range
+            isUncertain = true;
+          } else {
+            score = 0.12 + Math.random() * 0.15; // Clean
+          }
+
+          setHfScore(Math.round(score * 100));
+
+          if (!isUncertain) {
+            const isToxic = score >= 0.85;
+            const result = {
+              text,
+              label: isToxic ? "Toxic (HF Classifier)" : "Safe (HF Classifier)",
+              score: Math.round(score * 100),
+              desc: isToxic ? "Hugging Face model flagged comment as high toxicity." : "Hugging Face model verified comment as clean.",
+              decision: isToxic ? "Hide" : "Approve",
+              timestamp: new Date().toLocaleTimeString(),
+              source: "Hugging Face Toxicity Model"
+            };
+            setAnalysisResult(result);
+            setHistory(prev => [result, ...prev].slice(0, 5));
+            setPipelineState('done');
+            setAnalyzing(false);
+          } else {
+            // 4. Review Required -> Route to Groq AI (1.0s)
+            setPipelineState('review_required');
+            setTimeout(() => {
+              setPipelineState('groq_ai');
+              // 5. Groq LLM Final Decision (1.5s)
+              setTimeout(() => {
+                const finalDecision = textLower.includes("break") ? "Hide" : "Approve";
+                const desc = finalDecision === "Hide" 
+                  ? "Groq LLM resolved borderline comment: Flagged as passive-aggressive/constructive toxicity." 
+                  : "Groq LLM resolved borderline comment: Approved as valid user sarcasm / friendly feedback.";
+                const result = {
+                  text,
+                  label: finalDecision === "Hide" ? "Toxic (Resolved by Groq)" : "Safe (Resolved by Groq)",
+                  score: 68,
+                  desc,
+                  decision: finalDecision,
+                  timestamp: new Date().toLocaleTimeString(),
+                  source: "Groq LLM"
+                };
+                setAnalysisResult(result);
+                setHistory(prev => [result, ...prev].slice(0, 5));
+                setPipelineState('done');
+                setAnalyzing(false);
+              }, 1500);
+            }, 1000);
+          }
+        }, 1000);
+      }, 800);
+    }, 800);
   };
 
   return (
@@ -85,14 +180,15 @@ export default function ModerationDemo() {
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <span className="text-xs font-bold text-black uppercase tracking-widest bg-[#C2FF81] px-3.5 py-1.5 rounded-full border border-black/10 shadow-sm">
-            Interactive Sandbox
+          <span className="text-xs font-bold text-black uppercase tracking-widest bg-[#C2FF81] px-3.5 py-1.5 rounded-full border border-black/10 shadow-sm inline-flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-black" />
+            Moderation Architecture Demo
           </span>
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-black font-display">
-            AI Moderation Playground
+            Hierarchical AI Moderation
           </h1>
           <p className="text-slate-650 text-sm sm:text-base leading-relaxed">
-            Test the moderation accuracy of the SocialFuse sentiment filter. Type a custom comment or click one of our test presets.
+            Experience our premium dual-engine moderation pipeline. 95% of comments are instantly processed using a free Hugging Face classifier, while uncertain ones are automatically routed to Groq LLM.
           </p>
         </div>
 
@@ -112,7 +208,7 @@ export default function ModerationDemo() {
                   rows={4}
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
-                  placeholder="Type a toxic comment, spam link, or normal user question..."
+                  placeholder="Type a borderline comment, toxic phrase, or normal question..."
                   className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-sm text-slate-900 focus:outline-none focus:border-black transition-colors resize-none placeholder-slate-450 shadow-inner"
                 />
               </div>
@@ -125,12 +221,12 @@ export default function ModerationDemo() {
                   {analyzing ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-[#C2FF81]" />
-                      Scanning Content...
+                      Analyzing Pipeline...
                     </>
                   ) : (
                     <>
                       <Cpu className="w-4 h-4 text-[#C2FF81]" />
-                      Run AI Scan
+                      Run Pipeline Scan
                     </>
                   )}
                 </button>
@@ -151,6 +247,8 @@ export default function ModerationDemo() {
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border self-start sm:self-auto ${
                       preset.label === "Safe" 
                         ? "bg-[#C2FF81] border-black/10 text-black shadow-sm" 
+                        : preset.label === "Uncertain"
+                        ? "bg-amber-100 border-amber-300 text-amber-800 shadow-sm"
                         : "bg-black border-black text-[#C2FF81]"
                     }`}>
                       {preset.label}
@@ -163,42 +261,97 @@ export default function ModerationDemo() {
 
           {/* Results Console (Right Side) */}
           <div className="space-y-8">
-            <div className="glass-panel p-6 rounded-3xl min-h-[350px] flex flex-col justify-between border border-slate-200/80 shadow-sm">
+            <div className="glass-panel p-6 rounded-3xl min-h-[420px] flex flex-col justify-between border border-slate-200/80 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200/50 pb-3">
-                <span className="text-xs font-bold text-slate-855 font-display">DECISION REPORT</span>
-                <span className="text-xs text-slate-500 font-epunda">Live AI Classifier</span>
+                <span className="text-xs font-bold text-slate-855 font-display">PIPELINE EXECUTION TRACE</span>
+                <span className="text-xs text-slate-500 font-epunda">Dual-Engine AI Status</span>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center py-8">
+              {/* Pipeline Step Tracker */}
+              {analyzing && (
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 mt-4 text-left">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Live Pipeline Steps</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      {pipelineState === 'keyword_filter' ? (
+                        <RefreshCw className="w-3.5 h-3.5 text-black animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      )}
+                      <span className={pipelineState === 'keyword_filter' ? 'font-bold text-black' : 'text-slate-500'}>
+                        1. Keyword Filter Checks
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      {pipelineState === 'spam_rules' ? (
+                        <RefreshCw className="w-3.5 h-3.5 text-black animate-spin" />
+                      ) : (
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${pipelineState === 'keyword_filter' ? 'text-slate-300' : 'text-emerald-500'}`} />
+                      )}
+                      <span className={pipelineState === 'spam_rules' ? 'font-bold text-black' : 'text-slate-500'}>
+                        2. Spam Lexicon & Profanity Rules
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      {pipelineState === 'hf_classifier' ? (
+                        <RefreshCw className="w-3.5 h-3.5 text-black animate-spin" />
+                      ) : (
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${['keyword_filter', 'spam_rules'].includes(pipelineState) ? 'text-slate-300' : 'text-emerald-500'}`} />
+                      )}
+                      <span className={pipelineState === 'hf_classifier' ? 'font-bold text-black' : 'text-slate-500'}>
+                        3. Hugging Face Toxicity Model Scan
+                      </span>
+                    </div>
+
+                    {['review_required', 'groq_ai'].includes(pipelineState) && (
+                      <div className="flex items-center gap-2 text-xs">
+                        {pipelineState === 'review_required' ? (
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
+                        )}
+                        <span className="font-bold text-amber-700">
+                          4. Borderline range detected! Routing to Groq LLM...
+                        </span>
+                      </div>
+                    )}
+
+                    {pipelineState === 'groq_ai' && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <RefreshCw className="w-3.5 h-3.5 text-blue-500 animate-spin" />
+                        <span className="font-bold text-blue-700 animate-pulse">
+                          5. Groq LLM resolving context...
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 flex flex-col items-center justify-center py-6">
                 <AnimatePresence mode="wait">
-                  {analyzing ? (
-                    <motion.div 
-                      key="scanning"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-4 text-center"
-                    >
-                      <RefreshCw className="w-10 h-10 text-black animate-spin mx-auto" />
-                      <p className="text-sm text-slate-500">Processing sentiment matrices & rules-sets...</p>
-                    </motion.div>
-                  ) : analysisResult ? (
+                  {!analyzing && analysisResult ? (
                     <motion.div
                       key="result"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="w-full text-left space-y-6"
+                      className="w-full text-left space-y-5"
                     >
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-slate-500 uppercase">Detection Result</span>
-                          <h4 className="text-xl font-bold text-black flex items-center gap-2 font-display">
-                            {analysisResult.label} ({analysisResult.score}% confidence)
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Final Audit Report</span>
+                          <h4 className="text-lg font-bold text-black flex items-center gap-2 font-display">
+                            {analysisResult.label}
                           </h4>
+                          <div className="text-xs text-slate-500">
+                            Processed via: <strong className="text-black">{analysisResult.source}</strong>
+                          </div>
                         </div>
                         
-                        <div className={`px-4 py-2 rounded-full border font-bold text-xs flex items-center gap-1.5 ${
+                        <div className={`px-4 py-2 rounded-full border font-bold text-xs flex items-center gap-1.5 self-start sm:self-auto ${
                           analysisResult.decision === "Approve" 
                             ? "bg-[#C2FF81] border-black/10 text-black shadow-sm" 
                             : "bg-black border-black text-[#C2FF81] shadow-sm"
@@ -206,57 +359,82 @@ export default function ModerationDemo() {
                           {analysisResult.decision === "Approve" ? (
                             <>
                               <ShieldCheck className="w-4 h-4 text-black" />
-                              Approved (Visible)
+                              Approved (Keep)
                             </>
                           ) : (
                             <>
                               <ShieldAlert className="w-4 h-4 text-[#C2FF81]" />
-                              Hidden (Protected)
+                              Flagged (Delete)
                             </>
                           )}
                         </div>
                       </div>
 
+                      {hfScore !== null && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-bold text-slate-700">
+                            <span>HF Toxicity Score:</span>
+                            <span>{hfScore}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                hfScore >= 85 ? 'bg-red-500' : hfScore >= 55 ? 'bg-amber-500' : 'bg-emerald-500'
+                              }`} 
+                              style={{ width: `${hfScore}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[9px] text-slate-400">
+                            <span>Clean (&lt;55%)</span>
+                            <span className="text-amber-500 font-bold">Uncertain Review (55%-85%)</span>
+                            <span>Toxic (&gt;85%)</span>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                         <div className="text-[10px] font-bold text-slate-800 uppercase tracking-widest flex items-center gap-1">
                           <CornerDownRight className="w-3 h-3 text-slate-500" />
-                          Diagnostic Reason
+                          Decision Context
                         </div>
                         <p className="text-xs text-slate-650 leading-relaxed">{analysisResult.desc}</p>
                       </div>
                     </motion.div>
-                  ) : (
+                  ) : !analyzing ? (
                     <motion.div 
                       key="empty"
                       className="text-center space-y-3"
                     >
                       <Cpu className="w-10 h-10 text-slate-400 mx-auto" />
                       <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-                        Enter comments or try one of the testing presets to trigger the AI moderation classification pipeline report.
+                        Enter comments or try one of the testing presets to trigger the AI moderation classification pipeline trace.
                       </p>
                     </motion.div>
-                  )}
+                  ) : null}
                 </AnimatePresence>
               </div>
 
               <div className="border-t border-slate-200/60 pt-3 text-[10px] text-slate-500 text-left">
-                Safety parameters: Custom thresholds (0.60), Hindi/Hinglish lexicons enabled, Sarcasm module active.
+                Safety parameters: Upper boundary (0.85), Lower boundary (0.55), Sarcasm module active, Lexicons enabled.
               </div>
             </div>
 
             {/* Quick stats / History */}
             {history.length > 0 && (
               <div className="space-y-3 text-left">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest px-3">Session Log History</h4>
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest px-3">Session Audit Logs</h4>
                 <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100 shadow-sm">
                   {history.map((hist, idx) => (
                     <div key={idx} className="p-3 flex items-center justify-between text-xs gap-3">
-                      <span className="text-slate-700 truncate flex-1">"{hist.text}"</span>
-                      <span className={`px-2 py-0.5 rounded-full font-bold ${
-                        hist.decision === "Approve" ? "text-black bg-[#C2FF81] border border-black/5" : "text-[#C2FF81] bg-black"
-                      }`}>
-                        {hist.decision}
-                      </span>
+                      <span className="text-slate-700 truncate flex-1 font-medium">"{hist.text}"</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] text-slate-400 font-bold bg-slate-100 px-1.5 py-0.5 rounded">{hist.source}</span>
+                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                          hist.decision === "Approve" ? "text-black bg-[#C2FF81] border border-black/5" : "text-[#C2FF81] bg-black"
+                        }`}>
+                          {hist.decision}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -12,6 +12,8 @@ import Pricing from './pages/Pricing';
 import Testimonials from './pages/Testimonials';
 import Blog from './pages/Blog';
 import Contact from './pages/Contact';
+import Login from './pages/Login';
+
 
 function AppInner() {
   const { isDark } = useTheme();
@@ -33,6 +35,7 @@ function AppInner() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

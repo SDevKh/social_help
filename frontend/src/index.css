@@ -1,4 +1,21 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --color-destructive-foreground: var(--destructive-foreground);
+}
+
+:root {
+  --radius: 1rem;
+  --accent: oklch(0.89 0 0);
+  --destructive-foreground: oklch(0.985 0 0);
+}
+
+.dark {
+  --background: oklch(0.125 0 0);
+  --accent: oklch(0.229 0 0);
+  --destructive-foreground: oklch(0.985 0 0);
+}
 
 @theme {
   /* ── Glassmorphism Color System (Triadic) ── */
