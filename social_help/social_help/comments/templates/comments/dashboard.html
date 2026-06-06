@@ -1834,19 +1834,26 @@
                 },
                 body: JSON.stringify({ post_id: postId })
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById("scanStatus").innerText = "❌ " + data.error;
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.error || `HTTP error! status: ${res.status}`);
+                        }
+                        return data;
                     } else {
-                        document.getElementById("scanStatus").innerText = "✅ " + data.message;
-                        loadComments();
-                        // Reload statistics on page to update visual numbers dynamically
-                        setTimeout(() => window.location.reload(), 1500);
+                        throw new Error(`Server returned error status ${res.status}.`);
                     }
                 })
+                .then(data => {
+                    document.getElementById("scanStatus").innerText = "✅ " + data.message;
+                    loadComments();
+                    // Reload statistics on page to update visual numbers dynamically
+                    setTimeout(() => window.location.reload(), 1500);
+                })
                 .catch(err => {
-                    document.getElementById("scanStatus").innerText = "❌ Error: " + err.message;
+                    document.getElementById("scanStatus").innerText = "❌ " + err.message;
                 })
                 .finally(() => {
                     scanButton.disabled = false;

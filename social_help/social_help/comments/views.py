@@ -719,6 +719,9 @@ class ScanInstagramPost(APIView):
         service = InstagramService(account=account)
         results = service.scan_instagram_comments(post_id, user=request.user)
 
+        if results is None:
+            return Response({"error": "Post not found or inaccessible. Please verify the URL/ID and make sure the post belongs to your connected Instagram Business account."}, status=404)
+
         if isinstance(results, dict) and "error" in results:
             return Response({"error": results["error"]}, status=400)
 
