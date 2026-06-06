@@ -278,6 +278,114 @@ class InstagramService:
             print(f"[ERROR] Vader AI error: {e}")
             return None
 
+    def analyze_toxicity_hf(self, text):
+        """
+        Call Hugging Face Inference API for toxicity classification (unitary/toxic-bert).
+        Returns a score between 0.0 and 1.0, or None if the request fails.
+        """
+        if not text or not text.strip():
+            return 0.0
+
+        hf_key = getattr(settings, "HUGGINGFACE_API_KEY", "")
+        headers = {}
+        if hf_key:
+            headers["Authorization"] = f"Bearer {hf_key}"
+
+        api_url = "https://api-inference.huggingface.co/models/unitary/toxic-bert"
+        payload = {"inputs": text}
+
+        try:
+            res = requests.post(api_url, headers=headers, json=payload, timeout=8)
+            if res.ok:
+                data = res.json()
+                if isinstance(data, list) and len(data) > 0:
+                    first_item = data[0]
+                    if isinstance(first_item, list):
+                        for item in first_item:
+                            if item.get("label") == "toxic":
+                                return round(item.get("score", 0.0), 2)
+                        scores = [item.get("score", 0.0) for item in first_item if item.get("label") not in ("non-toxic", "clean", "neutral")]
+                        if scores:
+                            return round(max(scores), 2)
+                    elif isinstance(first_item, dict):
+                        if "score" in first_item:
+                            return round(first_item.get("score", 0.0), 2)
+            else:
+                if res.status_code == 503:
+                    print("[WARN] HF Toxicity API model is loading...")
+        except Exception as e:
+            print(f"[WARN] HF Toxicity API request failed: {e}")
+
+        return None
+
+    def resolve_comment_with_groq(self, text):
+        """
+        Resolve an uncertain comment using Groq LLM (llama-3.1-8b-instant).
+        Returns a tuple: (decision, reason)
+        """
+        groq_key = getattr(settings, "GROQ_API_KEY", "")
+        if not groq_key:
+            print("[WARN] GROQ_API_KEY not configured. Falling back to local heuristics.")
+            return self._resolve_comment_groq_fallback(text)
+
+        api_url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {groq_key}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": "llama-3.1-8b-instant",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert Instagram comment moderation AI. "
+                        "Determine if the comment should be kept or deleted. "
+                        "Keep positive, neutral, standard user feedback, constructiveness, and friendly banter. "
+                        "Delete profanity, harassment, spam, severe toxicity, and insults. "
+                        "Respond ONLY in valid JSON format with keys: 'decision' (must be either 'keep' or 'delete') "
+                        "and 'reason' (a brief explanation of your decision)."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": f"Analyze this comment:\n\"{text}\""
+                }
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.0,
+            "max_tokens": 100,
+        }
+
+        try:
+            res = requests.post(api_url, headers=headers, json=payload, timeout=10)
+            if res.ok:
+                resp_data = res.json()
+                content = resp_data["choices"][0]["message"]["content"]
+                import json
+                result = json.loads(content)
+                decision = result.get("decision", "keep").strip().lower()
+                reason = result.get("reason", "Groq LLM analysis")
+                if decision not in ("keep", "delete"):
+                    decision = "keep"
+                return decision, f"groq_llm: {reason}"
+            else:
+                print(f"[ERROR] Groq API returned error {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f"[ERROR] Groq API call failed: {e}")
+
+        return self._resolve_comment_groq_fallback(text)
+
+    def _resolve_comment_groq_fallback(self, text):
+        """
+        Fallback heuristic resolution when Groq is unavailable.
+        """
+        analysis = self.analyze_with_vader(text, enable_sarcasm=True)
+        if analysis and analysis.get("decision") == "delete":
+            return "delete", "fallback_vader_delete"
+        return "keep", "fallback_vader_keep"
+
     def scan_comment(self, text, user=None):
         if user:
             settings_obj = ModerationSetting.objects.filter(user=user).first() or ModerationSetting.objects.create(user=user)
@@ -342,19 +450,43 @@ class InstagramService:
                 "sarcasm_confidence": 0.0
             }
 
-        # 4. Sarcasm & VADER AI Analysis
-        analysis = self.analyze_with_vader(text, enable_sarcasm=enable_sarcasm, sarcasm_threshold=sarcasm_threshold)
-        if analysis:
-            return analysis
+        # 4. Hugging Face Toxicity Model & Fallback
+        score = self.analyze_toxicity_hf(text)
+        
+        # Run local VADER/sarcasm anyway to keep metadata enriched
+        vader_analysis = self.analyze_with_vader(text, enable_sarcasm=enable_sarcasm, sarcasm_threshold=sarcasm_threshold)
+        sentiment = vader_analysis["sentiment"] if vader_analysis else "neutral"
+        sarcasm_detected = vader_analysis["sarcasm_detected"] if vader_analysis else False
+        sarcasm_confidence = vader_analysis["sarcasm_confidence"] if vader_analysis else 0.0
 
-        score = 0.5
+        if score is None:
+            score = vader_analysis["toxicity_score"] if vader_analysis else 0.5
+            source = "vader_ai"
+        else:
+            source = "hf_ai"
+
+        # Determine decision based on threshold and margin
+        margin = 0.15
+        lower_bound = max(0.0, threshold - margin)
+        upper_bound = min(1.0, threshold + margin)
+
+        if score >= upper_bound:
+            decision = "delete"
+            reason = f"{source}_high_toxicity"
+        elif score < lower_bound:
+            decision = "keep"
+            reason = f"{source}_clean"
+        else:
+            decision = "review"
+            reason = f"{source}_uncertain"
+
         return {
             "toxicity_score": round(score, 2),
-            "decision": "delete" if score >= threshold else "keep",
-            "reason": "fallback_ai",
-            "sentiment": "neutral",
-            "sarcasm_detected": False,
-            "sarcasm_confidence": 0.0,
+            "decision": decision,
+            "reason": reason,
+            "sentiment": sentiment,
+            "sarcasm_detected": sarcasm_detected,
+            "sarcasm_confidence": sarcasm_confidence,
         }
 
     def delete_comment(self, comment_id):

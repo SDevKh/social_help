@@ -1,6 +1,6 @@
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
-from social_help.comments.models import Subscription
+from social_help.comments.models import Subscription, InstagramAccount, Comment
 from unittest.mock import Mock, patch
 
 class GumroadPaymentTests(TestCase):
@@ -196,5 +196,91 @@ class UserProfileAndSignupTests(TestCase):
         
         response = self.client.get("/api/settings/")
         self.assertEqual(response.status_code, 200)
+
+
+class TieredModerationAndGroqTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="moderator_user", password="password123")
+        self.client.login(username="moderator_user", password="password123")
+        Subscription.objects.update_or_create(user=self.user, defaults={'tier': 'starter', 'is_active': True})
+        InstagramAccount.objects.create(
+            user=self.user,
+            ig_business_id="test_ig_business_id",
+            page_access_token="fake_token"
+        )
+
+    @patch("social_help.comments.instagram_service.InstagramService.analyze_toxicity_hf")
+    def test_scan_comment_toxicity_ranges(self, mock_hf_toxicity):
+        from social_help.comments.instagram_service import InstagramService
+        service = InstagramService()
+
+        # 1. Clean comment (toxicity < lower bound) -> Keep
+        mock_hf_toxicity.return_value = 0.2
+        result = service.scan_comment("Hello! This is a lovely comment.", user=self.user)
+        self.assertEqual(result["decision"], "keep")
+        self.assertEqual(result["reason"], "hf_ai_clean")
+
+        # 2. Toxic comment (toxicity >= upper bound) -> Delete
+        mock_hf_toxicity.return_value = 0.9
+        result = service.scan_comment("This is bad, incredibly negative and mean.", user=self.user)
+        self.assertEqual(result["decision"], "delete")
+        self.assertEqual(result["reason"], "hf_ai_high_toxicity")
+
+        # 3. Uncertain/Borderline comment (within margin) -> Review
+        # Default toxicity threshold is 0.7. Margin is 0.15. Range for review is [0.55, 0.85]
+        mock_hf_toxicity.return_value = 0.7
+        result = service.scan_comment("Interesting update, I hope it doesn't break.", user=self.user)
+        self.assertEqual(result["decision"], "review")
+        self.assertEqual(result["reason"], "hf_ai_uncertain")
+
+    @patch("social_help.comments.instagram_service.InstagramService.resolve_comment_with_groq")
+    def test_resolve_comment_with_groq_api(self, mock_groq):
+        mock_groq.return_value = ("delete", "groq_llm: toxic comment resolved")
+
+        comment = Comment.objects.create(
+            user=self.user,
+            comment_text="Borderline comment",
+            toxicity_score=0.7,
+            decision="review",
+            reason="hf_ai_uncertain"
+        )
+
+        response = self.client.post(f"/api/comments/{comment.id}/resolve-groq/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["decision"], "delete")
+
+        # Verify database is updated
+        comment.refresh_from_db()
+        self.assertEqual(comment.decision, "delete")
+        self.assertEqual(comment.reason, "groq_llm: toxic comment resolved")
+
+    @patch("social_help.comments.instagram_service.InstagramService.resolve_comment_with_groq")
+    def test_resolve_all_uncertain_comments(self, mock_groq):
+        mock_groq.return_value = ("keep", "groq_llm: clean comment resolved")
+
+        Comment.objects.create(
+            user=self.user,
+            comment_text="Borderline comment 1",
+            toxicity_score=0.68,
+            decision="review",
+            reason="hf_ai_uncertain"
+        )
+        Comment.objects.create(
+            user=self.user,
+            comment_text="Borderline comment 2",
+            toxicity_score=0.72,
+            decision="review",
+            reason="hf_ai_uncertain"
+        )
+
+        response = self.client.post("/api/comments/resolve-groq-all/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["resolved_count"], 2)
+
+        # Verify both are kept in the database
+        comments = Comment.objects.filter(user=self.user)
+        for c in comments:
+            self.assertEqual(c.decision, "keep")
+            self.assertEqual(c.reason, "groq_llm: clean comment resolved")
 
 

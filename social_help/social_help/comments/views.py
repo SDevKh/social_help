@@ -278,6 +278,7 @@ def dashboard(request):
     toxic_comments = comments_qs.filter(decision="delete").count()
     sarcasm_comments = comments_qs.filter(sarcasm_detected=True).count()
     promotion_comments = comments_qs.filter(reason="spam_keyword").count()
+    review_comments = comments_qs.filter(decision="review").count()
 
     # Use mock fallback values if database is currently empty (matches dashboard post-purchase preview)
     if total_comments == 0:
@@ -285,6 +286,7 @@ def dashboard(request):
         toxic_comments = 2383
         sarcasm_comments = 10229
         promotion_comments = 6091
+        review_comments = 964
 
     import django.db.models as db_models
     avg_toxicity = comments_qs.aggregate(db_models.Avg('toxicity_score'))['toxicity_score__avg']
@@ -308,6 +310,7 @@ def dashboard(request):
         "toxic_comments": toxic_comments,
         "sarcasm_comments": sarcasm_comments,
         "promotion_comments": promotion_comments,
+        "review_comments": review_comments,
         "avg_toxicity_pct": avg_toxicity_pct,
         "avg_toxicity_remaining": 100 - avg_toxicity_pct,
         "toxicity_label": toxicity_label,
@@ -645,6 +648,53 @@ class ModerationSettingsAPI(APIView):
         )
         s.save()
         return Response({"message": "Settings updated"})
+
+
+class ResolveCommentWithGroq(APIView):
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
+
+    def post(self, request, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+        account = InstagramAccount.objects.filter(user=request.user).first()
+        service = InstagramService(account=account)
+        decision, reason = service.resolve_comment_with_groq(comment.comment_text)
+        comment.decision = decision
+        comment.reason = reason
+        comment.save()
+        return Response({
+            "success": True,
+            "comment_id": comment.id,
+            "decision": comment.decision,
+            "reason": comment.reason
+        })
+
+
+class ResolveAllUncertainComments(APIView):
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
+
+    def post(self, request):
+        comments = Comment.objects.filter(user=request.user, decision="review")
+        account = InstagramAccount.objects.filter(user=request.user).first()
+        service = InstagramService(account=account)
+        resolved_count = 0
+        resolved_details = []
+        for comment in comments:
+            decision, reason = service.resolve_comment_with_groq(comment.comment_text)
+            comment.decision = decision
+            comment.reason = reason
+            comment.save()
+            resolved_count += 1
+            resolved_details.append({
+                "comment_id": comment.id,
+                "text": comment.comment_text,
+                "decision": decision,
+                "reason": reason
+            })
+        return Response({
+            "success": True,
+            "resolved_count": resolved_count,
+            "resolved_comments": resolved_details
+        })
 
 
 class ScanInstagramPost(APIView):

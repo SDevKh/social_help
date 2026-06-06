@@ -131,7 +131,7 @@
             height: auto;
             display: block;
             margin-bottom: 23px;
-            margin-top: -6vh;
+            margin-top: -2vh;
         }
 
         /* White Profile Card */
@@ -1067,6 +1067,22 @@
             border-left: 6px solid var(--danger);
         }
 
+        .comment-item.review {
+            border-left: 6px solid #fbbf24;
+        }
+
+        .comment-badge-review {
+            display: inline-block;
+            background-color: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            border: 1px solid #fbbf24;
+            margin-left: 8px;
+        }
+
         .comment-item-header {
             display: flex;
             justify-content: space-between;
@@ -1445,6 +1461,10 @@
                                     <span class="breakdown-label">Promotion</span>
                                     <span class="breakdown-count">{{ promotion_comments }}</span>
                                 </div>
+                                <div class="breakdown-row">
+                                    <span class="breakdown-label">Uncertain</span>
+                                    <span class="breakdown-count">{{ review_comments }}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="card-scanned-buttons">
@@ -1510,10 +1530,13 @@
                             <button onclick="clearComments()" class="btn-pink-red">Clear Comments</button>
                         </div>
                         <div style="text-align: left;">
-                            <div class="comments-toolbar">
+                            <div class="comments-toolbar"
+                                style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                                 <button class="btn-pink-red" onclick="autoDeleteBadComments()">Auto delete bad</button>
                                 <button class="btn-toolbar-grey" onclick="deleteSelectedComments()">Delete
                                     selected</button>
+                                <button class="btn-blue-light" style="padding: 10px 18px; font-size: 12px; margin: 0;"
+                                    onclick="resolveUncertainWithGroqAll()">Resolve Review with Groq</button>
                                 <button class="btn-pink-red" id="deleteSearchedBtn" onclick="deleteSearchedComments()"
                                     style="display: none;">Delete matching</button>
 
@@ -1525,6 +1548,8 @@
                                     <button type="button" class="filter-link-btn" data-filter="positive">Positive
                                         first</button>
                                     <button type="button" class="filter-link-btn" data-filter="sarcastic">Sarcastic
+                                        first</button>
+                                    <button type="button" class="filter-link-btn" data-filter="review">Review
                                         first</button>
                                 </div>
                             </div>
@@ -1859,6 +1884,8 @@
                 sorted.sort((a, b) => (a.decision === "keep") === (b.decision === "keep") ? 0 : a.decision === "keep" ? -1 : 1);
             } else if (currentFilter === "sarcastic") {
                 sorted.sort((a, b) => (a.sarcasm_detected === b.sarcasm_detected) ? 0 : a.sarcasm_detected ? -1 : 1);
+            } else if (currentFilter === "review") {
+                sorted.sort((a, b) => (a.decision === "review") === (b.decision === "review") ? 0 : a.decision === "review" ? -1 : 1);
             }
 
             if (searchQuery) {
@@ -1888,16 +1915,28 @@
                     ? `<span class="comment-badge-sarcasm">🔥 Sarcastic (${item.sarcasm_confidence || 0})</span>`
                     : '';
 
+                const reviewBadge = item.decision === "review"
+                    ? `<span class="comment-badge-review">🤔 Uncertain (Review)</span>`
+                    : '';
+
+                const actionButtons = [];
+                if (item.decision === "review") {
+                    actionButtons.push(`<button class="btn-blue-light" style="padding: 5px 12px; font-size: 11px; margin: 0; box-shadow: 2px 2px 0px var(--border-black);" onclick="resolveCommentWithGroq(${item.id})">🧠 Resolve with Groq</button>`);
+                }
+                actionButtons.push(`<button class="btn-pink-red" style="padding: 5px 12px; font-size: 11px; margin: 0; box-shadow: 2px 2px 0px var(--border-black);" onclick="deleteComment(${item.id}, '${item.instagram_id || ''}')">Delete</button>`);
+
                 div.innerHTML = `
                     <div class="comment-item-header">
                         <label class="comment-checkbox-label">
                             <input class="comment-select" type="checkbox" data-id="${item.id}" data-instagram="${item.instagram_id || ''}">
                             Select
                         </label>
-                        <button class="btn-pink-red" style="padding: 5px 12px; font-size: 11px; box-shadow: 2px 2px 0px var(--border-black);" onclick="deleteComment(${item.id}, '${item.instagram_id || ''}')">Delete</button>
+                        <div style="display: flex; gap: 8px;">
+                            ${actionButtons.join('')}
+                        </div>
                     </div>
                     <div class="comment-text-body">
-                        "${item.comment_text}" ${sarcasmBadge}
+                        "${item.comment_text}" ${sarcasmBadge} ${reviewBadge}
                     </div>
                     <div class="comment-item-meta">
                         Decision: <strong>${String(item.decision || '').toUpperCase()}</strong> &nbsp;|&nbsp;
@@ -1954,6 +1993,64 @@
         });
 
         loadComments();
+
+        function resolveCommentWithGroq(commentId) {
+            document.getElementById("statusMsg").innerText = `🔄 Resolving comment ${commentId} with Groq AI...`;
+            fetch(`/api/comments/${commentId}/resolve-groq/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("statusMsg").innerText = `✅ Resolved comment ${commentId}: Decision updated to ${data.decision.toUpperCase()}.`;
+                        loadComments();
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        document.getElementById("statusMsg").innerText = `❌ Error resolving comment: ${data.error || 'unknown error'}`;
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+                });
+        }
+
+        function resolveUncertainWithGroqAll() {
+            const reviewCount = commentsCache.filter(item => item.decision === "review").length;
+            if (reviewCount === 0) {
+                document.getElementById("statusMsg").innerText = "No uncertain comments to resolve.";
+                return;
+            }
+
+            if (!confirm(`Resolve all ${reviewCount} uncertain comments with Groq AI?`)) {
+                return;
+            }
+
+            document.getElementById("statusMsg").innerText = "🔄 Resolving all review comments with Groq AI...";
+            fetch("/api/comments/resolve-groq-all/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("statusMsg").innerText = `✅ Successfully resolved ${data.resolved_count} comments using Groq AI.`;
+                        loadComments();
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        document.getElementById("statusMsg").innerText = `❌ Error: ${data.error || 'failed to resolve comments'}`;
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("statusMsg").innerText = "❌ Error: " + err.message;
+                });
+        }
 
         function clearComments() {
             if (!confirm("Are you sure you want to delete all comments? This action cannot be undone.")) {

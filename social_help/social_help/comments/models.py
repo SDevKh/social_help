@@ -4,6 +4,7 @@ class Comment(models.Model):
     DECISION_CHOICES = [
         ("delete", "Delete"),
         ("keep", "Keep"),
+        ("review", "Review"),
     ]
 
     REASON_CHOICES = [
@@ -13,7 +14,8 @@ class Comment(models.Model):
         ("toxic_word", "Toxic Word"),
         ("positive", "Positive"),
         ("spam_keyword", "Spam Keyword"),
-        ("hf_ai", "HF AI"),
+        ("hf_ai", "HF Toxicity AI"),
+        ("groq_ai", "Groq LLM"),
     ]
 
     SENTIMENT_CHOICES = [
