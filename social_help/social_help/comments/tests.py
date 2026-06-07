@@ -283,4 +283,13 @@ class TieredModerationAndGroqTests(TestCase):
             self.assertEqual(c.decision, "keep")
             self.assertEqual(c.reason, "groq_llm: clean comment resolved")
 
+    def test_scan_comment_promotional_spam(self):
+        from social_help.comments.instagram_service import InstagramService
+        service = InstagramService()
+        
+        result = service.scan_comment("dm me to get the website", user=self.user)
+        self.assertEqual(result["decision"], "delete")
+        self.assertEqual(result["reason"], "spam_keyword")
+        self.assertEqual(result["sentiment"], "neutral")
+
 

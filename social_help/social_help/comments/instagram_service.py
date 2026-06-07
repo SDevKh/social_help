@@ -450,7 +450,39 @@ class InstagramService:
                 "sarcasm_confidence": 0.0
             }
 
-        # 4. Hugging Face Toxicity Model & Fallback
+        # 4. Promotional/Spam Phrases (e.g. "dm me to get the website", "check link in bio")
+        promo_phrases = [
+            "dm me to get", "dm me to", "dm me for", "dm us for", "dm for details",
+            "dm to collab", "dm us to collab", "dm for collab", "check link in bio",
+            "link in bio", "check my bio", "click the link", "get the website",
+            "visit my website", "promo code", "discount code", "use code", "buy now",
+            "visit my page", "check out my page", "check out my profile",
+            "follow me for", "free guide", "free ebook", "check link",
+            "send me a message", "message me to get", "dm me", "dm us", "in bio"
+        ]
+        if any(phrase in text_lower for phrase in promo_phrases):
+            try:
+                analyzer = SentimentIntensityAnalyzer()
+                vs = analyzer.polarity_scores(text)
+                compound = vs['compound']
+                if compound <= -0.05:
+                    sentiment = "negative"
+                elif compound >= 0.05:
+                    sentiment = "positive"
+                else:
+                    sentiment = "neutral"
+            except Exception:
+                sentiment = "neutral"
+            return {
+                "toxicity_score": 0.85, 
+                "decision": "delete", 
+                "reason": "spam_keyword", 
+                "sentiment": sentiment, 
+                "sarcasm_detected": False, 
+                "sarcasm_confidence": 0.0
+            }
+
+        # 5. Hugging Face Toxicity Model & Fallback
         score = self.analyze_toxicity_hf(text)
         
         # Run local VADER/sarcasm anyway to keep metadata enriched

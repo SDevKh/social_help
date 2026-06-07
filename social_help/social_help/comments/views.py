@@ -280,6 +280,8 @@ def dashboard(request):
     promotion_comments = comments_qs.filter(reason="spam_keyword").count()
     review_comments = comments_qs.filter(decision="review").count()
 
+    positive_comments = comments_qs.filter(sentiment="positive").count()
+
     # Use mock fallback values if database is currently empty (matches dashboard post-purchase preview)
     if total_comments == 0:
         total_comments = 19299
@@ -287,6 +289,7 @@ def dashboard(request):
         sarcasm_comments = 10229
         promotion_comments = 6091
         review_comments = 964
+        positive_comments = 11000
 
     import django.db.models as db_models
     avg_toxicity = comments_qs.aggregate(db_models.Avg('toxicity_score'))['toxicity_score__avg']
@@ -302,6 +305,22 @@ def dashboard(request):
     else:
         toxicity_label = "Poor"
 
+    sarcasm_pct = int((sarcasm_comments / total_comments) * 100) if total_comments > 0 else 57
+    if sarcasm_pct < 30:
+        sarcasm_label = "Good"
+    elif sarcasm_pct < 60:
+        sarcasm_label = "Fair"
+    else:
+        sarcasm_label = "Poor"
+
+    positive_pct = int((positive_comments / total_comments) * 100) if total_comments > 0 else 57
+    if positive_pct > 70:
+        positive_label = "Good"
+    elif positive_pct > 40:
+        positive_label = "Fair"
+    else:
+        positive_label = "Poor"
+
     return render(request, "comments/dashboard.html", {
         "account": account,
         "subscription": sub,
@@ -314,6 +333,10 @@ def dashboard(request):
         "avg_toxicity_pct": avg_toxicity_pct,
         "avg_toxicity_remaining": 100 - avg_toxicity_pct,
         "toxicity_label": toxicity_label,
+        "sarcasm_pct": sarcasm_pct,
+        "sarcasm_label": sarcasm_label,
+        "positive_pct": positive_pct,
+        "positive_label": positive_label,
     })
 
 

@@ -573,7 +573,7 @@
 
         .enhancements-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
             align-items: stretch;
         }
@@ -1492,8 +1492,20 @@
                                 <div class="widget-preview-line purple"></div>
                                 <div class="widget-preview-line"></div>
                             </div>
-                            <!-- Widget 3: Empty Card -->
-                            <div class="enhancement-widget widget-empty"></div>
+                            <!-- Widget 3: Sarcasm Score -->
+                            <div class="enhancement-widget">
+                                <div class="widget-score-title">Sarcasm Score<br>{{ sarcasm_pct }}% {{ sarcasm_label }}</div>
+                                <div class="widget-progress-container">
+                                    <div class="widget-progress-fill" style="width: {{ sarcasm_pct }}%;"></div>
+                                </div>
+                            </div>
+                            <!-- Widget 4: Positive Sentiment Score -->
+                            <div class="enhancement-widget">
+                                <div class="widget-score-title">Positive Sentiment<br>{{ positive_pct }}% {{ positive_label }}</div>
+                                <div class="widget-progress-container">
+                                    <div class="widget-progress-fill" style="width: {{ positive_pct }}%;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
