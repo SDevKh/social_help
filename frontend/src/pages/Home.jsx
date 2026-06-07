@@ -98,6 +98,24 @@ export default function Home() {
             </Link>
           </motion.div>
 
+          {/* ListBulb Badge */}
+          <motion.div
+            custom={3.5}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="pt-4 flex flex-col items-center"
+          >
+            <a href="https://www.listbulb.com/tools/socialfuse" target="_blank" rel="noopener noreferrer" className="inline-block hover:scale-[1.03] hover:opacity-90 active:scale-95 transition-all duration-250">
+              <img
+                src="https://www.listbulb.com/featured-on-listbulb-light.svg"
+                alt="Featured on ListBulb"
+                height={240}
+                className="h-16 md:h-20 w-auto object-contain"
+              />
+            </a>
+          </motion.div>
+
         </div>
 
         {/* Three point features strip at the very bottom */}
