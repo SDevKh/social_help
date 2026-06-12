@@ -589,12 +589,18 @@ class HasActivePaidSubscription(BasePermission):
     message = "You must have an active paid subscription to access this feature."
 
     def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.user.is_superuser or request.user.is_staff:
-            return True
-        sub = get_subscription(request.user)
-        return sub is not None and sub.tier in ['free', 'starter', 'pro', 'agency'] and sub.is_active
+        try:
+            if not request.user or not request.user.is_authenticated:
+                return False
+            if request.user.is_superuser or request.user.is_staff:
+                return True
+            sub = get_subscription(request.user)
+            return sub is not None and sub.tier in ['free', 'starter', 'pro', 'agency'] and sub.is_active
+        except Exception as e:
+            import traceback
+            import sys
+            sys.stderr.write(f"[ERROR] HasActivePaidSubscription permission check failed: {e}\n{traceback.format_exc()}\n")
+            raise e
 
 
 class RecentComments(ListAPIView):
@@ -724,40 +730,50 @@ class ScanInstagramPost(APIView):
     permission_classes = [IsAuthenticated, HasActivePaidSubscription]
 
     def post(self, request):
-        post_id = request.data.get("post_id")
-        if not post_id:
-            return Response({"error": "post_id required"}, status=400)
+        try:
+            post_id = request.data.get("post_id")
+            if not post_id:
+                return Response({"error": "post_id required"}, status=400)
 
-        sub = get_subscription(request.user)
-        if sub and not sub.can_process_more():
+            sub = get_subscription(request.user)
+            if sub and not sub.can_process_more():
+                return Response({
+                    "error": f"Monthly limit reached ({sub.comments_processed_this_month} / {sub.max_comments()} comments). Please upgrade your plan.",
+                    "limit_reached": True
+                }, status=403)
+
+            account = InstagramAccount.objects.filter(user=request.user).first()
+            if not account:
+                return Response({"error": "No Instagram account connected"}, status=400)
+
+            service = InstagramService(account=account)
+            results = service.scan_instagram_comments(post_id, user=request.user)
+
+            if results is None:
+                return Response({"error": "Post not found or inaccessible. Please verify the URL/ID and make sure the post belongs to your connected Instagram Business account."}, status=404)
+
+            if isinstance(results, dict) and "error" in results:
+                return Response({"error": results["error"]}, status=400)
+
+            if sub and results:
+                sub.comments_processed_this_month += len(results)
+                sub.save()
+
             return Response({
-                "error": f"Monthly limit reached ({sub.comments_processed_this_month} / {sub.max_comments()} comments). Please upgrade your plan.",
-                "limit_reached": True
-            }, status=403)
-
-        account = InstagramAccount.objects.filter(user=request.user).first()
-        if not account:
-            return Response({"error": "No Instagram account connected"}, status=400)
-
-        service = InstagramService(account=account)
-        results = service.scan_instagram_comments(post_id, user=request.user)
-
-        if results is None:
-            return Response({"error": "Post not found or inaccessible. Please verify the URL/ID and make sure the post belongs to your connected Instagram Business account."}, status=404)
-
-        if isinstance(results, dict) and "error" in results:
-            return Response({"error": results["error"]}, status=400)
-
-        if sub and results:
-            sub.comments_processed_this_month += len(results)
-            sub.save()
-
-        return Response({
-            "message": f"Scanned {len(results)} comments (Used this month: {sub.comments_processed_this_month} / {sub.max_comments()})",
-            "results": results,
-            "used": sub.comments_processed_this_month,
-            "max": sub.max_comments(),
-        })
+                "message": f"Scanned {len(results)} comments (Used this month: {sub.comments_processed_this_month} / {sub.max_comments()})",
+                "results": results,
+                "used": sub.comments_processed_this_month,
+                "max": sub.max_comments(),
+            })
+        except Exception as e:
+            import traceback
+            import sys
+            sys.stderr.write(f"[ERROR] ScanInstagramPost view failed: {e}\n{traceback.format_exc()}\n")
+            return Response({
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "detail": "Internal Server Error captured by debug wrapper"
+            }, status=500)
 
 
 # -------------------------------------------------------------------

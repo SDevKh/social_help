@@ -9,7 +9,7 @@ sys.path.insert(0, r'C:\Users\deves\OneDrive\Desktop\sicial_help\social_help\soc
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'social_help.settings')
 django.setup()
 
-from comments.instagram_service import InstagramService
+from social_help.comments.instagram_service import InstagramService
 
 service = InstagramService()
 
