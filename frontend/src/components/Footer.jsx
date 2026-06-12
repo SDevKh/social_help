@@ -90,17 +90,7 @@ export default function Footer({ showNewsletter = true }) {
               ))}
             </div>
 
-            {/* ListBulb Badge */}
-            <div className="pt-2">
-              <a href="https://www.listbulb.com/tools/socialfuse" target="_blank" rel="noopener noreferrer" className="inline-block hover:opacity-80 transition-opacity">
-                <img
-                  src="https://www.listbulb.com/featured-on-listbulb-light.svg"
-                  alt="Featured on ListBulb"
-                  height={240}
-                  className="h-14 w-auto object-contain"
-                />
-              </a>
-            </div>
+
           </div>
 
           {/* Nav groups */}

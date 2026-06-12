@@ -103,22 +103,17 @@ export default function ModerationDemo() {
         // 3. Hugging Face Toxicity Classifier (1.0s)
         setPipelineState('hf_classifier');
         setTimeout(() => {
-          let score = 0.95;
+          let score = 0.12 + Math.random() * 0.15; // Default Clean
           let isUncertain = false;
-          if (textLower.includes("scam") || textLower.includes("fraud") || textLower.includes("garbage") || textLower.includes("trash")) {
-            score = 0.92;
-          } else if (
-            textLower.includes("hope") || 
-            textLower.includes("break") || 
-            textLower.includes("interesting") || 
-            textLower.includes("genius") || 
-            textLower.includes("madness") || 
-            textLower.includes("...")
-          ) {
-            score = 0.68; // Borderline score in the [0.55, 0.85] uncertainty range
+          
+          const highlyToxicKeywords = ["scam", "fraud", "garbage", "trash", "worst", "terrible", "sucks", "awful", "rubbish", "useless", "fake"];
+          const borderlineKeywords = ["hope", "break", "interesting", "genius", "madness", "...", "bad", "poor", "disappointed", "fail"];
+
+          if (highlyToxicKeywords.some(keyword => textLower.includes(keyword))) {
+            score = 0.88 + Math.random() * 0.08; // High toxicity (e.g. 88% - 96%)
+          } else if (borderlineKeywords.some(keyword => textLower.includes(keyword))) {
+            score = 0.65 + Math.random() * 0.15; // Borderline score (e.g. 65% - 80%)
             isUncertain = true;
-          } else {
-            score = 0.12 + Math.random() * 0.15; // Clean
           }
 
           setHfScore(Math.round(score * 100));
@@ -145,14 +140,14 @@ export default function ModerationDemo() {
               setPipelineState('groq_ai');
               // 5. Groq LLM Final Decision (1.5s)
               setTimeout(() => {
-                const finalDecision = textLower.includes("break") ? "Hide" : "Approve";
+                const finalDecision = (textLower.includes("break") || textLower.includes("bad") || textLower.includes("poor") || textLower.includes("fail") || textLower.includes("disappointed")) ? "Hide" : "Approve";
                 const desc = finalDecision === "Hide" 
                   ? "Groq LLM resolved borderline comment: Flagged as passive-aggressive/constructive toxicity." 
                   : "Groq LLM resolved borderline comment: Approved as valid user sarcasm / friendly feedback.";
                 const result = {
                   text,
                   label: finalDecision === "Hide" ? "Toxic (Resolved by Groq)" : "Safe (Resolved by Groq)",
-                  score: 68,
+                  score: Math.round(score * 100),
                   desc,
                   decision: finalDecision,
                   timestamp: new Date().toLocaleTimeString(),
