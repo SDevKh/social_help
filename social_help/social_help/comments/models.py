@@ -12,10 +12,19 @@ class Comment(models.Model):
         ("ai", "AI Score"),
         ("clean", "Clean"),
         ("toxic_word", "Toxic Word"),
+        ("toxic_phrase", "Toxic Phrase"),
         ("positive", "Positive"),
         ("spam_keyword", "Spam Keyword"),
         ("hf_ai", "HF Toxicity AI"),
         ("groq_ai", "Groq LLM"),
+        ("hf_ai_high_toxicity", "HF High Toxicity"),
+        ("hf_ai_clean", "HF Clean"),
+        ("hf_ai_uncertain", "HF Uncertain"),
+        ("vader_ai_high_toxicity", "Vader High Toxicity"),
+        ("vader_ai_clean", "Vader Clean"),
+        ("vader_ai_uncertain", "Vader Uncertain"),
+        ("fallback_vader_delete", "Fallback Vader Delete"),
+        ("fallback_vader_keep", "Fallback Vader Keep"),
     ]
 
     SENTIMENT_CHOICES = [
@@ -28,7 +37,7 @@ class Comment(models.Model):
     comment_text = models.TextField()
     toxicity_score = models.FloatField()
     decision = models.CharField(max_length=10, choices=DECISION_CHOICES)
-    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    reason = models.CharField(max_length=255, choices=REASON_CHOICES)
     instagram_id = models.CharField(max_length=100, blank=True, null=True)
     sentiment = models.CharField(max_length=10, choices=SENTIMENT_CHOICES, default="neutral")
     sarcasm_detected = models.BooleanField(default=False)
