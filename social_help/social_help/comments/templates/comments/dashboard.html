@@ -652,9 +652,9 @@
 
         /* Dark Tools Panels base */
         .dark-panel {
-            background-color: var(--bg-dark);
+            background-color: #ffffff;
             border: 2px solid var(--border-black);
-            color: #ffffff;
+            color: var(--text-dark);
             padding: 32px;
             border-radius: 28px;
             box-shadow: 6px 6px 0px var(--border-black);
@@ -680,14 +680,14 @@
         .dark-panel h3 svg {
             width: 22px;
             height: 22px;
-            color: var(--accent-purple-light);
+            color: var(--accent-purple);
             stroke-width: 2.2px;
         }
 
         .form-label {
             font-size: 13px;
             font-weight: 700;
-            color: #94a3b8;
+            color: var(--text-muted);
             margin-bottom: 8px;
             display: block;
             text-align: left;
@@ -696,23 +696,23 @@
         /* Input Styles inside Dark Panels */
         .dark-input {
             width: 100%;
-            background-color: #151a26;
+            background-color: #ffffff;
             border: 2px solid var(--border-black);
             border-radius: 9999px;
             padding: 14px 24px;
-            color: #ffffff;
+            color: var(--text-dark);
             font-family: inherit;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             outline: none;
             transition: all 0.2s ease;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            box-shadow: 3px 3px 0px var(--border-black);
             margin-bottom: 12px;
         }
 
         .dark-input:focus {
             border-color: var(--accent-purple);
-            background-color: #1a2030;
+            background-color: #f8fafc;
         }
 
         /* Sliders */
@@ -778,7 +778,7 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--text-dark);
             margin-bottom: 24px;
             user-select: none;
         }
@@ -794,7 +794,7 @@
             border-radius: 6px;
             display: inline-block;
             position: relative;
-            background-color: #151a26;
+            background-color: #ffffff;
             box-shadow: 2px 2px 0px var(--border-black);
             transition: all 0.2s ease;
         }
@@ -816,19 +816,19 @@
 
         /* Help/Info boxes in Dark Panels */
         .dark-info-box {
-            background-color: #151a26;
+            background-color: #f1f5f9;
             border: 2px solid var(--border-black);
             border-radius: 16px;
             padding: 16px 20px;
             font-size: 12px;
-            color: #94a3b8;
+            color: var(--text-muted);
             line-height: 1.6;
             margin-top: 14px;
             text-align: left;
         }
 
         .dark-info-box strong {
-            color: #ffffff;
+            color: var(--text-dark);
         }
 
         /* Buttons inside Dark Panels */
@@ -911,7 +911,7 @@
             border: 2px solid var(--success);
             border-radius: 20px;
             padding: 20px;
-            color: #a7f3d0;
+            color: #065f46;
             font-size: 14px;
             line-height: 1.6;
             margin-bottom: 20px;
@@ -923,7 +923,7 @@
             border: 2px solid var(--danger);
             border-radius: 20px;
             padding: 20px;
-            color: #fecdd3;
+            color: #991b1b;
             font-size: 14px;
             line-height: 1.6;
             margin-bottom: 24px;
@@ -1006,7 +1006,7 @@
 
         .filter-link-btn:hover,
         .filter-link-btn.active {
-            color: #ffffff;
+            color: var(--text-dark);
         }
 
         .filter-link-btn.active::after {
@@ -1047,7 +1047,7 @@
 
         /* Comment Item Card */
         .comment-item {
-            background-color: #151a26;
+            background-color: #f8fafc;
             border: 2px solid var(--border-black);
             border-radius: 20px;
             padding: 18px 20px;
@@ -1074,7 +1074,7 @@
         .comment-badge-review {
             display: inline-block;
             background-color: rgba(251, 191, 36, 0.15);
-            color: #fbbf24;
+            color: #d97706;
             font-size: 11px;
             font-weight: 800;
             padding: 4px 8px;
@@ -1096,7 +1096,7 @@
             gap: 8px;
             font-size: 12px;
             font-weight: 700;
-            color: #94a3b8;
+            color: var(--text-muted);
             cursor: pointer;
             user-select: none;
         }
@@ -1110,7 +1110,7 @@
         .comment-text-body {
             font-size: 14px;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--text-dark);
             line-height: 1.4;
         }
 
@@ -1119,7 +1119,7 @@
             font-weight: 600;
             color: #64748b;
             line-height: 1.5;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
             padding-top: 8px;
         }
 
@@ -1511,24 +1511,52 @@
 
                 </div>
 
-                <!-- Middle Row: Instagram Post Scanner Card -->
-                <div class="dark-panel">
-                    <h3><i data-lucide="instagram"></i> Instagram Post Scanner</h3>
-                    <div style="text-align: left;">
-                        <label class="form-label" for="postId">Instagram Post URL or ID:</label>
-                        <input type="text" id="postId" class="dark-input"
-                            placeholder="Paste Instagram URL or enter post ID">
-                        <div class="dark-info-box">
-                            <strong>Examples:</strong><br>
-                            • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
-                            • Shortcode: DTnrWNNk-WY<br>
-                            • Numeric ID: 17841400455970028
+                <!-- Middle Row: Instagram Post Scanner Card & Auto-Reply Link Triggers -->
+                <div class="stats-grid">
+                    <!-- Instagram Post Scanner -->
+                    <div class="dark-panel">
+                        <h3><i data-lucide="instagram"></i> Instagram Post Scanner</h3>
+                        <div style="text-align: left;">
+                            <label class="form-label" for="postId">Instagram Post URL or ID:</label>
+                            <input type="text" id="postId" class="dark-input"
+                                placeholder="Paste Instagram URL or enter post ID">
+                            <div class="dark-info-box">
+                                <strong>Examples:</strong><br>
+                                • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
+                                • Shortcode: DTnrWNNk-WY<br>
+                                • Numeric ID: 17841400455970028
+                            </div>
+                            <button class="btn-blue-light" onclick="scanInstagramPost()" style="margin-top: 18px;">
+                                <i data-lucide="search"></i> Scan Comments
+                            </button>
+                            <p id="scanStatus" style="margin-top: 12px; color: #047857; font-size: 13px; font-weight: 700;">
+                            </p>
                         </div>
-                        <button class="btn-blue-light" onclick="scanInstagramPost()" style="margin-top: 18px;">
-                            <i data-lucide="search"></i> Scan Comments
-                        </button>
-                        <p id="scanStatus" style="margin-top: 12px; color: #a7f3d0; font-size: 13px; font-weight: 700;">
-                        </p>
+                    </div>
+
+                    <!-- Auto-Reply Link Triggers -->
+                    <div class="dark-panel" style="display: flex; flex-direction: column;">
+                        <h3><i data-lucide="message-square"></i> Auto-Reply Link Triggers</h3>
+                        <div style="text-align: left; flex-grow: 1; display: flex; flex-direction: column;">
+                            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 12px;">
+                                <div>
+                                    <label class="form-label" for="triggerKeywordInput">Keyword:</label>
+                                    <input type="text" id="triggerKeywordInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. link">
+                                </div>
+                                <div>
+                                    <label class="form-label" for="replyTextInput">Reply Text / Link:</label>
+                                    <input type="text" id="replyTextInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. Here is the link: https://google.com">
+                                </div>
+                            </div>
+                            <button class="btn-blue-light" onclick="addAutoReplyRule()" style="margin-top: 6px; margin-bottom: 18px;">
+                                <i data-lucide="plus-circle"></i> Add Trigger Rule
+                            </button>
+
+                            <label class="form-label" style="margin-bottom: 8px;">Active Auto-Replies:</label>
+                            <div id="autoReplyRulesList" style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                                <p style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading triggers...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1570,10 +1598,10 @@
                                 placeholder="Search comments by word..." onkeyup="renderComments()">
 
                             <p id="statusMsg"
-                                style="color: #94a3b8; font-size: 13px; font-weight: 600; margin-bottom: 12px;"></p>
+                                style="color: var(--text-muted); font-size: 13px; font-weight: 600; margin-bottom: 12px;"></p>
 
                             <div id="comments" class="comment-list-container">
-                                <p style="color: #94a3b8; font-size: 13px; text-align: center; padding: 20px 0;">No
+                                <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">No
                                     comments found. Try scanning an Instagram post!</p>
                             </div>
                         </div>
@@ -1618,7 +1646,7 @@
                                 <i data-lucide="save"></i> Save Settings
                             </button>
                             <p id="settingsStatus"
-                                style="margin-top: 12px; color: #a7f3d0; font-size: 13px; font-weight: 700;"></p>
+                                style="margin-top: 12px; color: #047857; font-size: 13px; font-weight: 700;"></p>
 
                             <!-- Connected account details footer inside settings -->
                             <div class="connected-status-banner"
@@ -1686,15 +1714,100 @@
         const instagramUrl = "/api/scan-instagram/";
         const clearCommentsUrl = "/api/comments/clear/";
         const deleteInstagramUrl = "/api/delete-instagram-comment/";
+        const autoReplyUrl = "/api/autoreply/";
         let commentsCache = [];
         let currentFilter = "default";
 
-        // Initialize Lucide Icons
+        // Initialize Lucide Icons & Auto-Reply Rules
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) {
                 window.lucide.createIcons();
             }
+            loadAutoReplyRules();
         });
+
+        function loadAutoReplyRules() {
+            fetch(autoReplyUrl)
+                .then(res => res.json())
+                .then(data => {
+                    const listContainer = document.getElementById("autoReplyRulesList");
+                    if (!listContainer) return;
+                    listContainer.innerHTML = "";
+                    if (data.length === 0) {
+                        listContainer.innerHTML = `<p style="color:var(--text-muted); font-size:13px; font-style:italic; margin: 4px 0 0 0;">No triggers configured yet.</p>`;
+                        return;
+                    }
+                    data.forEach(rule => {
+                        const div = document.createElement("div");
+                        div.style = "display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border: 2px solid var(--border-black); border-radius: 16px; background-color: #ffffff; box-shadow: 2px 2px 0px var(--border-black);";
+                        div.innerHTML = `
+                            <div style="text-align: left; flex-grow: 1; min-width: 0; padding-right: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <span style="font-weight: 800; background-color: var(--neon-lime); padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">"${rule.trigger_keyword}"</span>
+                                <span style="font-size: 12px; font-weight: 700; color: var(--text-dark);">${rule.reply_text}</span>
+                            </div>
+                            <button class="btn-pink-red" style="padding: 4px 10px; font-size: 11px; margin: 0; box-shadow: 1.5px 1.5px 0px var(--border-black); flex-shrink: 0;" onclick="deleteAutoReplyRule(${rule.id})">Delete</button>
+                        `;
+                        listContainer.appendChild(div);
+                    });
+                })
+                .catch(err => console.error("Error loading auto-reply rules:", err));
+        }
+
+        function addAutoReplyRule() {
+            const keywordInput = document.getElementById("triggerKeywordInput");
+            const replyInput = document.getElementById("replyTextInput");
+            const keyword = keywordInput ? keywordInput.value.trim() : "";
+            const reply = replyInput ? replyInput.value.trim() : "";
+
+            if (!keyword || !reply) {
+                alert("Please fill in both the trigger keyword and the reply text/link.");
+                return;
+            }
+
+            fetch(autoReplyUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                },
+                body: JSON.stringify({ trigger_keyword: keyword, reply_text: reply })
+            })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || "Failed to add trigger.");
+                    }
+                    return data;
+                })
+                .then(() => {
+                    if (keywordInput) keywordInput.value = "";
+                    if (replyInput) replyInput.value = "";
+                    loadAutoReplyRules();
+                })
+                .catch(err => {
+                    alert(err.message);
+                });
+        }
+
+        function deleteAutoReplyRule(ruleId) {
+            if (!confirm("Are you sure you want to delete this auto-reply trigger?")) {
+                return;
+            }
+            fetch(`${autoReplyUrl}${ruleId}/`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRFToken": getCookie('csrftoken')
+                }
+            })
+                .then(res => {
+                    if (res.ok) {
+                        loadAutoReplyRules();
+                    } else {
+                        alert("Failed to delete rule.");
+                    }
+                })
+                .catch(err => console.error("Error deleting rule:", err));
+        }
 
         function alertMessage(message, confirmUrl = '/logout/') {
             showPopup(message, () => { window.location.href = confirmUrl; });
@@ -1891,7 +2004,7 @@
             const searchQuery = (document.getElementById("searchInput") ? document.getElementById("searchInput").value.toLowerCase() : "");
 
             if (commentsCache.length === 0) {
-                container.innerHTML = `<p style="color:#94a3b8; font-size:13px; text-align:center; padding:20px 0;">No comments found. Try scanning an Instagram post!</p>`;
+                container.innerHTML = `<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px 0;">No comments found. Try scanning an Instagram post!</p>`;
                 if (document.getElementById("deleteSearchedBtn")) document.getElementById("deleteSearchedBtn").style.display = 'none';
                 return;
             }
@@ -1922,7 +2035,7 @@
             }
 
             if (sorted.length === 0 && searchQuery) {
-                container.innerHTML = `<p style="color:#94a3b8; font-size:13px; text-align:center; padding:20px 0;">No matching comments found for your search.</p>`;
+                container.innerHTML = `<p style="color:var(--text-muted); font-size:13px; text-align:center; padding:20px 0;">No matching comments found for your search.</p>`;
                 return;
             }
 

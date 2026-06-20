@@ -292,4 +292,34 @@ class TieredModerationAndGroqTests(TestCase):
         self.assertEqual(result["reason"], "spam_keyword")
         self.assertEqual(result["sentiment"], "neutral")
 
+    def test_sarcastic_backhanded_compliment_is_detected(self):
+        from social_help.comments.instagram_service import InstagramService
+        service = InstagramService()
+
+        result = service._sarcasm_heuristic_fallback(
+            "Wow... groundbreaking content. Truly the cure for insomnia. "
+            "Thanks for reminding me why the scroll button exists."
+        )
+
+        self.assertTrue(result["detected"])
+        self.assertGreaterEqual(result["confidence"], 0.75)
+
+    @patch("social_help.comments.instagram_service.InstagramService.analyze_toxicity_hf")
+    @patch("social_help.comments.instagram_service.InstagramService.detect_sarcasm")
+    def test_scan_comment_deletes_high_confidence_sarcasm_when_hf_is_clean(self, mock_sarcasm, mock_hf_toxicity):
+        from social_help.comments.instagram_service import InstagramService
+        service = InstagramService()
+        mock_hf_toxicity.return_value = 0.05
+        mock_sarcasm.return_value = {"detected": True, "confidence": 0.95}
+
+        result = service.scan_comment(
+            "Wow... groundbreaking content. Truly the cure for insomnia. "
+            "Thanks for reminding me why the scroll button exists.",
+            user=self.user,
+        )
+
+        self.assertEqual(result["decision"], "delete")
+        self.assertEqual(result["reason"], "vader_ai_high_toxicity")
+        self.assertTrue(result["sarcasm_detected"])
+        self.assertGreaterEqual(result["toxicity_score"], 0.85)
 

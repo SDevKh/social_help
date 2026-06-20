@@ -132,6 +132,15 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s profile"
 
+class AutoReplyRule(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auto_reply_rules')
+    trigger_keyword = models.CharField(max_length=100, help_text="Keyword that triggers the auto-reply (case-insensitive)")
+    reply_text = models.TextField(help_text="The message or link to reply with")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.trigger_keyword} -> {self.reply_text[:30]}"
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -144,3 +153,4 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
     profile, created = UserProfile.objects.get_or_create(user=instance)
     profile.save()
+

@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from .serializers import CommentSerializer
-from .models import Comment, ModerationSetting, InstagramAccount, Subscription
+from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule
 from .instagram_service import InstagramService
 from .forms import SignUpForm
 
@@ -1355,3 +1355,52 @@ class GumroadWebhook(APIView):
         except Exception as exc:
             logger.exception("Error processing Gumroad webhook")
             return Response({"error": str(exc)}, status=500)
+
+
+class AutoReplyRuleListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
+
+    def get(self, request):
+        rules = AutoReplyRule.objects.filter(user=request.user).order_by('-created_at')
+        data = [
+            {
+                "id": rule.id,
+                "trigger_keyword": rule.trigger_keyword,
+                "reply_text": rule.reply_text,
+                "created_at": rule.created_at.isoformat(),
+            }
+            for rule in rules
+        ]
+        return Response(data)
+
+    def post(self, request):
+        trigger_keyword = request.data.get("trigger_keyword", "").strip()
+        reply_text = request.data.get("reply_text", "").strip()
+
+        if not trigger_keyword or not reply_text:
+            return Response({"error": "Both trigger keyword and reply text/link are required."}, status=400)
+
+        if AutoReplyRule.objects.filter(user=request.user, trigger_keyword__iexact=trigger_keyword).exists():
+            return Response({"error": f"An auto-reply trigger for '{trigger_keyword}' already exists."}, status=400)
+
+        rule = AutoReplyRule.objects.create(
+            user=request.user,
+            trigger_keyword=trigger_keyword,
+            reply_text=reply_text
+        )
+        return Response({
+            "id": rule.id,
+            "trigger_keyword": rule.trigger_keyword,
+            "reply_text": rule.reply_text,
+            "message": "Auto-reply rule created successfully."
+        }, status=201)
+
+
+class AutoReplyRuleDestroyAPIView(APIView):
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
+
+    def delete(self, request, rule_id):
+        rule = get_object_or_404(AutoReplyRule, id=rule_id, user=request.user)
+        rule.delete()
+        return Response({"message": "Auto-reply rule deleted successfully."})
+

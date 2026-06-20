@@ -13,6 +13,8 @@ from .views import (
     GumroadCheckoutURL,
     ResolveCommentWithGroq,
     ResolveAllUncertainComments,
+    AutoReplyRuleListCreateAPIView,
+    AutoReplyRuleDestroyAPIView,
 )
 from .polar_views import PolarCheckoutURL, PolarWebhookAPI
 
@@ -32,4 +34,6 @@ urlpatterns = [
     path("gumroad/checkout-url/", GumroadCheckoutURL.as_view()),
     path("polar/checkout/", PolarCheckoutURL.as_view()),
     path("polar/webhook/", PolarWebhookAPI.as_view()),
+    path("autoreply/", AutoReplyRuleListCreateAPIView.as_view()),
+    path("autoreply/<int:rule_id>/", AutoReplyRuleDestroyAPIView.as_view()),
 ]

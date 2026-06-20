@@ -3,7 +3,7 @@ import random
 import requests
 from django.conf import settings
 from django.core.cache import cache
-from .models import Comment, ModerationSetting
+from .models import Comment, ModerationSetting, AutoReplyRule
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 
@@ -173,6 +173,7 @@ class InstagramService:
         Fallback sarcasm detection using keyword/phrase heuristics.
         """
         text_lower = text.lower().strip()
+        words_cleaned = set(re.findall(r"\b\w+\b", text_lower))
 
         # Common sarcastic phrases and patterns
         sarcastic_phrases = [
@@ -182,13 +183,15 @@ class InstagramService:
             "oh really", "really", "wow", "amazing", "fantastic",
             "love it", "so good", "best ever", "perfect",
             "what a genius", "good job ruining", "as if", "so excited for nothing",
-            "not upto the mark", "not up to the mark"
+            "not upto the mark", "not up to the mark", "groundbreaking content",
+            "cure for insomnia", "thanks for reminding me", "scroll button exists",
         ]
 
         # Sarcastic indicators (often paired with negative context)
         sarcastic_indicators = [
             "not", "never", "always", "everyone", "nobody",
-            "obviously", "clearly", "surely", "definitely", "should"
+            "obviously", "clearly", "surely", "definitely", "should",
+            "thanks", "thank you", "wow", "truly", "really"
         ]
 
         # Excessive punctuation often signals sarcasm
@@ -207,7 +210,13 @@ class InstagramService:
                 score += 0.4
 
         # Check for sarcastic indicators near negative words
-        negative_words = ["bad", "worst", "terrible", "awful", "hate", "stupid", "idiot", "fail", "wrong", "exist", "world", "ruin", "garbage"]
+        negative_words = [
+            "bad", "worst", "terrible", "awful", "hate", "stupid", "idiot",
+            "fail", "wrong", "exist", "exists", "world", "ruin", "garbage",
+            "trash", "boring", "bored", "insomnia", "sleep", "snooze", "dull",
+            "pointless", "useless", "waste", "annoying", "reminding", "scroll",
+            "button"
+        ]
         for indicator in sarcastic_indicators:
             for neg in negative_words:
                 if indicator in text_lower and neg in text_lower:
@@ -227,12 +236,33 @@ class InstagramService:
             if emoji in text:
                 score += 0.25
 
+        unicode_sarcastic_emojis = [
+            "\U0001f644", "\U0001f612", "\U0001f60f", "\U0001f921",
+            "\U0001f480", "\U0001f602", "\U0001f923", "\U0001f44f",
+            "\U0001f44d"
+        ]
+        for emoji in unicode_sarcastic_emojis:
+            if emoji in text:
+                score += 0.25
+
         # Contrast detection: positive words near negative words
-        positive_words = ["love", "great", "amazing", "awesome", "perfect", "best", "good", "nice"]
-        has_positive = any(w in text_lower for w in positive_words)
-        has_negative = any(w in text_lower for w in negative_words)
+        positive_words = [
+            "love", "great", "amazing", "awesome", "perfect", "best", "good",
+            "nice", "wow", "groundbreaking", "brilliant", "genius", "thanks",
+            "thank", "truly", "cure"
+        ]
+        has_positive = any(w in words_cleaned or w in text_lower for w in positive_words)
+        has_negative = any(w in words_cleaned or w in text_lower for w in negative_words)
         if has_positive and has_negative:
             score += 0.35
+
+        backhanded_compliment_patterns = [
+            r"\b(wow|amazing|great|brilliant|groundbreaking|genius)\b.{0,90}\b(insomnia|sleep|snooze|boring|dull|waste|trash|scroll)\b",
+            r"\b(thanks|thank you)\b.{0,90}\b(reminding|scroll|exist|exists|boring|waste)\b",
+            r"\b(cure for|solution for)\b.{0,40}\b(insomnia|sleep)\b",
+        ]
+        if any(re.search(pattern, text_lower) for pattern in backhanded_compliment_patterns):
+            score += 0.55
 
         confidence = min(score, 1.0)
         return {"detected": confidence > 0.5, "confidence": round(confidence, 2)}
@@ -263,6 +293,8 @@ class InstagramService:
                 
             if sarcasm_detected:
                 toxicity_score += 0.45
+                if sarcasm_confidence >= 0.75:
+                    toxicity_score = max(toxicity_score, 0.85)
 
             toxicity_score = min(toxicity_score, 1.0)
 
@@ -272,7 +304,7 @@ class InstagramService:
                 "sarcasm_confidence": round(sarcasm_confidence, 2),
                 "toxicity_score": round(toxicity_score, 2),
                 "decision": "delete" if toxicity_score >= 0.6 else "keep",
-                "reason": "sarcasm_ai" if sarcasm_detected else "vader_ai",
+                "reason": "vader_ai",
             }
         except Exception as e:
             print(f"[ERROR] Vader AI error: {e}")
@@ -497,6 +529,12 @@ class InstagramService:
         else:
             source = "hf_ai"
 
+        if vader_analysis and vader_analysis.get("sarcasm_detected"):
+            vader_score = vader_analysis.get("toxicity_score", 0.0)
+            if vader_score >= threshold:
+                score = max(score, vader_score)
+                source = "vader_ai"
+
         # Determine decision based on threshold and margin
         margin = 0.15
         lower_bound = max(0.0, threshold - margin)
@@ -538,12 +576,36 @@ class InstagramService:
         except Exception as exc:
             return {"success": False, "error": str(exc)}
 
+    def reply_to_comment(self, comment_id, message):
+        if not comment_id or not message:
+            return {"success": False, "error": "comment_id and message are required"}
+        url = f"{self.base_url}/{comment_id}/replies"
+        params = {
+            "message": message,
+            "access_token": self.page_token
+        }
+        try:
+            res = requests.post(url, data=params, timeout=10)
+            data = res.json()
+            if "error" in data:
+                print(f"[ERROR] Failed to reply to Instagram comment {comment_id}: {data['error']['message']}")
+                return {"success": False, "error": data["error"]["message"]}
+            print(f"[INFO] Successfully replied to Instagram comment {comment_id}")
+            return {"success": True, "id": data.get("id")}
+        except Exception as e:
+            print(f"[ERROR] Reply request failed: {e}")
+            return {"success": False, "error": str(e)}
+
     def scan_instagram_comments(self, post_url, user=None):
         comments = self.fetch_comments(post_url)
         if isinstance(comments, dict) and "error" in comments:
             return comments
 
         results = []
+
+        auto_reply_rules = []
+        if user:
+            auto_reply_rules = list(AutoReplyRule.objects.filter(user=user))
 
         for comment in comments:
             comment_text = comment.get("text") or comment.get("message", "")
@@ -552,12 +614,27 @@ class InstagramService:
 
             analysis = self.scan_comment(comment_text, user=user)
 
+            replied = False
+            reply_id = None
+            if auto_reply_rules and analysis["decision"] != "delete":
+                comment_text_lower = comment_text.lower()
+                for rule in auto_reply_rules:
+                    trigger = rule.trigger_keyword.strip().lower()
+                    if trigger and (re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower):
+                        reply_res = self.reply_to_comment(comment["id"], rule.reply_text)
+                        if reply_res.get("success"):
+                            replied = True
+                            reply_id = reply_res.get("id")
+                            break
+
             results.append({
                 "instagram_id": comment["id"],
                 "username": comment.get("username", ""),
                 "timestamp": comment.get("timestamp", ""),
                 "comment_text": comment_text,
                 "deleted": False,
+                "replied": replied,
+                "reply_id": reply_id,
                 **analysis,
             })
 
