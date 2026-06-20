@@ -1332,6 +1332,9 @@
                 <a href="/dashboard/" class="menu-item active">
                     <i data-lucide="layout-dashboard"></i> Dashboard
                 </a>
+                <a href="#auto-reply-card" class="menu-item" onclick="scrollToAutoReply(event)">
+                    <i data-lucide="message-circle"></i> Auto Reply
+                </a>
                 <a href="/demo/" class="menu-item">
                     <i data-lucide="sparkles"></i> AI Content Generator
                 </a>
@@ -1480,10 +1483,9 @@
                         <div class="enhancements-row">
                             <!-- Widget 1: Toxic Score -->
                             <div class="enhancement-widget">
-                                <div class="widget-score-title">Toxic Score<br>{{ avg_toxicity_pct }}% {{ toxicity_label
-                                    }}</div>
+                                <div class="widget-score-title">Toxic Score<br><span id="toxicScoreText">{{ avg_toxicity_pct }}% {{ toxicity_label }}</span></div>
                                 <div class="widget-progress-container">
-                                    <div class="widget-progress-fill" style="width: {{ avg_toxicity_pct }}%;"></div>
+                                    <div id="toxicScoreFill" class="widget-progress-fill" style="width: {{ avg_toxicity_pct }}%;"></div>
                                 </div>
                             </div>
                             <!-- Widget 2: Screenshot/Preview Graph -->
@@ -1494,16 +1496,16 @@
                             </div>
                             <!-- Widget 3: Sarcasm Score -->
                             <div class="enhancement-widget">
-                                <div class="widget-score-title">Sarcasm Score<br>{{ sarcasm_pct }}% {{ sarcasm_label }}</div>
+                                <div class="widget-score-title">Sarcasm Score<br><span id="sarcasmScoreText">{{ sarcasm_pct }}% {{ sarcasm_label }}</span></div>
                                 <div class="widget-progress-container">
-                                    <div class="widget-progress-fill" style="width: {{ sarcasm_pct }}%;"></div>
+                                    <div id="sarcasmScoreFill" class="widget-progress-fill" style="width: {{ sarcasm_pct }}%;"></div>
                                 </div>
                             </div>
                             <!-- Widget 4: Positive Sentiment Score -->
                             <div class="enhancement-widget">
-                                <div class="widget-score-title">Positive Sentiment<br>{{ positive_pct }}% {{ positive_label }}</div>
+                                <div class="widget-score-title">Positive Sentiment<br><span id="positiveScoreText">{{ positive_pct }}% {{ positive_label }}</span></div>
                                 <div class="widget-progress-container">
-                                    <div class="widget-progress-fill" style="width: {{ positive_pct }}%;"></div>
+                                    <div id="positiveScoreFill" class="widget-progress-fill" style="width: {{ positive_pct }}%;"></div>
                                 </div>
                             </div>
                         </div>
@@ -1535,13 +1537,20 @@
                     </div>
 
                     <!-- Auto-Reply Link Triggers -->
-                    <div class="dark-panel" style="display: flex; flex-direction: column;">
+                    <div id="auto-reply-card" class="dark-panel" style="display: flex; flex-direction: column;">
                         <h3><i data-lucide="message-square"></i> Auto-Reply Link Triggers</h3>
                         <div style="text-align: left; flex-grow: 1; display: flex; flex-direction: column;">
-                            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 12px;">
+                            <div style="display: grid; grid-template-columns: 1.2fr 1.2fr 2.6fr; gap: 12px; margin-bottom: 12px;">
                                 <div>
                                     <label class="form-label" for="triggerKeywordInput">Keyword:</label>
                                     <input type="text" id="triggerKeywordInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. link">
+                                </div>
+                                <div>
+                                    <label class="form-label" for="replyTypeSelect">Reply Type:</label>
+                                    <select id="replyTypeSelect" class="dark-input" style="margin-bottom: 0; padding: 12px 18px; border-radius: 9999px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 20px top 50%; background-size: 10px auto;">
+                                        <option value="public">Comment</option>
+                                        <option value="dm">Direct Msg (DM)</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="form-label" for="replyTextInput">Reply Text / Link:</label>
@@ -1740,9 +1749,14 @@
                     data.forEach(rule => {
                         const div = document.createElement("div");
                         div.style = "display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border: 2px solid var(--border-black); border-radius: 16px; background-color: #ffffff; box-shadow: 2px 2px 0px var(--border-black);";
+                        const isDm = rule.reply_type === "dm";
+                        const badgeBg = isDm ? "var(--accent-purple)" : "var(--neon-lime)";
+                        const badgeColor = isDm ? "#ffffff" : "var(--text-dark)";
+                        const typeLabel = isDm ? "DM" : "Comment";
                         div.innerHTML = `
                             <div style="text-align: left; flex-grow: 1; min-width: 0; padding-right: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <span style="font-weight: 800; background-color: var(--neon-lime); padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">"${rule.trigger_keyword}"</span>
+                                <span style="font-weight: 800; background-color: ${badgeBg}; color: ${badgeColor}; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 10px; margin-right: 6px; display: inline-block;">${typeLabel}</span>
+                                <span style="font-weight: 800; background-color: #f1f5f9; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">"${rule.trigger_keyword}"</span>
                                 <span style="font-size: 12px; font-weight: 700; color: var(--text-dark);">${rule.reply_text}</span>
                             </div>
                             <button class="btn-pink-red" style="padding: 4px 10px; font-size: 11px; margin: 0; box-shadow: 1.5px 1.5px 0px var(--border-black); flex-shrink: 0;" onclick="deleteAutoReplyRule(${rule.id})">Delete</button>
@@ -1756,8 +1770,10 @@
         function addAutoReplyRule() {
             const keywordInput = document.getElementById("triggerKeywordInput");
             const replyInput = document.getElementById("replyTextInput");
+            const typeSelect = document.getElementById("replyTypeSelect");
             const keyword = keywordInput ? keywordInput.value.trim() : "";
             const reply = replyInput ? replyInput.value.trim() : "";
+            const replyType = typeSelect ? typeSelect.value : "public";
 
             if (!keyword || !reply) {
                 alert("Please fill in both the trigger keyword and the reply text/link.");
@@ -1770,7 +1786,7 @@
                     "Content-Type": "application/json",
                     "X-CSRFToken": getCookie('csrftoken')
                 },
-                body: JSON.stringify({ trigger_keyword: keyword, reply_text: reply })
+                body: JSON.stringify({ trigger_keyword: keyword, reply_text: reply, reply_type: replyType })
             })
                 .then(async res => {
                     const data = await res.json();
@@ -1782,6 +1798,7 @@
                 .then(() => {
                     if (keywordInput) keywordInput.value = "";
                     if (replyInput) replyInput.value = "";
+                    if (typeSelect) typeSelect.value = "public";
                     loadAutoReplyRules();
                 })
                 .catch(err => {
@@ -1807,6 +1824,21 @@
                     }
                 })
                 .catch(err => console.error("Error deleting rule:", err));
+        }
+
+        function scrollToAutoReply(e) {
+            e.preventDefault();
+            const el = document.getElementById("auto-reply-card");
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth" });
+                el.style.transition = "border-color 0.5s ease, box-shadow 0.5s ease";
+                el.style.borderColor = "var(--accent-purple)";
+                el.style.boxShadow = "8px 8px 0px var(--accent-purple)";
+                setTimeout(() => {
+                    el.style.borderColor = "var(--border-black)";
+                    el.style.boxShadow = "6px 6px 0px var(--border-black)";
+                }, 2000);
+            }
         }
 
         function alertMessage(message, confirmUrl = '/logout/') {
@@ -1974,8 +2006,6 @@
                 .then(data => {
                     document.getElementById("scanStatus").innerText = "✅ " + data.message;
                     loadComments();
-                    // Reload statistics on page to update visual numbers dynamically
-                    setTimeout(() => window.location.reload(), 1500);
                 })
                 .catch(err => {
                     document.getElementById("scanStatus").innerText = "❌ " + err.message;
@@ -1992,8 +2022,56 @@
                 .then(res => res.json())
                 .then(data => {
                     commentsCache = Array.isArray(data) ? data : [];
+                    updateAiEnhancements(commentsCache);
                     renderComments();
                 });
+        }
+
+        function getScoreLabel(percent, higherIsBetter) {
+            if (higherIsBetter) {
+                if (percent > 70) return "Good";
+                if (percent > 40) return "Fair";
+                return "Poor";
+            }
+            if (percent < 30) return "Good";
+            if (percent < 60) return "Fair";
+            return "Poor";
+        }
+
+        function setEnhancementMetric(textId, fillId, percent, label) {
+            const textEl = document.getElementById(textId);
+            const fillEl = document.getElementById(fillId);
+            const boundedPercent = Math.max(0, Math.min(100, Number(percent) || 0));
+            if (textEl) {
+                textEl.innerText = `${boundedPercent}% ${label}`;
+            }
+            if (fillEl) {
+                fillEl.style.width = `${boundedPercent}%`;
+            }
+        }
+
+        function updateAiEnhancements(items) {
+            const comments = Array.isArray(items) ? items : [];
+            const total = comments.length;
+
+            if (total === 0) {
+                setEnhancementMetric("toxicScoreText", "toxicScoreFill", 0, "Good");
+                setEnhancementMetric("sarcasmScoreText", "sarcasmScoreFill", 0, "Good");
+                setEnhancementMetric("positiveScoreText", "positiveScoreFill", 0, "Poor");
+                return;
+            }
+
+            const toxicityTotal = comments.reduce((sum, item) => {
+                const score = Number(item.toxicity_score);
+                return sum + (Number.isFinite(score) ? score : 0);
+            }, 0);
+            const toxicPercent = Math.round((toxicityTotal / total) * 100);
+            const sarcasmPercent = Math.round((comments.filter(item => item.sarcasm_detected).length / total) * 100);
+            const positivePercent = Math.round((comments.filter(item => item.sentiment === "positive").length / total) * 100);
+
+            setEnhancementMetric("toxicScoreText", "toxicScoreFill", toxicPercent, getScoreLabel(toxicPercent, false));
+            setEnhancementMetric("sarcasmScoreText", "sarcasmScoreFill", sarcasmPercent, getScoreLabel(sarcasmPercent, false));
+            setEnhancementMetric("positiveScoreText", "positiveScoreFill", positivePercent, getScoreLabel(positivePercent, true));
         }
 
         // Render Redesigned Comments List

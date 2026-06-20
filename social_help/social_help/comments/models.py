@@ -133,13 +133,23 @@ class UserProfile(models.Model):
         return f"{self.user.username}'s profile"
 
 class AutoReplyRule(models.Model):
+    REPLY_TYPE_CHOICES = [
+        ("public", "Public Comment"),
+        ("dm", "Direct Message (DM)"),
+    ]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='auto_reply_rules')
     trigger_keyword = models.CharField(max_length=100, help_text="Keyword that triggers the auto-reply (case-insensitive)")
     reply_text = models.TextField(help_text="The message or link to reply with")
+    reply_type = models.CharField(
+        max_length=10,
+        choices=REPLY_TYPE_CHOICES,
+        default="public",
+        help_text="Whether to reply publicly or send a private DM"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username}: {self.trigger_keyword} -> {self.reply_text[:30]}"
+        return f"{self.user.username}: {self.trigger_keyword} -> {self.reply_text[:30]} ({self.reply_type})"
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver

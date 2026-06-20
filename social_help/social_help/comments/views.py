@@ -282,21 +282,12 @@ def dashboard(request):
 
     positive_comments = comments_qs.filter(sentiment="positive").count()
 
-    # Use mock fallback values if database is currently empty (matches dashboard post-purchase preview)
-    if total_comments == 0:
-        total_comments = 19299
-        toxic_comments = 2383
-        sarcasm_comments = 10229
-        promotion_comments = 6091
-        review_comments = 964
-        positive_comments = 11000
-
     import django.db.models as db_models
     avg_toxicity = comments_qs.aggregate(db_models.Avg('toxicity_score'))['toxicity_score__avg']
     if avg_toxicity is not None:
         avg_toxicity_pct = int(avg_toxicity * 100)
     else:
-        avg_toxicity_pct = 57  # Fallback matching the "57%" mockup value
+        avg_toxicity_pct = 0
         
     if avg_toxicity_pct < 30:
         toxicity_label = "Good"
@@ -1367,6 +1358,7 @@ class AutoReplyRuleListCreateAPIView(APIView):
                 "id": rule.id,
                 "trigger_keyword": rule.trigger_keyword,
                 "reply_text": rule.reply_text,
+                "reply_type": rule.reply_type,
                 "created_at": rule.created_at.isoformat(),
             }
             for rule in rules
@@ -1376,9 +1368,13 @@ class AutoReplyRuleListCreateAPIView(APIView):
     def post(self, request):
         trigger_keyword = request.data.get("trigger_keyword", "").strip()
         reply_text = request.data.get("reply_text", "").strip()
+        reply_type = request.data.get("reply_type", "public").strip().lower()
 
         if not trigger_keyword or not reply_text:
             return Response({"error": "Both trigger keyword and reply text/link are required."}, status=400)
+
+        if reply_type not in ["public", "dm"]:
+            return Response({"error": "Invalid reply type. Must be 'public' or 'dm'."}, status=400)
 
         if AutoReplyRule.objects.filter(user=request.user, trigger_keyword__iexact=trigger_keyword).exists():
             return Response({"error": f"An auto-reply trigger for '{trigger_keyword}' already exists."}, status=400)
@@ -1386,12 +1382,14 @@ class AutoReplyRuleListCreateAPIView(APIView):
         rule = AutoReplyRule.objects.create(
             user=request.user,
             trigger_keyword=trigger_keyword,
-            reply_text=reply_text
+            reply_text=reply_text,
+            reply_type=reply_type
         )
         return Response({
             "id": rule.id,
             "trigger_keyword": rule.trigger_keyword,
             "reply_text": rule.reply_text,
+            "reply_type": rule.reply_type,
             "message": "Auto-reply rule created successfully."
         }, status=201)
 
@@ -1403,4 +1401,104 @@ class AutoReplyRuleDestroyAPIView(APIView):
         rule = get_object_or_404(AutoReplyRule, id=rule_id, user=request.user)
         rule.delete()
         return Response({"message": "Auto-reply rule deleted successfully."})
+
+
+from django.utils.decorators import method_decorator
+import json
+import re
+
+@method_decorator(csrf_exempt, name='dispatch')
+class InstagramWebhookView(APIView):
+    permission_classes = []  # Public endpoint for Meta webhook calls
+
+    def get(self, request):
+        """
+        Meta Webhook Verification (Hub Verification)
+        """
+        verify_token = os.getenv("INSTAGRAM_WEBHOOK_VERIFY_TOKEN", "socialfuse_verify_token")
+        mode = request.GET.get("hub.mode")
+        token = request.GET.get("hub.verify_token")
+        challenge = request.GET.get("hub.challenge")
+
+        if mode == "subscribe" and token == verify_token:
+            logger.info("Instagram Webhook verified successfully.")
+            return HttpResponse(challenge)
+        logger.warning("Instagram Webhook verification failed.")
+        return HttpResponse("Verification failed", status=403)
+
+    def post(self, request):
+        """
+        Receive real-time comment events from Instagram
+        """
+        try:
+            payload = json.loads(request.body.decode('utf-8'))
+            logger.info("Received Instagram Webhook: %s", payload)
+
+            for entry in payload.get("entry", []):
+                ig_business_id = entry.get("id")
+                
+                # Find connected account
+                account = InstagramAccount.objects.filter(ig_business_id=ig_business_id).first()
+                if not account:
+                    continue
+                
+                user = account.user
+                service = InstagramService(account=account)
+                
+                for change in entry.get("changes", []):
+                    if change.get("field") == "comments":
+                        value = change.get("value", {})
+                        comment_id = value.get("id")
+                        comment_text = value.get("text", "")
+                        
+                        if not comment_id or not comment_text:
+                            continue
+
+                        # 1. Moderate comment toxicity & sentiment
+                        analysis = service.scan_comment(comment_text, user=user)
+
+                        # 2. Check auto-reply rules (Public Comment or DM)
+                        replied = False
+                        reply_id = None
+                        reply_type_sent = None
+
+                        auto_reply_rules = list(AutoReplyRule.objects.filter(user=user))
+                        if auto_reply_rules and analysis["decision"] != "delete":
+                            comment_text_lower = comment_text.lower()
+                            for rule in auto_reply_rules:
+                                trigger = rule.trigger_keyword.strip().lower()
+                                if trigger and (re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower):
+                                    rule_type = getattr(rule, "reply_type", "public")
+                                    if rule_type == "dm":
+                                        reply_res = service.send_private_reply(comment_id, rule.reply_text)
+                                    else:
+                                        reply_res = service.reply_to_comment(comment_id, rule.reply_text)
+                                    
+                                    if reply_res.get("success"):
+                                        replied = True
+                                        reply_id = reply_res.get("id")
+                                        reply_type_sent = rule_type
+                                        break
+
+                        # 3. Save comment to local database
+                        Comment.objects.create(
+                            user=user,
+                            comment_text=comment_text,
+                            toxicity_score=analysis["toxicity_score"],
+                            decision=analysis["decision"],
+                            reason=analysis["reason"],
+                            instagram_id=comment_id,
+                            sentiment=analysis["sentiment"],
+                            sarcasm_detected=analysis["sarcasm_detected"],
+                            sarcasm_confidence=analysis["sarcasm_confidence"],
+                        )
+                        
+                        # 4. If flagged as delete, auto-delete it on Instagram
+                        if analysis["decision"] == "delete":
+                            service.delete_instagram_comment(comment_id)
+            
+            return Response({"success": True})
+        except Exception as e:
+            logger.exception("Error processing Instagram webhook event")
+            return Response({"error": str(e)}, status=500)
 

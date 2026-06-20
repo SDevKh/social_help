@@ -12,10 +12,12 @@ class InstagramService:
         if account:
             self.page_token = account.page_access_token
             self.ig_business_id = account.ig_business_id
+            self.page_id = getattr(account, "page_id", "")
             auth_method = getattr(account, "auth_method", "")
         else:
             self.page_token = getattr(settings, "INSTAGRAM_PAGE_ACCESS_TOKEN", "")
             self.ig_business_id = getattr(settings, "INSTAGRAM_BUSINESS_ACCOUNT_ID", "")
+            self.page_id = getattr(settings, "INSTAGRAM_PAGE_ID", "")
             auth_method = ""
 
         if auth_method == "instagram_login":
@@ -596,6 +598,40 @@ class InstagramService:
             print(f"[ERROR] Reply request failed: {e}")
             return {"success": False, "error": str(e)}
 
+    def send_private_reply(self, comment_id, message):
+        if not getattr(self, "page_id", ""):
+            print("[ERROR] Page ID is not configured. Cannot send private reply (DM).")
+            return {"success": False, "error": "Facebook Page ID not configured."}
+        if not comment_id or not message:
+            return {"success": False, "error": "comment_id and message are required"}
+        
+        url = f"https://graph.facebook.com/v20.0/{self.page_id}/messages"
+        headers = {
+            "Content-Type": "application/json"
+        }
+        params = {
+            "access_token": self.page_token
+        }
+        payload = {
+            "recipient": {
+                "comment_id": comment_id
+            },
+            "message": {
+                "text": message
+            }
+        }
+        try:
+            res = requests.post(url, params=params, json=payload, headers=headers, timeout=10)
+            data = res.json()
+            if "error" in data:
+                print(f"[ERROR] Failed to send DM reply to comment {comment_id}: {data['error']['message']}")
+                return {"success": False, "error": data["error"]["message"]}
+            print(f"[INFO] Successfully sent private reply (DM) to comment {comment_id}")
+            return {"success": True, "id": data.get("message_id")}
+        except Exception as e:
+            print(f"[ERROR] Send DM reply request failed: {e}")
+            return {"success": False, "error": str(e)}
+
     def scan_instagram_comments(self, post_url, user=None):
         comments = self.fetch_comments(post_url)
         if isinstance(comments, dict) and "error" in comments:
@@ -616,15 +652,21 @@ class InstagramService:
 
             replied = False
             reply_id = None
+            reply_type_sent = None
             if auto_reply_rules and analysis["decision"] != "delete":
                 comment_text_lower = comment_text.lower()
                 for rule in auto_reply_rules:
                     trigger = rule.trigger_keyword.strip().lower()
                     if trigger and (re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower):
-                        reply_res = self.reply_to_comment(comment["id"], rule.reply_text)
+                        rule_type = getattr(rule, "reply_type", "public")
+                        if rule_type == "dm":
+                            reply_res = self.send_private_reply(comment["id"], rule.reply_text)
+                        else:
+                            reply_res = self.reply_to_comment(comment["id"], rule.reply_text)
                         if reply_res.get("success"):
                             replied = True
                             reply_id = reply_res.get("id")
+                            reply_type_sent = rule_type
                             break
 
             results.append({
@@ -635,6 +677,7 @@ class InstagramService:
                 "deleted": False,
                 "replied": replied,
                 "reply_id": reply_id,
+                "reply_type": reply_type_sent,
                 **analysis,
             })
 
