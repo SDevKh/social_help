@@ -66,9 +66,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'social_help.middleware.AdminLoginProtectionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'social_help.urls'
 
@@ -188,3 +190,8 @@ GUMROAD_WEBHOOK_SECRET = os.getenv("GUMROAD_WEBHOOK_SECRET", "replace-with-secur
 POLAR_ACCESS_TOKEN = os.getenv("POLAR_ACCESS_TOKEN", "")
 POLAR_ORGANIZATION_ID = os.getenv("POLAR_ORGANIZATION_ID", "")
 POLAR_WEBHOOK_SECRET = os.getenv("POLAR_WEBHOOK_SECRET", "")
+
+# Admin Login Protection Settings
+ADMIN_BASIC_AUTH_USERNAME = os.getenv('ADMIN_BASIC_AUTH_USERNAME', 'admin')
+ADMIN_BASIC_AUTH_PASSWORD = os.getenv('ADMIN_BASIC_AUTH_PASSWORD', 'adminpass')
+ALLOWED_ADMIN_IPS = [ip.strip() for ip in os.getenv('ALLOWED_ADMIN_IPS', '').split(',') if ip.strip()]

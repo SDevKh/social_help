@@ -2,6 +2,7 @@ from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from social_help.comments.models import Subscription, InstagramAccount, Comment
 from unittest.mock import Mock, patch
+import base64
 
 class GumroadPaymentTests(TestCase):
     def setUp(self):
@@ -322,4 +323,84 @@ class TieredModerationAndGroqTests(TestCase):
         self.assertEqual(result["reason"], "vader_ai_high_toxicity")
         self.assertTrue(result["sarcasm_detected"])
         self.assertGreaterEqual(result["toxicity_score"], 0.85)
+
+
+class AdminLoginProtectionTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="adminuser", password="password123")
+        Subscription.objects.update_or_create(user=self.user, defaults={'tier': 'pro', 'is_active': True})
+
+    @override_settings(
+        ADMIN_BASIC_AUTH_USERNAME='testadmin',
+        ADMIN_BASIC_AUTH_PASSWORD='supersecretpassword',
+        ALLOWED_ADMIN_IPS=[]
+    )
+    def test_restricted_paths_without_credentials(self):
+        response = self.client.get('/admin/login/')
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response['WWW-Authenticate'], 'Basic realm="Restricted Area"')
+
+        response = self.client.get('/admin/')
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.get('/dashboard/')
+        self.assertEqual(response.status_code, 401)
+
+    @override_settings(
+        ADMIN_BASIC_AUTH_USERNAME='testadmin',
+        ADMIN_BASIC_AUTH_PASSWORD='supersecretpassword',
+        ALLOWED_ADMIN_IPS=[]
+    )
+    def test_restricted_paths_with_incorrect_credentials(self):
+        auth_headers = {
+            'HTTP_AUTHORIZATION': 'Basic ' + base64.b64encode(b'wronguser:wrongpass').decode('utf-8')
+        }
+        response = self.client.get('/admin/login/', **auth_headers)
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.get('/dashboard/', **auth_headers)
+        self.assertEqual(response.status_code, 401)
+
+    @override_settings(
+        ADMIN_BASIC_AUTH_USERNAME='testadmin',
+        ADMIN_BASIC_AUTH_PASSWORD='supersecretpassword',
+        ALLOWED_ADMIN_IPS=[]
+    )
+    def test_restricted_paths_with_correct_credentials(self):
+        auth_headers = {
+            'HTTP_AUTHORIZATION': 'Basic ' + base64.b64encode(b'testadmin:supersecretpassword').decode('utf-8')
+        }
+        response = self.client.get('/admin/login/', **auth_headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/dashboard/', **auth_headers)
+        self.assertEqual(response.status_code, 302)
+
+    @override_settings(
+        ADMIN_BASIC_AUTH_USERNAME='testadmin',
+        ADMIN_BASIC_AUTH_PASSWORD='supersecretpassword',
+        ALLOWED_ADMIN_IPS=['1.2.3.4']
+    )
+    def test_restricted_paths_with_allowed_ip(self):
+        response = self.client.get('/admin/login/', HTTP_X_FORWARDED_FOR='1.2.3.4')
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/dashboard/', HTTP_X_FORWARDED_FOR='1.2.3.4')
+        self.assertEqual(response.status_code, 302)
+
+    @override_settings(
+        ADMIN_BASIC_AUTH_USERNAME='testadmin',
+        ADMIN_BASIC_AUTH_PASSWORD='supersecretpassword',
+        ALLOWED_ADMIN_IPS=[]
+    )
+    def test_authenticated_session_bypasses_basic_auth(self):
+        self.client.force_login(self.user)
+        response = self.client.get('/dashboard/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_other_endpoints_unaffected(self):
+        response = self.client.get('/signup/')
+        self.assertEqual(response.status_code, 200)
+
+
 
