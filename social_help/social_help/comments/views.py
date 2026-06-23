@@ -5,7 +5,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
@@ -1317,6 +1317,25 @@ def android_asset_links(request):
 def google_verification(request):
     """Serve Google site verification HTML file."""
     return HttpResponse("google-site-verification: google1e281c209d0ab913.html", content_type="text/html")
+
+
+def serve_root_file(request, filename):
+    """Serve verification and configuration files from FRONTEND_DIST_DIR root."""
+    file_path = os.path.join(settings.FRONTEND_DIST_DIR, filename)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        content_type = "text/plain"
+        if filename.endswith(".html"):
+            content_type = "text/html"
+        elif filename.endswith(".xml"):
+            content_type = "application/xml"
+        
+        try:
+            with open(file_path, 'rb') as f:
+                return HttpResponse(f.read(), content_type=content_type)
+        except Exception as e:
+            logger.exception("Error serving root static file %s", filename)
+            raise Http404("Error reading file")
+    raise Http404("File not found")
 
 
 class SubscriptionStatus(APIView):

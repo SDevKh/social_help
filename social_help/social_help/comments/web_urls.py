@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from django.contrib.auth import views as auth_views
 from .views import (
     landing,
@@ -24,6 +24,7 @@ from .views import (
     robots_txt,
     sitemap_xml,
     google_verification,
+    serve_root_file,
 )
 
 urlpatterns = [
@@ -41,6 +42,7 @@ urlpatterns = [
     path("robots.txt", robots_txt),
     path("sitemap.xml", sitemap_xml),
     path("google1e281c209d0ab913.html", google_verification),
+    re_path(r'^(?P<filename>[a-zA-Z0-9_\-\.]+\.(xml|html|txt))$', serve_root_file),
     path("manifest.webmanifest", pwa_manifest),
     path("sw.js", service_worker),
     path(".well-known/assetlinks.json", android_asset_links),
