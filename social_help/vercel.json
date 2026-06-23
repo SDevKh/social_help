@@ -18,6 +18,14 @@
   ],
   "routes": [
     {
+      "src": "/google1e281c209d0ab913.html",
+      "dest": "/staticfiles/google1e281c209d0ab913.html"
+    },
+    {
+      "src": "/BingSiteAuth.xml",
+      "dest": "/staticfiles/BingSiteAuth.xml"
+    },
+    {
       "src": "/static/(.*)",
       "dest": "/staticfiles/$1"
     },
