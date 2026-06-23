@@ -8,9 +8,9 @@ const categories = ['All', 'AI & Safety', 'Tutorials', 'E-commerce', 'Community'
 const fallbackBlogPosts = [
   {
     id: 5,
-    title: "Introducing SocialFuse: The Enterprise-Grade AI Guard for Instagram Brand Safety",
-    slug: "introducing-socialfuse-ai-moderator",
-    excerpt: "Discover how automated deep learning and real-time moderation pipelines shield creators, protect ad ROI, and optimize community engagement.",
+    title: "How to Automatically Delete Spam Comments on Instagram",
+    slug: "how-to-automatically-delete-spam-comments-on-instagram",
+    excerpt: "Discover the step-by-step guide to automate your comment moderation, eliminate spam bots, and protect your brand reputation in real-time.",
     category: "AI & Safety",
     author: "SocialFuse Engineering Team",
     date: "June 23, 2026",
@@ -54,9 +54,9 @@ const fallbackBlogPosts = [
   },
   {
     id: 1,
-    title: "How AI is Combating Comment Impersonator Bots on Social Media",
-    slug: "how-ai-combats-impersonator-bots",
-    excerpt: "Explore how deep learning pattern sweep engines identify and hide fake prize giveaways and scam links automatically.",
+    title: "How to Delete Spam Comments on Instagram Automatically",
+    slug: "how-to-delete-spam-comments-on-instagram-automatically",
+    excerpt: "Learn the latest API workflows and AI rules to clean your Instagram comment sections from spam bots instantly.",
     category: "AI & Safety",
     author: "Dr. Ryan Vance",
     date: "May 24, 2026",
@@ -73,9 +73,9 @@ const fallbackBlogPosts = [
   },
   {
     id: 2,
-    title: "Meta API Redirection Rules: A 2026 Guide for Agencies",
-    slug: "meta-api-redirection-rules-agency-guide",
-    excerpt: "Learn how to configure secure login redirect permissions across multi-brand client portfolios without password sharing.",
+    title: "Best Instagram Comment Moderation Tools in 2026",
+    slug: "best-instagram-comment-moderation-tools-in-2026",
+    excerpt: "An in-depth review and comparison of the top AI-powered comment filtration platforms for creators and enterprise brands.",
     category: "Tutorials",
     author: "Elena Rostova",
     date: "May 18, 2026",
@@ -92,9 +92,9 @@ const fallbackBlogPosts = [
   },
   {
     id: 3,
-    title: "Maximizing Ad ROIs by Suppressing Comment Link Hijacks",
-    slug: "maximizing-ad-rois-suppressing-hijacks",
-    excerpt: "How e-commerce stores protect their ad budgets by cleaning social comment sections from competitor discount hijackers.",
+    title: "CommentGuard vs SocialFuse: The Honest Comparison",
+    slug: "commentguard-vs-socialfuse",
+    excerpt: "Which Instagram comment moderation tool fits your agency workflow best? We compare features, AI accuracy, and API limits.",
     category: "E-commerce",
     author: "David Vance",
     date: "May 12, 2026",
@@ -111,9 +111,9 @@ const fallbackBlogPosts = [
   },
   {
     id: 4,
-    title: "The Psychology of Clean Comment Sections for Fan Engagement",
-    slug: "psychology-clean-comment-sections",
-    excerpt: "Why creating safe, toxic-free spaces increases positive customer comments, brand loyalty, and organic engagement.",
+    title: "How AI Detects Toxic Comments on Social Media",
+    slug: "how-ai-detects-toxic-comments",
+    excerpt: "Unpacking the deep learning models, toxicity scoring, and lexical rules that shield digital community discussions.",
     category: "Community",
     author: "Sarah Jenkins",
     date: "May 08, 2026",
@@ -190,6 +190,55 @@ export default function Blog() {
     }
   }, [searchParams, finalPosts]);
 
+  // Inject FAQ Schema on active post load
+  useEffect(() => {
+    if (activePost && activePost.slug === "how-to-automatically-delete-spam-comments-on-instagram") {
+      const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does SocialFuse work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "SocialFuse connects to Instagram and uses AI to detect spam and toxic comments."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can SocialFuse delete comments automatically?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, users can configure moderation rules and automate comment management."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who should use SocialFuse?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Creators, brands, agencies, and businesses."
+            }
+          }
+        ]
+      };
+
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.id = 'faq-jsonld-schema';
+      script.text = JSON.stringify(schemaData);
+      document.head.appendChild(script);
+
+      return () => {
+        const existingScript = document.getElementById('faq-jsonld-schema');
+        if (existingScript) {
+          existingScript.remove();
+        }
+      };
+    }
+  }, [activePost]);
+
   // Lock/reset scroll when changing posts
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -214,6 +263,8 @@ export default function Blog() {
 
   // If a blog post is open, render the complete post page view
   if (activePost) {
+    const relatedPosts = finalPosts.filter(p => p.slug !== activePost.slug).slice(0, 4);
+
     return (
       <div className="relative z-10 w-full min-h-screen bg-transparent text-slate-900">
         {/* Background gradients */}
@@ -262,14 +313,63 @@ export default function Blog() {
             {activePost.image}
           </div>
 
-          {/* Post Body (rendered professionally using prose layout) */}
+          {/* Post Body */}
           <article 
             className="prose prose-slate max-w-none prose-headings:font-display prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-p:leading-relaxed prose-p:mb-6 prose-li:leading-relaxed prose-ul:mb-6 text-slate-800 text-base"
             dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
           />
 
+          {/* FAQ Accordion Section */}
+          {activePost.slug === "how-to-automatically-delete-spam-comments-on-instagram" && (
+            <div className="mt-16 border-t border-slate-200/60 pt-12 space-y-6">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight font-display">FAQs</h3>
+              <div className="space-y-6">
+                <div className="border border-slate-200/80 p-5 rounded-2xl bg-slate-50/50">
+                  <h4 className="font-bold text-slate-900 text-base mb-2">How does SocialFuse work?</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    SocialFuse connects to Instagram and uses AI to detect spam and toxic comments.
+                  </p>
+                </div>
+                <div className="border border-slate-200/80 p-5 rounded-2xl bg-slate-50/50">
+                  <h4 className="font-bold text-slate-900 text-base mb-2">Can SocialFuse delete comments automatically?</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Yes, users can configure moderation rules and automate comment management.
+                  </p>
+                </div>
+                <div className="border border-slate-200/80 p-5 rounded-2xl bg-slate-50/50">
+                  <h4 className="font-bold text-slate-900 text-base mb-2">Who should use SocialFuse?</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Creators, brands, agencies, and businesses.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Related Articles segment (Internal Linking) */}
+          <div className="mt-16 border-t border-slate-200/60 pt-12">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight mb-8 font-display">Related Articles</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {relatedPosts.map(post => (
+                <div 
+                  key={post.id}
+                  onClick={() => handleOpenPost(post)}
+                  className="glass-panel glass-panel-hover p-6 border border-slate-200/80 rounded-2xl cursor-pointer text-left flex flex-col justify-between space-y-4 group"
+                >
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-black bg-[#C2FF81] px-2 py-0.5 rounded-md border border-black/5">{post.category}</span>
+                    <h4 className="font-bold text-slate-900 text-base leading-snug group-hover:text-black transition-colors font-display line-clamp-2">{post.title}</h4>
+                  </div>
+                  <span className="text-xs font-bold text-black flex items-center gap-1 group-hover:translate-x-1 transition-transform duration-250">
+                    Read article <ArrowRight className="w-4.5 h-4.5 text-black" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Author bio segment */}
-          <div className="border-t border-b border-slate-200/60 py-8 my-12 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+          <div className="border-t border-slate-200/60 py-8 my-12 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
             <span className="w-14 h-14 rounded-full bg-[#C2FF81]/20 flex items-center justify-center text-2xl font-bold border border-black/5">
               🛡️
             </span>
@@ -281,19 +381,18 @@ export default function Blog() {
             </div>
           </div>
 
-          {/* Premium Call to Action card */}
-          <div className="bg-[#C2FF81]/15 border border-[#C2FF81]/40 rounded-3xl p-8 sm:p-10 space-y-6 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
-            <div className="space-y-3 text-left">
-              <h3 className="text-2xl font-extrabold text-black font-display">Keep your communities safe automatically</h3>
-              <p className="text-sm text-slate-700 leading-relaxed max-w-xl">
-                Eliminate spam comments, competitors hijacking your ads traffic, and toxicity on your profile in real-time with SocialFuse AI moderation.
-              </p>
-            </div>
+          {/* Call to Action segment */}
+          <div className="cta bg-gradient-to-br from-[#C2FF81]/25 to-black/[0.01] border border-[#C2FF81]/40 rounded-3xl p-8 sm:p-12 text-center space-y-6 relative overflow-hidden shadow-sm">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-black font-display tracking-tight">Protect Your Instagram Community</h2>
+            <p className="text-sm sm:text-base text-slate-700 leading-relaxed max-w-xl mx-auto">
+              Let SocialFuse detect and remove toxic comments automatically.
+            </p>
             <a 
-              href="/pricing/"
-              className="px-8 py-4 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all whitespace-nowrap cursor-pointer"
+              href="/signup/"
+              onClick={handleClosePost}
+              className="inline-block px-8 py-4 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
             >
-              Start Protecting Now
+              Start Free →
             </a>
           </div>
         </div>
@@ -342,7 +441,7 @@ export default function Blog() {
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-black leading-tight font-display">
                     {featuredPost.title}
                   </h2>
-                  <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                  <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-sans">
                     {featuredPost.excerpt}
                   </p>
                 </div>
@@ -358,7 +457,7 @@ export default function Blog() {
                   </div>
                   <button 
                     onClick={() => handleOpenPost(featuredPost)}
-                    className="px-5 py-3 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer animate-pulse-slow"
+                    className="px-5 py-3 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
                   >
                     Read Featured Post
                     <ArrowRight className="w-4 h-4" />
