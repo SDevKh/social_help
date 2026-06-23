@@ -1,53 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Calendar, User, Clock, ArrowRight, Sparkles, X, Link } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, Calendar, User, Clock, ArrowRight, Sparkles, Link, ArrowLeft } from 'lucide-react';
 
 const categories = ['All', 'AI & Safety', 'Tutorials', 'E-commerce', 'Community'];
 
 const fallbackBlogPosts = [
   {
     id: 5,
-    title: "Introducing SocialFuse: The Ultimate AI Guardian for Instagram Comment Sections",
+    title: "Introducing SocialFuse: The Enterprise-Grade AI Guard for Instagram Brand Safety",
     slug: "introducing-socialfuse-ai-moderator",
-    excerpt: "Learn how automated AI moderation protects your brand reputation, eliminates spam bots, and boosts organic engagement.",
+    excerpt: "Discover how automated deep learning and real-time moderation pipelines shield creators, protect ad ROI, and optimize community engagement.",
     category: "AI & Safety",
-    author: "SocialFuse Team",
+    author: "SocialFuse Engineering Team",
     date: "June 23, 2026",
-    readTime: "4 min read",
+    readTime: "6 min read",
     image: "✨",
     featured: true,
     contentHtml: `
-      <p class="lead text-lg font-medium text-slate-700 mb-6">In the digital age, social media is the lifeblood of brand reputation and customer engagement. But for creators, brands, and agencies, Instagram comment sections have increasingly become a battleground. From spam bots pushing fake crypto prizes to competitors hijacking comments with redirect links, manually moderating comments is a time-consuming, frustrating uphill battle.</p>
+      <p class="lead text-lg font-medium text-slate-700 mb-6">In the modern digital economy, social media engagement is the single most valuable asset for brand authority and customer acquisition. However, as profiles scale, comment sections quickly descend into vulnerability vectors. From coordinate crypto phishing bots to competitor link hijackers, manual moderation is an expensive and losing battle. SocialFuse introduces an enterprise-grade AI guardian to secure your digital spaces automatically.</p>
       
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">Enter SocialFuse: The Next-Gen AI Shield</h3>
-      <p class="mb-4"><strong>SocialFuse</strong> was built from the ground up to solve this exact problem. By connecting directly to the Instagram Graph API and utilizing advanced AI models, SocialFuse automatically scans, filters, and moderates comment threads in real time.</p>
-      
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">Key Features of the Platform</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">The Modern Threat Landscape of Social Spaces</h2>
+      <p class="mb-4">Standard spam filters rely on simple static keyword checks, which are easily bypassed by modern bad actors using character substitutions (e.g., using 🅵🆁🅴🅴 instead of "free"). This lack of moderation leads to significant challenges:</p>
       <ul class="list-disc pl-6 space-y-2 mb-6">
-        <li><strong>Direct Meta Integration:</strong> Secure connection via standard Meta OAuth without sharing credentials.</li>
-        <li><strong>Real-Time Scanning & Detection:</strong> Comments are processed instantly as they are posted.</li>
-        <li><strong>Customizable Toxicity Thresholds:</strong> Tailor the AI's sensitivity to match your brand's voice and tolerance.</li>
-        <li><strong>Robust Keyword & Phrase Filtering:</strong> Block specific words, links, and known spam patterns instantly.</li>
-        <li><strong>Auto-Reply and Auto-Delete:</strong> Automatically reply publicly or send a direct message (DM) when users trigger a keyword, and auto-delete harmful comments.</li>
+        <li><strong>Ad Spend Leakage:</strong> Competitors post affiliate discount codes under your paid promotion posts, hijacking traffic you bought.</li>
+        <li><strong>Brand Degradation:</strong> Customer service threads are hijacked by fake support accounts offering refunds or stealing billing info.</li>
+        <li><strong>Algorithmic Penalties:</strong> High concentrations of spam and user reports trigger shadowbans or decreased visibility in the Instagram Explore feed.</li>
       </ul>
       
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">How SocialFuse AI Works</h3>
-      <p class="mb-4">When a comment is posted, SocialFuse runs it through a series of analysis layers:</p>
-      <ol class="list-decimal pl-6 space-y-2 mb-6">
-        <li><strong>Keyword Matching:</strong> Instant lookup against your customized list of prohibited terms.</li>
-        <li><strong>AI Sentiment & Toxicity Analysis:</strong> Evaluation using specialized language models (like VADER, HuggingFace toxicity scanners, and Groq LLMs) to evaluate the true intent, detecting sarcasm or hidden toxic statements that simple keyword blocks miss.</li>
-        <li><strong>Automatic Moderation Action:</strong> Based on the outcome, the comment is safely kept, flagged for manual review on the dashboard, or deleted automatically via the Instagram API.</li>
-      </ol>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">The SocialFuse Moderation Architecture</h2>
+      <p class="mb-4">SocialFuse doesn't just filter text; it understands human intent. When a comment is posted on your connected Instagram business accounts, it traverses a real-time analysis pipeline within milliseconds:</p>
       
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">Next Steps to Build Brand Loyalty and Boost Organic Engagement</h3>
-      <p class="mb-4">A clean comment section is more than just safe—it’s profitable. When spam is removed immediately:</p>
+      <h3 class="text-xl font-bold text-black mt-6 mb-3">1. Multi-Stage Natural Language Processing (NLP)</h3>
+      <p class="mb-4">Using advanced lexical models, the platform analyzes text structures. It calculates toxicity probabilities and cross-references them against custom keyword rules, detecting hostile, abusive, or spammy statements even when written using internet slang or typos.</p>
+      
+      <h3 class="text-xl font-bold text-black mt-6 mb-3">2. Sarcasm and Sentiment Resolution</h3>
+      <p class="mb-4">Traditional tools flag neutral words and miss toxic statements wrapped in sarcasm. SocialFuse uses semantic context analysis (via LLM models) to evaluate the core emotional sentiment, assuring genuine feedback stays untouched while disguised hostility is neutralized.</p>
+      
+      <h3 class="text-xl font-bold text-black mt-6 mb-3">3. Immediate API Action and Dashboard Control</h3>
+      <p class="mb-4">Once categorized, the system acts. Toxic comments are immediately deleted or hidden via Meta’s Graph API. Clean comments remain live, and uncertain statements are routed to a dashboard for quick manual approval.</p>
+      
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">Optimizing Indexing and Algorithmic Crawls</h2>
+      <p class="mb-4">A clean comment thread signals high quality to the platform algorithm. When toxic noise is purged:</p>
       <ul class="list-disc pl-6 space-y-2 mb-6">
-        <li>Real followers feel safer and engage more.</li>
-        <li>Competitor links do not steal your traffic or sales.</li>
-        <li>Social algorithms favor comment threads with high-quality, authentic conversations, leading to increased organic reach and crawling efficiency.</li>
+        <li>Followers spend more time in your comment threads, boosting the "dwell time" metric that triggers viral discovery.</li>
+        <li>Your post crawl eligibility improves, ensuring clean indexing for organic search presence.</li>
       </ul>
-      <p class="mb-4">Ready to secure your community? Sign up for a SocialFuse plan today and let AI handle the heavy lifting!</p>
+      
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">Secure and Compliance-First OAuth Setup</h2>
+      <p class="mb-4">SocialFuse integrates natively using Meta's secure partner authentication protocols. You do not need to share passwords or account credentials. You delegate only comment management scopes, keeping your account fully secure and compliant with platform policies.</p>
+      <p class="mb-6 font-semibold">Join the creators and marketing agencies who trust SocialFuse to protect their community footprint on autopilot.</p>
     `
   },
   {
@@ -63,9 +65,9 @@ const fallbackBlogPosts = [
     featured: false,
     contentHtml: `
       <p class="lead text-lg font-medium text-slate-700 mb-6">Comment impersonator bots have become highly sophisticated. They copy the avatar and handle of popular creators, add subtle special characters, and post automated links claiming you have won a prize.</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">The Danger of Impersonator Bots</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">The Danger of Impersonator Bots</h2>
       <p class="mb-4">These bots hijack user trust, directing fans to malicious phishing sites. This damages creator credibility and leads to security warnings. Standard filters block static words, but bots adapt by using weird symbols (like 🅶🅸🆅🅴🅰🆆🅰🆈).</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">How Advanced AI Pattern Scanners Win</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">How Advanced AI Pattern Scanners Win</h2>
       <p class="mb-4">Modern AI doesn't just read the letters; it looks at the semantic intent and semantic structure. Neural networks identify intent markers (requests for shipping fees, redirection to third-party profiles) regardless of character substitution or obfuscation.</p>
     `
   },
@@ -82,9 +84,9 @@ const fallbackBlogPosts = [
     featured: false,
     contentHtml: `
       <p class="lead text-lg font-medium text-slate-700 mb-6">Managing multiple client Instagram accounts requires robust API security. This guide details how Meta's latest permission model facilitates secure delegation without credential sharing.</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">The Principle of Least Privilege</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">The Principle of Least Privilege</h2>
       <p class="mb-4">Agencies should never ask for direct client passwords. Instead, use Facebook Business Manager to request partner access. This grants your system tokens with scopes like <code>instagram_manage_comments</code> and <code>pages_show_list</code>.</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">Configuring OAuth Redirects Safely</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">Configuring OAuth Redirects Safely</h2>
       <p class="mb-4">Ensure your redirect URI uses strict SSL and matches the domain verified in your Meta App Dashboard. Use cryptographically secure <code>state</code> parameters to validate the flow on your callback handler.</p>
     `
   },
@@ -101,9 +103,9 @@ const fallbackBlogPosts = [
     featured: false,
     contentHtml: `
       <p class="lead text-lg font-medium text-slate-700 mb-6">You pay for every click on your Instagram Ads. But did you know competitors and dropshippers are placing links to cheaper items directly in your comment sections?</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">The E-commerce Leak</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">The E-commerce Leak</h2>
       <p class="mb-4">When a customer is interested in your ad, they open the comment thread. If they see a link saying "get it cheaper here!", they click away. You are effectively paying for their advertising.</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">Securing the ROI</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">Securing the ROI</h2>
       <p class="mb-4">By setting up real-time links detection and competitor filters, you protect your digital ad budget. Auto-deleting suspicious links guarantees that the traffic generated by your ad stays focused on your store.</p>
     `
   },
@@ -120,9 +122,9 @@ const fallbackBlogPosts = [
     featured: false,
     contentHtml: `
       <p class="lead text-lg font-medium text-slate-700 mb-6">Humans are deeply affected by the social environment of a page. A comment thread filled with toxic arguments, spam, and insults discourages authentic users from participating.</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">The Broken Window Theory of Comments</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">The Broken Window Theory of Comments</h2>
       <p class="mb-4">If a comment thread has unresolved spam and abuse, more spam and abuse will follow. If a page maintains clean, constructive threads, users are psychologically primed to write positive, engaging feedback.</p>
-      <h3 class="text-xl font-bold text-black mt-8 mb-4">Boosting Organic Reach</h3>
+      <h2 class="text-2xl font-bold text-black mt-10 mb-4">Boosting Organic Reach</h2>
       <p class="mb-4">When community members converse positively under your posts, algorithms notice the engagement length and push your posts to the Explore page. Keeping spam out keeps fans talking.</p>
     `
   }
@@ -145,7 +147,6 @@ export default function Blog() {
       })
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
-          // Map backend slug, date formats if needed
           const formatted = data.map(post => ({
             ...post,
             id: post.id,
@@ -189,16 +190,9 @@ export default function Blog() {
     }
   }, [searchParams, finalPosts]);
 
-  // Lock scroll when modal is open
+  // Lock/reset scroll when changing posts
   useEffect(() => {
-    if (activePost) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    window.scrollTo(0, 0);
   }, [activePost]);
 
   const handleOpenPost = (post) => {
@@ -218,6 +212,96 @@ export default function Blog() {
 
   const featuredPost = filteredPosts.find(p => p.featured) || filteredPosts[0];
 
+  // If a blog post is open, render the complete post page view
+  if (activePost) {
+    return (
+      <div className="relative z-10 w-full min-h-screen bg-transparent text-slate-900">
+        {/* Background gradients */}
+        <div className="absolute top-20 left-1/4 w-[350px] h-[350px] bg-[#C2FF81]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-20 right-1/4 w-[350px] h-[350px] bg-black/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-left">
+          {/* Back button */}
+          <button
+            onClick={handleClosePost}
+            className="group flex items-center gap-2 text-sm font-bold text-slate-650 hover:text-black transition-colors mb-12 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-255" />
+            Back to articles
+          </button>
+
+          {/* Article Header info */}
+          <div className="space-y-6 mb-10">
+            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-700">
+              <span className="bg-[#C2FF81] text-black px-3 py-1 rounded-full border border-black/5 shadow-sm">
+                {activePost.category}
+              </span>
+              <span className="text-slate-500 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5" />
+                {activePost.readTime}
+              </span>
+            </div>
+            
+            <h1 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight leading-tight font-display">
+              {activePost.title}
+            </h1>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+              <span className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center text-sm font-bold text-black border border-black/10">
+                SF
+              </span>
+              <div>
+                <p className="text-sm font-bold text-black">{activePost.author}</p>
+                <p className="text-xs text-slate-500">{activePost.date}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero visual header */}
+          <div className="aspect-[21/9] bg-[#C2FF81]/15 border border-slate-200/80 rounded-3xl flex items-center justify-center text-7xl select-none mb-12 shadow-inner">
+            {activePost.image}
+          </div>
+
+          {/* Post Body (rendered professionally using prose layout) */}
+          <article 
+            className="prose prose-slate max-w-none prose-headings:font-display prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-p:leading-relaxed prose-p:mb-6 prose-li:leading-relaxed prose-ul:mb-6 text-slate-800 text-base"
+            dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
+          />
+
+          {/* Author bio segment */}
+          <div className="border-t border-b border-slate-200/60 py-8 my-12 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+            <span className="w-14 h-14 rounded-full bg-[#C2FF81]/20 flex items-center justify-center text-2xl font-bold border border-black/5">
+              🛡️
+            </span>
+            <div className="space-y-1">
+              <h4 className="font-bold text-black">Written by the {activePost.author}</h4>
+              <p className="text-xs text-slate-650 leading-relaxed">
+                We design and engineer real-time social automation layers, brand security systems, semantic moderation rules, and compliance infrastructure.
+              </p>
+            </div>
+          </div>
+
+          {/* Premium Call to Action card */}
+          <div className="bg-[#C2FF81]/15 border border-[#C2FF81]/40 rounded-3xl p-8 sm:p-10 space-y-6 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
+            <div className="space-y-3 text-left">
+              <h3 className="text-2xl font-extrabold text-black font-display">Keep your communities safe automatically</h3>
+              <p className="text-sm text-slate-700 leading-relaxed max-w-xl">
+                Eliminate spam comments, competitors hijacking your ads traffic, and toxicity on your profile in real-time with SocialFuse AI moderation.
+              </p>
+            </div>
+            <a 
+              href="/pricing/"
+              className="px-8 py-4 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all whitespace-nowrap cursor-pointer"
+            >
+              Start Protecting Now
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Blog list view
   return (
     <div className="relative z-10 w-full min-h-screen bg-transparent text-slate-900">
       {/* Background gradients */}
@@ -274,7 +358,7 @@ export default function Blog() {
                   </div>
                   <button 
                     onClick={() => handleOpenPost(featuredPost)}
-                    className="px-5 py-3 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                    className="px-5 py-3 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer animate-pulse-slow"
                   >
                     Read Featured Post
                     <ArrowRight className="w-4 h-4" />
@@ -388,93 +472,6 @@ export default function Blog() {
         </section>
 
       </div>
-
-      {/* Dynamic Overlay Modal Reader */}
-      <AnimatePresence>
-        {activePost && (
-          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 md:p-10">
-            {/* Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={handleClosePost}
-              className="fixed inset-0 bg-black/70 backdrop-blur-md cursor-zoom-out"
-            />
-
-            {/* Modal Box */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="relative w-full max-w-4xl bg-white border border-slate-200/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10 text-left"
-            >
-              {/* Header bar */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-slate-700">
-                  <span className="bg-[#C2FF81] text-black px-2 py-0.5 rounded">{activePost.category}</span>
-                  <span className="text-slate-500">{activePost.readTime}</span>
-                </div>
-                <button 
-                  onClick={handleClosePost}
-                  className="p-1.5 rounded-full hover:bg-slate-200 text-slate-500 hover:text-black transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Scrollable contents */}
-              <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8">
-                {/* visual icon header */}
-                <div className="w-20 h-20 bg-[#C2FF81]/20 border border-slate-200/60 rounded-2xl flex items-center justify-center text-4xl select-none">
-                  {activePost.image}
-                </div>
-
-                {/* title & meta */}
-                <div className="space-y-4">
-                  <h1 className="text-2xl sm:text-4xl font-extrabold text-black leading-tight font-display">
-                    {activePost.title}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-slate-500">
-                    <div className="flex items-center gap-1">
-                      <User className="w-4 h-4 text-slate-400" />
-                      <span className="font-bold text-slate-800">{activePost.author}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <span>{activePost.date}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* HTML post body content */}
-                <div 
-                  className="prose prose-slate max-w-none prose-headings:font-display prose-headings:font-bold prose-h3:text-lg prose-p:leading-relaxed prose-li:leading-relaxed text-slate-800"
-                  dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
-                />
-
-                {/* Call To Action Box */}
-                <div className="bg-[#C2FF81]/10 border border-[#C2FF81]/40 rounded-3xl p-6 sm:p-8 space-y-4 mt-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="space-y-2 text-left">
-                    <h3 className="text-lg font-bold text-black font-display">Secure Your Comment Threads with SocialFuse AI</h3>
-                    <p className="text-xs sm:text-sm text-slate-650">
-                      Eliminate bot spam, block scams, and create a positive space for your community. Get started in minutes.
-                    </p>
-                  </div>
-                  <a 
-                    href="/pricing/"
-                    onClick={() => { handleClosePost(); }}
-                    className="px-6 py-3 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-sm whitespace-nowrap shadow-md transition-all cursor-pointer"
-                  >
-                    View Pricing & Plans
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
