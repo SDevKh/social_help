@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Calendar, User, Clock, ArrowRight, Sparkles, Link, ArrowLeft } from 'lucide-react';
 
@@ -132,6 +132,8 @@ const fallbackBlogPosts = [
 
 export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { postSlug } = useParams();
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [dbPosts, setDbPosts] = useState([]);
@@ -177,18 +179,28 @@ export default function Blog() {
 
   const finalPosts = dbPosts.length > 0 ? dbPosts : fallbackBlogPosts;
 
-  // Handle URL query parameters for dynamic post reading (?post=slug)
+  // Redirect legacy query parameters (?post=slug) to clean route /blog/slug/
   useEffect(() => {
-    const postSlug = searchParams.get('post');
+    const legacySlug = searchParams.get('post');
+    if (legacySlug) {
+      navigate(`/blog/${legacySlug}/`, { replace: true });
+    }
+  }, [searchParams, navigate]);
+
+  // Handle URL path parameters for dynamic post reading
+  useEffect(() => {
     if (postSlug && finalPosts.length > 0) {
-      const found = finalPosts.find(p => p.slug === postSlug);
+      const cleanSlug = postSlug.replace(/\/$/, "");
+      const found = finalPosts.find(p => p.slug === cleanSlug);
       if (found) {
         setActivePost(found);
+      } else {
+        setActivePost(null);
       }
     } else {
       setActivePost(null);
     }
-  }, [searchParams, finalPosts]);
+  }, [postSlug, finalPosts]);
 
   // Inject FAQ Schema on active post load
   useEffect(() => {
@@ -245,17 +257,17 @@ export default function Blog() {
   }, [activePost]);
 
   const handleOpenPost = (post) => {
-    setSearchParams({ post: post.slug });
+    navigate(`/blog/${post.slug}/`);
   };
 
   const handleClosePost = () => {
-    setSearchParams({});
+    navigate('/blog/');
   };
 
   const filteredPosts = finalPosts.filter(post => {
     const matchesCategory = selectedCategory === 'All' || post.category === selectedCategory;
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -292,7 +304,7 @@ export default function Blog() {
                 {activePost.readTime}
               </span>
             </div>
-            
+
             <h1 className="text-3xl sm:text-5xl font-extrabold text-black tracking-tight leading-tight font-display">
               {activePost.title}
             </h1>
@@ -314,7 +326,7 @@ export default function Blog() {
           </div>
 
           {/* Post Body */}
-          <article 
+          <article
             className="prose prose-slate max-w-none prose-headings:font-display prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-p:leading-relaxed prose-p:mb-6 prose-li:leading-relaxed prose-ul:mb-6 text-slate-800 text-base"
             dangerouslySetInnerHTML={{ __html: activePost.contentHtml }}
           />
@@ -351,7 +363,7 @@ export default function Blog() {
             <h3 className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight mb-8 font-display">Related Articles</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {relatedPosts.map(post => (
-                <div 
+                <div
                   key={post.id}
                   onClick={() => handleOpenPost(post)}
                   className="glass-panel glass-panel-hover p-6 border border-slate-200/80 rounded-2xl cursor-pointer text-left flex flex-col justify-between space-y-4 group"
@@ -387,7 +399,7 @@ export default function Blog() {
             <p className="text-sm sm:text-base text-slate-700 leading-relaxed max-w-xl mx-auto">
               Let SocialFuse detect and remove toxic comments automatically.
             </p>
-            <a 
+            <a
               href="/signup/"
               onClick={handleClosePost}
               className="inline-block px-8 py-4 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
@@ -408,7 +420,7 @@ export default function Blog() {
       <div className="absolute bottom-20 right-1/4 w-[350px] h-[350px] bg-black/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        
+
         {/* Title */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <span className="text-xs font-bold text-black uppercase tracking-widest bg-[#C2FF81] px-3.5 py-1.5 rounded-full border border-black/10 shadow-sm">
@@ -455,7 +467,7 @@ export default function Blog() {
                       <p className="text-slate-500">{featuredPost.date}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleOpenPost(featuredPost)}
                     className="px-5 py-3 rounded-full bg-black hover:bg-slate-900 text-[#C2FF81] font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
                   >
@@ -476,11 +488,10 @@ export default function Blog() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold border transition-all cursor-pointer ${
-                  selectedCategory === cat 
-                    ? 'bg-black text-[#C2FF81] border-black shadow-sm' 
+                className={`px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold border transition-all cursor-pointer ${selectedCategory === cat
+                    ? 'bg-black text-[#C2FF81] border-black shadow-sm'
                     : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:text-black shadow-sm'
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -503,8 +514,8 @@ export default function Blog() {
         {/* Blog Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
           {filteredPosts.filter(p => !p.featured || searchQuery || selectedCategory !== 'All').map((post) => (
-            <article 
-              key={post.id} 
+            <article
+              key={post.id}
               className="glass-panel glass-panel-hover rounded-3xl overflow-hidden flex flex-col justify-between border border-slate-200/80 text-left group cursor-pointer"
               onClick={() => handleOpenPost(post)}
             >
@@ -523,7 +534,7 @@ export default function Blog() {
                       {post.readTime}
                     </span>
                   </div>
-                  
+
                   <h3 className="text-lg font-bold text-black leading-snug group-hover:text-black transition-colors font-display">
                     {post.title}
                   </h3>
@@ -533,7 +544,7 @@ export default function Blog() {
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                   <span className="text-xs text-slate-500">{post.date}</span>
                   <span className="text-xs font-bold text-black flex items-center gap-1 group-hover:translate-x-1 transition-transform duration-300">
-                    Read article 
+                    Read article
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
@@ -556,7 +567,7 @@ export default function Blog() {
                 Weekly insights on combatting spam bots, algorithms upgrades, and safety guidelines.
               </p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"

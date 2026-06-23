@@ -874,7 +874,7 @@ def landing(request):
     return render(request, "index.html")
 
 
-def react_frontend(request):
+def react_frontend(request, *args, **kwargs):
     """Serve React frontend for SPA routes without redirecting authenticated users."""
     return render(request, "index.html")
 
@@ -942,7 +942,7 @@ def sitemap_xml(request):
         for post in posts:
             url_elems.append(
                 f"  <url>\n"
-                f"    <loc>{domain}/blog/?post={post.slug}</loc>\n"
+                f"    <loc>{domain}/blog/{post.slug}/</loc>\n"
                 f"    <changefreq>weekly</changefreq>\n"
                 f"    <priority>0.7</priority>\n"
                 f"  </url>"

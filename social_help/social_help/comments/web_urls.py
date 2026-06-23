@@ -37,6 +37,7 @@ urlpatterns = [
     path("pricing/", react_frontend),
     path("testimonials/", react_frontend),
     path("blog/", react_frontend),
+    path("blog/<slug:post_slug>/", react_frontend),
     path("contact/", react_frontend),
 
     path("robots.txt", robots_txt),
