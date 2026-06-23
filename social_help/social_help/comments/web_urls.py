@@ -23,6 +23,7 @@ from .views import (
     gumroad_webhook,
     robots_txt,
     sitemap_xml,
+    google_verification,
 )
 
 urlpatterns = [
@@ -39,6 +40,7 @@ urlpatterns = [
 
     path("robots.txt", robots_txt),
     path("sitemap.xml", sitemap_xml),
+    path("google1e281c209d0ab913.html", google_verification),
     path("manifest.webmanifest", pwa_manifest),
     path("sw.js", service_worker),
     path(".well-known/assetlinks.json", android_asset_links),

@@ -1314,6 +1314,11 @@ def android_asset_links(request):
     return JsonResponse(statements, safe=False)
 
 
+def google_verification(request):
+    """Serve Google site verification HTML file."""
+    return HttpResponse("google-site-verification: google1e281c209d0ab913.html", content_type="text/html")
+
+
 class SubscriptionStatus(APIView):
     """Return current user's subscription tier and active status."""
     permission_classes = [IsAuthenticated]
