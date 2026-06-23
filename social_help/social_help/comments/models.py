@@ -151,6 +151,23 @@ class AutoReplyRule(models.Model):
     def __str__(self):
         return f"{self.user.username}: {self.trigger_keyword} -> {self.reply_text[:30]} ({self.reply_type})"
 
+class BlogPost(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True, help_text="URL-friendly short name (e.g. introducing-socialfuse)")
+    excerpt = models.TextField(help_text="Short summary shown in the blog grid")
+    content_html = models.TextField(help_text="Full HTML content of the post")
+    category = models.CharField(max_length=100, default="All")
+    author = models.CharField(max_length=100, default="SocialFuse Team")
+    date = models.DateField(help_text="Publication date shown to users")
+    read_time = models.CharField(max_length=50, default="5 min read")
+    image = models.CharField(max_length=50, default="📝", help_text="Emoji character or icon name for post image")
+    featured = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 

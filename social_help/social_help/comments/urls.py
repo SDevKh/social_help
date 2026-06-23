@@ -16,6 +16,7 @@ from .views import (
     AutoReplyRuleListCreateAPIView,
     AutoReplyRuleDestroyAPIView,
     InstagramWebhookView,
+    BlogPostListView,
 )
 from .polar_views import PolarCheckoutURL, PolarWebhookAPI
 
@@ -38,4 +39,5 @@ urlpatterns = [
     path("autoreply/", AutoReplyRuleListCreateAPIView.as_view()),
     path("autoreply/<int:rule_id>/", AutoReplyRuleDestroyAPIView.as_view()),
     path("instagram/webhook/", InstagramWebhookView.as_view()),
+    path("blog/", BlogPostListView.as_view()),
 ]

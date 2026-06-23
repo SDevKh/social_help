@@ -2,7 +2,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
@@ -14,8 +14,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from .serializers import CommentSerializer
-from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule
+from .serializers import CommentSerializer, BlogPostSerializer
+from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost
 from .instagram_service import InstagramService
 from .forms import SignUpForm
 
@@ -877,6 +877,86 @@ def landing(request):
 def react_frontend(request):
     """Serve React frontend for SPA routes without redirecting authenticated users."""
     return render(request, "index.html")
+
+
+class BlogPostListView(ListAPIView):
+    """API endpoint to list published blog posts"""
+    serializer_class = BlogPostSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return BlogPost.objects.filter(is_published=True).order_by('-featured', '-date', '-created_at')
+
+
+def robots_txt(request):
+    """Serve robots.txt for search engine crawlers"""
+    domain = getattr(settings, 'DOMAIN_URL', 'http://localhost:8000')
+    content = f"""User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /admin/
+
+Sitemap: {domain}/sitemap.xml
+"""
+    return HttpResponse(content.strip(), content_type="text/plain")
+
+
+def sitemap_xml(request):
+    """Serve dynamically generated sitemap.xml"""
+    domain = getattr(settings, 'DOMAIN_URL', 'http://localhost:8000')
+    
+    # Static routes
+    static_routes = [
+        "",
+        "features/",
+        "how-it-works/",
+        "use-cases/",
+        "demo/",
+        "pricing/",
+        "testimonials/",
+        "blog/",
+        "contact/",
+        "creators/",
+        "brands/",
+        "privacy-policy/",
+        "terms-of-service/",
+        "terms/",
+    ]
+    
+    url_elems = []
+    
+    # Generate XML entries for static routes
+    for route in static_routes:
+        url_elems.append(
+            f"  <url>\n"
+            f"    <loc>{domain}/{route}</loc>\n"
+            f"    <changefreq>weekly</changefreq>\n"
+            f"    <priority>0.8</priority>\n"
+            f"  </url>"
+        )
+        
+    # Query all active blog posts from database to include in sitemap
+    try:
+        posts = BlogPost.objects.filter(is_published=True)
+        for post in posts:
+            url_elems.append(
+                f"  <url>\n"
+                f"    <loc>{domain}/blog/?post={post.slug}</loc>\n"
+                f"    <changefreq>weekly</changefreq>\n"
+                f"    <priority>0.7</priority>\n"
+                f"  </url>"
+            )
+    except Exception as e:
+        logger.exception("Error generating dynamic sitemap blog entries")
+        
+    content = (
+        f'<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(url_elems)
+        + "\n</urlset>"
+    )
+    return HttpResponse(content, content_type="application/xml")
 
 def privacy_policy(request):
     """Serve the static Privacy Policy page required by Meta App Review."""

@@ -21,6 +21,8 @@ from .views import (
     android_asset_links,
     gumroad_success,
     gumroad_webhook,
+    robots_txt,
+    sitemap_xml,
 )
 
 urlpatterns = [
@@ -35,6 +37,8 @@ urlpatterns = [
     path("blog/", react_frontend),
     path("contact/", react_frontend),
 
+    path("robots.txt", robots_txt),
+    path("sitemap.xml", sitemap_xml),
     path("manifest.webmanifest", pwa_manifest),
     path("sw.js", service_worker),
     path(".well-known/assetlinks.json", android_asset_links),
