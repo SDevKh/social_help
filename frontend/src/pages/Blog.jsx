@@ -164,6 +164,8 @@ export default function Blog() {
             }) : 'Recent',
             readTime: post.read_time || '5 min read',
             image: post.image || '📝',
+            image_file: post.image_file,
+            image_url: post.image_url,
             featured: post.featured,
             contentHtml: post.content_html
           }));
@@ -321,8 +323,12 @@ export default function Blog() {
           </div>
 
           {/* Hero visual header */}
-          <div className="aspect-[21/9] bg-[#C2FF81]/15 border border-slate-200/80 rounded-3xl flex items-center justify-center text-7xl select-none mb-12 shadow-inner">
-            {activePost.image}
+          <div className="aspect-[21/9] bg-[#C2FF81]/15 border border-slate-200/80 rounded-3xl flex items-center justify-center select-none mb-12 shadow-inner overflow-hidden">
+            {activePost.image_file || activePost.image_url ? (
+              <img src={activePost.image_file || activePost.image_url} alt={activePost.title} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-7xl">{activePost.image}</span>
+            )}
           </div>
 
           {/* Post Body */}
@@ -438,8 +444,12 @@ export default function Blog() {
         {featuredPost && !searchQuery && selectedCategory === 'All' && (
           <div className="mb-16">
             <div className="glass-panel rounded-3xl overflow-hidden border border-slate-200/80 grid grid-cols-1 lg:grid-cols-12 gap-0 text-left group">
-              <div className="lg:col-span-7 bg-[#C2FF81]/10 flex items-center justify-center text-7xl p-12 lg:p-20 select-none border-b lg:border-b-0 lg:border-r border-slate-200/60">
-                {featuredPost.image}
+              <div className="lg:col-span-7 bg-[#C2FF81]/10 flex items-center justify-center select-none border-b lg:border-b-0 lg:border-r border-slate-200/60 overflow-hidden min-h-[300px]">
+                {featuredPost.image_file || featuredPost.image_url ? (
+                  <img src={featuredPost.image_file || featuredPost.image_url} alt={featuredPost.title} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-7xl p-12 lg:p-20">{featuredPost.image}</span>
+                )}
               </div>
               <div className="lg:col-span-5 p-8 sm:p-12 flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
@@ -520,8 +530,12 @@ export default function Blog() {
               onClick={() => handleOpenPost(post)}
             >
               {/* Header Visual icon */}
-              <div className="aspect-video bg-[#C2FF81]/15 border-b border-slate-200/60 flex items-center justify-center text-5xl select-none">
-                {post.image}
+              <div className="aspect-video bg-[#C2FF81]/15 border-b border-slate-200/60 flex items-center justify-center select-none overflow-hidden">
+                {post.image_file || post.image_url ? (
+                  <img src={post.image_file || post.image_url} alt={post.title} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-5xl">{post.image}</span>
+                )}
               </div>
 
               {/* Copy details */}
