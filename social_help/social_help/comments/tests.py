@@ -1,6 +1,6 @@
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
-from social_help.comments.models import Subscription, InstagramAccount, Comment
+from social_help.comments.models import Subscription, InstagramAccount, Comment, AutoReplyRule
 from unittest.mock import Mock, patch
 import base64
 
@@ -401,6 +401,235 @@ class AdminLoginProtectionTests(TestCase):
     def test_other_endpoints_unaffected(self):
         response = self.client.get('/signup/')
         self.assertEqual(response.status_code, 200)
+
+
+from social_help.comments.instagram_service import InstagramTokenExpiredException
+
+class InstagramScanTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="scantestuser", password="password123")
+        self.client.login(username="scantestuser", password="password123")
+        Subscription.objects.create(user=self.user, tier="starter", is_active=True)
+        InstagramAccount.objects.create(
+            user=self.user,
+            ig_business_id="12345",
+            page_access_token="expired_token",
+            auth_method="direct_token"
+        )
+
+    @patch("social_help.comments.instagram_service.InstagramService.scan_instagram_comments")
+    def test_scan_instagram_token_expired(self, mock_scan):
+        mock_scan.side_effect = InstagramTokenExpiredException(
+            "Instagram access token has expired or is invalid: Session has expired"
+        )
+        response = self.client.post(
+            "/api/scan-instagram/",
+            data={"post_id": "test_post_id"},
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.json().get("error"),
+            "Instagram access token has expired or is invalid: Session has expired"
+        )
+
+    @patch("social_help.comments.scanner.scan_account_posts")
+    def test_scan_recent_posts_success(self, mock_scan_posts):
+        mock_scan_posts.return_value = [
+            {"id": "post1", "permalink": "https://ig.com/p/post1", "scanned_at": "2026-06-24 12:00:00", "new_comments": 2, "total_comments": 10}
+        ]
+        response = self.client.post("/api/scan-recent/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Successfully synced and scanned comments", response.json().get("message"))
+        self.assertEqual(response.json().get("total_scanned"), 2)
+
+    def test_scan_status_api(self):
+        from django.core.cache import cache
+        user_id = self.user.id
+        cache.set(f"last_scan_time_{user_id}", "12:00:00 PM", timeout=3600)
+        cache.set(f"recent_scanned_posts_{user_id}", [{"id": "post1", "permalink": "https://ig.com/p/post1", "scanned_at": "2026-06-24 12:00:00", "new_comments": 2, "total_comments": 10}], timeout=3600)
+        
+        response = self.client.get("/api/scan-status/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json().get("last_scan_time"), "12:00:00 PM")
+        self.assertEqual(len(response.json().get("recent_posts")), 1)
+
+    @patch("social_help.comments.instagram_service.InstagramService.fetch_comments")
+    @patch("social_help.comments.instagram_service.InstagramService.api_get")
+    def test_scan_account_posts_only_targets_user_posts(self, mock_api_get, mock_fetch_comments):
+        from social_help.comments.scanner import scan_account_posts
+        from django.core.cache import cache
+
+        # Ensure cache is empty
+        cache.clear()
+        
+        account = InstagramAccount.objects.filter(user=self.user).first()
+        
+        # 1. No rules / no tracked posts -> should not scan anything
+        mock_fetch_comments.return_value = []
+        result = scan_account_posts(account)
+        self.assertEqual(result, [])
+        mock_fetch_comments.assert_not_called()
+
+        # 2. Add an AutoReplyRule targeting '12345'
+        AutoReplyRule.objects.create(
+            user=self.user,
+            trigger_keyword="promo",
+            reply_text="check it out",
+            instagram_post_id="12345"
+        )
+
+        mock_api_get.return_value = {"permalink": "https://ig.com/p/12345"}
+        mock_fetch_comments.return_value = [{"id": "comment_1", "text": "promo word", "username": "other", "timestamp": "2026-06-24T12:00:00Z"}]
+        
+        result = scan_account_posts(account)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["id"], "12345")
+        mock_fetch_comments.assert_called_once_with("12345")
+
+
+class AutoReplyRuleTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="ruleuser", password="password123")
+        self.client.login(username="ruleuser", password="password123")
+        Subscription.objects.create(user=self.user, tier="pro", is_active=True)
+
+    def test_create_single_rule_success(self):
+        response = self.client.post(
+            "/api/autoreply/",
+            data={
+                "trigger_keyword": "promo",
+                "reply_text": "Check it out: http://promo",
+                "reply_type": "public",
+                "instagram_post_id": "postA"
+            },
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["instagram_post_id"], "postA")
+        
+        # Verify db
+        from social_help.comments.models import AutoReplyRule
+        self.assertTrue(AutoReplyRule.objects.filter(user=self.user, trigger_keyword="promo").exists())
+
+    def test_create_global_rule_disabled(self):
+        response = self.client.post(
+            "/api/autoreply/",
+            data={
+                "trigger_keyword": "global",
+                "reply_text": "No post ID here",
+                "reply_type": "public",
+                "instagram_post_id": ""
+            },
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Instagram post ID or URL is required", response.json()["error"])
+
+    def test_create_multiple_rules_same_link(self):
+        response = self.client.post(
+            "/api/autoreply/",
+            data={
+                "trigger_keyword": "multi",
+                "reply_type": "dm",
+                "entries": [
+                    {"instagram_post_id": "post1", "reply_text": "Same Link"},
+                    {"instagram_post_id": "post2", "reply_text": "Same Link"}
+                ]
+            },
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.json()["rules"]), 2)
+        
+        from social_help.comments.models import AutoReplyRule
+        self.assertEqual(AutoReplyRule.objects.filter(user=self.user, trigger_keyword="multi").count(), 2)
+
+    def test_create_multiple_rules_separate_links(self):
+        response = self.client.post(
+            "/api/autoreply/",
+            data={
+                "trigger_keyword": "multi-sep",
+                "reply_type": "public",
+                "entries": [
+                    {"instagram_post_id": "post1", "reply_text": "Link 1"},
+                    {"instagram_post_id": "post2", "reply_text": "Link 2"}
+                ]
+            },
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 201)
+        
+        from social_help.comments.models import AutoReplyRule
+        rule1 = AutoReplyRule.objects.get(user=self.user, trigger_keyword="multi-sep", instagram_post_id="post1")
+        rule2 = AutoReplyRule.objects.get(user=self.user, trigger_keyword="multi-sep", instagram_post_id="post2")
+        self.assertEqual(rule1.reply_text, "Link 1")
+        self.assertEqual(rule2.reply_text, "Link 2")
+
+
+class AIContentGeneratorTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="contentuser", password="password123")
+        self.client.login(username="contentuser", password="password123")
+        Subscription.objects.create(user=self.user, tier="pro", is_active=True)
+
+    def test_generate_ideas_fallback_success(self):
+        response = self.client.post("/api/generate-content-ideas/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("analysis", data)
+        self.assertEqual(len(data["ideas"]), 3)
+        first_idea = data["ideas"][0]
+        self.assertIn("title", first_idea)
+        self.assertIn("hook", first_idea)
+        self.assertIn("caption", first_idea)
+        self.assertIn("hashtags", first_idea)
+
+    @patch("requests.post")
+    @override_settings(GROQ_API_KEY="test_groq_key", NVIDIA_API_KEY="")
+    def test_generate_ideas_groq_success(self, mock_post):
+        mock_response = Mock()
+        mock_response.ok = True
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"analysis": "Groq analysis", "ideas": [{"title": "G1", "hook": "H1", "caption": "C1", "hashtags": ["T1"]}]}'
+                    }
+                }
+            ]
+        }
+        mock_post.return_value = mock_response
+
+        response = self.client.post("/api/generate-content-ideas/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["analysis"], "Groq analysis")
+        self.assertEqual(data["ideas"][0]["title"], "G1")
+
+    @patch("requests.post")
+    @override_settings(GROQ_API_KEY="", NVIDIA_API_KEY="test_nvidia_key")
+    def test_generate_ideas_nvidia_success(self, mock_post):
+        mock_response = Mock()
+        mock_response.ok = True
+        mock_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"analysis": "Nvidia analysis", "ideas": [{"title": "N1", "hook": "H1", "caption": "C1", "hashtags": ["T1"]}]}'
+                    }
+                }
+            ]
+        }
+        mock_post.return_value = mock_response
+
+        response = self.client.post("/api/generate-content-ideas/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["analysis"], "Nvidia analysis")
+        self.assertEqual(data["ideas"][0]["title"], "N1")
+
+
 
 
 

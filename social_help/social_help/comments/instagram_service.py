@@ -6,9 +6,14 @@ from django.core.cache import cache
 from .models import Comment, ModerationSetting, AutoReplyRule
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
+class InstagramTokenExpiredException(Exception):
+    """Exception raised when the Instagram access token has expired or is invalid."""
+    pass
+
 
 class InstagramService:
     def __init__(self, account=None):
+        self.account = account
         if account:
             self.page_token = account.page_access_token
             self.ig_business_id = account.ig_business_id
@@ -32,6 +37,8 @@ class InstagramService:
             params = {}
         params["access_token"] = self.page_token
         url = f"{self.base_url}/{endpoint}"
+        is_token_expired = False
+        expired_msg = ""
         try:
             res = requests.get(url, params=params, timeout=10)
             if "application/json" not in res.headers.get("Content-Type", ""):
@@ -39,12 +46,26 @@ class InstagramService:
                 return None
             data = res.json()
             if "error" in data:
-                print("[ERROR] Meta API Error:", data["error"]["message"])
-                return None
-            return data
+                err_msg = data["error"].get("message", "")
+                err_code = data["error"].get("code")
+                err_type = data["error"].get("type")
+                
+                # Check for token expiration / invalidation
+                if err_code == 190 or err_type == "OAuthException" or "access token" in err_msg.lower() or "session has expired" in err_msg.lower():
+                    is_token_expired = True
+                    expired_msg = err_msg
+                else:
+                    print("[ERROR] Meta API Error:", err_msg)
+                    return None
+            else:
+                return data
         except Exception as e:
             print("[ERROR] API Request Failed:", e)
             return None
+
+        if is_token_expired:
+            raise InstagramTokenExpiredException(f"Instagram access token has expired or is invalid: {expired_msg}")
+        return None
 
     def extract_shortcode(self, input_value):
         if input_value.isdigit():
@@ -287,7 +308,7 @@ class InstagramService:
             if enable_sarcasm:
                 sarcasm_result = self.detect_sarcasm(text)
                 sarcasm_confidence = sarcasm_result["confidence"]
-                sarcasm_detected = sarcasm_confidence >= sarcasm_threshold
+                sarcasm_detected = (sarcasm_confidence > 0.0) and (sarcasm_confidence >= sarcasm_threshold)
 
             toxicity_score = vs['neg'] 
             if sentiment == "negative":
@@ -598,10 +619,44 @@ class InstagramService:
             print(f"[ERROR] Reply request failed: {e}")
             return {"success": False, "error": str(e)}
 
+    def resolve_page_id(self, account=None):
+        if not self.page_token or not self.ig_business_id:
+            return None
+        
+        # Query Facebook Pages linked to this access token
+        url = "me/accounts"
+        data = self.api_get(url)
+        if not data or "data" not in data:
+            return None
+            
+        for page in data["data"]:
+            page_id = page.get("id")
+            page_token = page.get("access_token")
+            # Query if this Page owns the Instagram Business Account
+            check_url = f"{page_id}"
+            check_data = self.api_get(check_url, params={"fields": "instagram_business_account"})
+            if check_data and "instagram_business_account" in check_data:
+                ig_id = check_data["instagram_business_account"].get("id")
+                if ig_id == self.ig_business_id:
+                    self.page_id = page_id
+                    # Update database if account model is provided
+                    if account:
+                        account.page_id = page_id
+                        if account.auth_method == "direct_token":
+                            account.page_access_token = page_token
+                            self.page_token = page_token
+                            self.access_token = page_token
+                        account.save()
+                    return page_id
+        return None
+
     def send_private_reply(self, comment_id, message):
         if not getattr(self, "page_id", ""):
-            print("[ERROR] Page ID is not configured. Cannot send private reply (DM).")
-            return {"success": False, "error": "Facebook Page ID not configured."}
+            # Try to resolve the Page ID dynamically and update database
+            resolved_page_id = self.resolve_page_id(account=getattr(self, "account", None))
+            if not resolved_page_id:
+                print("[ERROR] Page ID is not configured and could not be resolved. Cannot send private reply (DM).")
+                return {"success": False, "error": "Facebook Page ID not configured."}
         if not comment_id or not message:
             return {"success": False, "error": "comment_id and message are required"}
         
@@ -632,8 +687,24 @@ class InstagramService:
             print(f"[ERROR] Send DM reply request failed: {e}")
             return {"success": False, "error": str(e)}
 
-    def scan_instagram_comments(self, post_url, user=None):
-        comments = self.fetch_comments(post_url)
+    def get_instagram_username(self):
+        if not hasattr(self, "_instagram_username"):
+            self._instagram_username = None
+            if self.page_token and self.ig_business_id:
+                cache_key = f"ig_username_{self.ig_business_id}"
+                cached = cache.get(cache_key)
+                if cached:
+                    self._instagram_username = cached
+                else:
+                    data = self.api_get(f"{self.ig_business_id}", {"fields": "username"})
+                    if data and "username" in data:
+                        username = data["username"]
+                        self._instagram_username = username
+                        cache.set(cache_key, username, timeout=86400)
+        return self._instagram_username
+
+    def scan_instagram_comments(self, post_url, user=None, prefetched_comments=None):
+        comments = prefetched_comments if prefetched_comments is not None else self.fetch_comments(post_url)
         if isinstance(comments, dict) and "error" in comments:
             return comments
 
@@ -648,6 +719,18 @@ class InstagramService:
             if not comment_text:
                 continue
 
+            comment_id = comment.get("id")
+            if comment_id and Comment.objects.filter(instagram_id=comment_id).exists():
+                print(f"[INFO] Skipping already processed comment: {comment_id}")
+                continue
+
+            # Skip comments made by the owner themselves
+            comment_username = comment.get("username", "")
+            owner_username = self.get_instagram_username()
+            if comment_username and owner_username and comment_username.lower() == owner_username.lower():
+                print(f"[INFO] Skipping owner's own comment: {comment_username}")
+                continue
+
             analysis = self.scan_comment(comment_text, user=user)
 
             replied = False
@@ -655,7 +738,17 @@ class InstagramService:
             reply_type_sent = None
             if auto_reply_rules and analysis["decision"] != "delete":
                 comment_text_lower = comment_text.lower()
+                current_shortcode = self.extract_shortcode(post_url)
+                current_media_id = current_shortcode if current_shortcode.isdigit() else self.get_media_id(current_shortcode)
+
                 for rule in auto_reply_rules:
+                    rule_post_id = getattr(rule, "instagram_post_id", None)
+                    if rule_post_id and rule_post_id.strip():
+                        target_post = rule_post_id.strip()
+                        target_shortcode = self.extract_shortcode(target_post)
+                        if target_shortcode not in (current_shortcode, current_media_id):
+                            continue
+
                     trigger = rule.trigger_keyword.strip().lower()
                     if trigger and (re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower):
                         rule_type = getattr(rule, "reply_type", "public")

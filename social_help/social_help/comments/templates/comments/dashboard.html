@@ -1304,6 +1304,10 @@
                 padding: 20px;
             }
         }
+
+        .view-section {
+            transition: opacity 0.25s ease-in-out;
+        }
     </style>
 </head>
 
@@ -1329,23 +1333,16 @@
             <!-- Sidebar Navigation menu -->
             <div class="menu-title">Main Menu</div>
             <nav class="sidebar-menu">
-                <a href="/dashboard/" class="menu-item active">
+                <a href="/dashboard/" id="menu-item-dashboard" class="menu-item active"
+                    onclick="switchView(event, 'dashboard')">
                     <i data-lucide="layout-dashboard"></i> Dashboard
                 </a>
-                <a href="#auto-reply-card" class="menu-item" onclick="scrollToAutoReply(event)">
+                <a href="/dashboard/#autoreply" id="menu-item-autoreply" class="menu-item"
+                    onclick="switchView(event, 'autoreply')">
                     <i data-lucide="message-circle"></i> Auto Reply
                 </a>
-                <a href="/demo/" class="menu-item">
+                <a href="/dashboard/#ai" id="menu-item-ai" class="menu-item" onclick="switchView(event, 'ai')">
                     <i data-lucide="sparkles"></i> AI Content Generator
-                </a>
-                <a href="/features/" class="menu-item">
-                    <i data-lucide="trending-up"></i> Track Growth
-                </a>
-                <a href="/how-it-works/" class="menu-item">
-                    <i data-lucide="calendar"></i> Automate Post
-                </a>
-                <a href="/use-cases/" class="menu-item">
-                    <i data-lucide="file-text"></i> Report
                 </a>
             </nav>
 
@@ -1441,243 +1438,485 @@
 
                 <!-- Connected State View -->
 
-                <!-- Top row: Statistics & AI Enhancements -->
-                <div class="stats-grid">
+                <div id="dashboard-view-section" class="view-section">
+                    <!-- Top row: Statistics & AI Enhancements -->
+                    <div class="stats-grid">
 
-                    <!-- Card 1: Total Comments Scanned -->
-                    <div class="card-container card-scanned">
-                        <div class="card-scanned-top">
-                            <div class="card-scanned-left">
-                                <div class="scanned-title">Total Comments Scanned</div>
-                                <div class="scanned-value">{{ total_comments }}</div>
+                        <!-- Card 1: Total Comments Scanned -->
+                        <div class="card-container card-scanned">
+                            <div class="card-scanned-top">
+                                <div class="card-scanned-left">
+                                    <div class="scanned-title">Total Comments Scanned</div>
+                                    <div class="scanned-value">{{ total_comments }}</div>
+                                </div>
+                                <div class="breakdown-capsule">
+                                    <div class="breakdown-row">
+                                        <span class="breakdown-label">Toxic</span>
+                                        <span class="breakdown-count">{{ toxic_comments }}</span>
+                                    </div>
+                                    <div class="breakdown-row">
+                                        <span class="breakdown-label">Sarcasm</span>
+                                        <span class="breakdown-count">{{ sarcasm_comments }}</span>
+                                    </div>
+                                    <div class="breakdown-row">
+                                        <span class="breakdown-label">Promotion</span>
+                                        <span class="breakdown-count">{{ promotion_comments }}</span>
+                                    </div>
+                                    <div class="breakdown-row">
+                                        <span class="breakdown-label">Uncertain</span>
+                                        <span class="breakdown-count">{{ review_comments }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="breakdown-capsule">
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label">Toxic</span>
-                                    <span class="breakdown-count">{{ toxic_comments }}</span>
+                            <div class="card-scanned-buttons">
+                                <button class="btn-capsule btn-capsule-white" onclick="clearComments()">Delete</button>
+                                <button class="btn-capsule btn-capsule-black"
+                                    onclick="document.getElementById('comments').scrollIntoView({behavior:'smooth'});">Explore</button>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: AI Enhancements -->
+                        <div class="card-container card-enhancements">
+                            <div class="enhancements-title">Ai Enhancements</div>
+                            <div class="enhancements-row">
+                                <!-- Widget 1: Toxic Score -->
+                                <div class="enhancement-widget">
+                                    <div class="widget-score-title">Toxic Score<br><span id="toxicScoreText">{{
+                                            avg_toxicity_pct }}% {{ toxicity_label }}</span></div>
+                                    <div class="widget-progress-container">
+                                        <div id="toxicScoreFill" class="widget-progress-fill"
+                                            style="width: {{ avg_toxicity_pct }}%;"></div>
+                                    </div>
                                 </div>
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label">Sarcasm</span>
-                                    <span class="breakdown-count">{{ sarcasm_comments }}</span>
+                                <!-- Widget 2: Screenshot/Preview Graph -->
+                                <div class="enhancement-widget widget-preview">
+                                    <div class="widget-preview-line"></div>
+                                    <div class="widget-preview-line purple"></div>
+                                    <div class="widget-preview-line"></div>
                                 </div>
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label">Promotion</span>
-                                    <span class="breakdown-count">{{ promotion_comments }}</span>
+                                <!-- Widget 3: Sarcasm Score -->
+                                <div class="enhancement-widget">
+                                    <div class="widget-score-title">Sarcasm Score<br><span id="sarcasmScoreText">{{
+                                            sarcasm_pct }}% {{ sarcasm_label }}</span></div>
+                                    <div class="widget-progress-container">
+                                        <div id="sarcasmScoreFill" class="widget-progress-fill"
+                                            style="width: {{ sarcasm_pct }}%;"></div>
+                                    </div>
                                 </div>
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label">Uncertain</span>
-                                    <span class="breakdown-count">{{ review_comments }}</span>
+                                <!-- Widget 4: Positive Sentiment Score -->
+                                <div class="enhancement-widget">
+                                    <div class="widget-score-title">Positive Sentiment<br><span
+                                            id="positiveScoreText">{{ positive_pct }}% {{ positive_label }}</span></div>
+                                    <div class="widget-progress-container">
+                                        <div id="positiveScoreFill" class="widget-progress-fill"
+                                            style="width: {{ positive_pct }}%;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-scanned-buttons">
-                            <button class="btn-capsule btn-capsule-white" onclick="clearComments()">Delete</button>
-                            <button class="btn-capsule btn-capsule-black"
-                                onclick="document.getElementById('comments').scrollIntoView({behavior:'smooth'});">Explore</button>
+
+                    </div>
+
+                    <!-- Middle Row: Instagram Post Scanner Card -->
+                    <div class="stats-grid" style="grid-template-columns: 1fr; margin-top: 32px;">
+                        <!-- Instagram Post Scanner -->
+                        <div class="dark-panel">
+                            <h3><i data-lucide="instagram"></i> Instagram Post Scanner</h3>
+                            <div style="text-align: left;">
+                                <label class="form-label" for="postId">Instagram Post URL or ID:</label>
+                                <input type="text" id="postId" class="dark-input"
+                                    placeholder="Paste Instagram URL or enter post ID">
+                                <div class="dark-info-box">
+                                    <strong>Examples:</strong><br>
+                                    • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
+                                    • Shortcode: DTnrWNNk-WY<br>
+                                    • Numeric ID: 17841400455970028
+                                </div>
+                                <button class="btn-blue-light" onclick="scanInstagramPost()" style="margin-top: 18px;">
+                                    <i data-lucide="search"></i> Scan Comments
+                                </button>
+                                <p id="scanStatus"
+                                    style="margin-top: 12px; color: #047857; font-size: 13px; font-weight: 700;">
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Card 2: AI Enhancements -->
-                    <div class="card-container card-enhancements">
-                        <div class="enhancements-title">Ai Enhancements</div>
-                        <div class="enhancements-row">
-                            <!-- Widget 1: Toxic Score -->
-                            <div class="enhancement-widget">
-                                <div class="widget-score-title">Toxic Score<br><span id="toxicScoreText">{{ avg_toxicity_pct }}% {{ toxicity_label }}</span></div>
-                                <div class="widget-progress-container">
-                                    <div id="toxicScoreFill" class="widget-progress-fill" style="width: {{ avg_toxicity_pct }}%;"></div>
+                    <!-- Bottom Row: Recent Comments & Moderation Settings -->
+                    <div class="stats-grid" style="margin-top: 32px;">
+
+                        <!-- Recent Comments panel -->
+                        <div class="dark-panel" style="display: flex; flex-direction: column;">
+                            <div class="comments-header-row">
+                                <h3><i data-lucide="message-square"></i> Recent Comments</h3>
+                                <button onclick="clearComments()" class="btn-pink-red">Clear Comments</button>
+                            </div>
+                            <div style="text-align: left;">
+                                <div class="comments-toolbar"
+                                    style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                                    <button class="btn-pink-red" onclick="autoDeleteBadComments()">Auto delete
+                                        bad</button>
+                                    <button class="btn-toolbar-grey" onclick="deleteSelectedComments()">Delete
+                                        selected</button>
+                                    <button class="btn-blue-light"
+                                        style="padding: 10px 18px; font-size: 12px; margin: 0;"
+                                        onclick="resolveUncertainWithGroqAll()">Resolve Review with Groq</button>
+                                    <button class="btn-pink-red" id="deleteSearchedBtn"
+                                        onclick="deleteSearchedComments()" style="display: none;">Delete
+                                        matching</button>
+
+                                    <div class="filter-links-group" role="group" aria-label="Comment filter">
+                                        <button type="button" class="filter-link-btn active"
+                                            data-filter="default">Default</button>
+                                        <button type="button" class="filter-link-btn" data-filter="negative">Negative
+                                            first</button>
+                                        <button type="button" class="filter-link-btn" data-filter="positive">Positive
+                                            first</button>
+                                        <button type="button" class="filter-link-btn" data-filter="sarcastic">Sarcastic
+                                            first</button>
+                                        <button type="button" class="filter-link-btn" data-filter="review">Review
+                                            first</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- Widget 2: Screenshot/Preview Graph -->
-                            <div class="enhancement-widget widget-preview">
-                                <div class="widget-preview-line"></div>
-                                <div class="widget-preview-line purple"></div>
-                                <div class="widget-preview-line"></div>
-                            </div>
-                            <!-- Widget 3: Sarcasm Score -->
-                            <div class="enhancement-widget">
-                                <div class="widget-score-title">Sarcasm Score<br><span id="sarcasmScoreText">{{ sarcasm_pct }}% {{ sarcasm_label }}</span></div>
-                                <div class="widget-progress-container">
-                                    <div id="sarcasmScoreFill" class="widget-progress-fill" style="width: {{ sarcasm_pct }}%;"></div>
-                                </div>
-                            </div>
-                            <!-- Widget 4: Positive Sentiment Score -->
-                            <div class="enhancement-widget">
-                                <div class="widget-score-title">Positive Sentiment<br><span id="positiveScoreText">{{ positive_pct }}% {{ positive_label }}</span></div>
-                                <div class="widget-progress-container">
-                                    <div id="positiveScoreFill" class="widget-progress-fill" style="width: {{ positive_pct }}%;"></div>
+
+                                <input type="text" id="searchInput" class="white-search-input"
+                                    placeholder="Search comments by word..." onkeyup="renderComments()">
+
+                                <p id="statusMsg"
+                                    style="color: var(--text-muted); font-size: 13px; font-weight: 600; margin-bottom: 12px;">
+                                </p>
+
+                                <div id="comments" class="comment-list-container">
+                                    <p
+                                        style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">
+                                        No
+                                        comments found. Try scanning an Instagram post!</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
+                        <!-- Moderation Settings panel -->
+                        <div class="dark-panel">
+                            <h3><i data-lucide="sliders"></i> Moderation Settings</h3>
+                            <div style="text-align: left;">
+
+                                <!-- Toxicity Threshold slider -->
+                                <div class="slider-wrapper">
+                                    <div class="slider-header">
+                                        <label class="form-label" style="margin-bottom: 0;">Toxicity Threshold:</label>
+                                        <span class="slider-value" id="thresholdValue">0.7</span>
+                                    </div>
+                                    <input type="range" id="thresholdSlider" min="0" max="1" step="0.05" value="0.7">
+                                </div>
+
+                                <!-- Keywords Input -->
+                                <label class="form-label">Keywords (comma separated):</label>
+                                <input type="text" id="keywordsInput" class="dark-input"
+                                    placeholder="stupid,idiot,scam,fake,hate">
+
+                                <!-- Checkbox Sarcasm -->
+                                <label class="checkbox-label" style="margin-top: 18px;">
+                                    <input type="checkbox" id="enableSarcasmDetection" checked>
+                                    <span class="custom-checkbox"></span>
+                                    Enable AI Sarcasm Detection
+                                </label>
+
+                                <!-- Sarcasm Threshold slider -->
+                                <div class="slider-wrapper">
+                                    <div class="slider-header">
+                                        <label class="form-label" style="margin-bottom: 0;">Sarcasm Threshold:</label>
+                                        <span class="slider-value" id="sarcasmThresholdValue">0.5</span>
+                                    </div>
+                                    <input type="range" id="sarcasmThresholdSlider" min="0" max="1" step="0.05"
+                                        value="0.5">
+                                </div>
+
+                                <button class="btn-blue-light" onclick="saveSettings()" style="margin-top: 12px;">
+                                    <i data-lucide="save"></i> Save Settings
+                                </button>
+                                <p id="settingsStatus"
+                                    style="margin-top: 12px; color: #047857; font-size: 13px; font-weight: 700;"></p>
+
+                                <!-- Connected account details footer inside settings -->
+                                <div class="connected-status-banner"
+                                    style="margin-top: 32px; margin-bottom: 0; background-color: rgba(255,255,255,0.02); border: 2px solid var(--border-black);">
+                                    📱 <strong>Connected Account Details</strong><br>
+                                    Business Account ID: {{ account.ig_business_id }}<br>
+                                    Connected: {{ account.connected_at|date:"M d, Y H:i" }}
+                                    <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                        <a href="/instagram/connect/" class="btn-pink-red"
+                                            style="text-decoration: none; padding: 6px 14px; font-size: 11px;">🔄
+                                            Reconnect</a>
+                                        <form method="post" action="/instagram/disconnect/" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button class="btn-toolbar-grey" type="submit"
+                                                style="padding: 6px 14px; font-size: 11px;">Disconnect</button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
 
-                <!-- Middle Row: Instagram Post Scanner Card & Auto-Reply Link Triggers -->
-                <div class="stats-grid">
-                    <!-- Instagram Post Scanner -->
-                    <div class="dark-panel">
-                        <h3><i data-lucide="instagram"></i> Instagram Post Scanner</h3>
-                        <div style="text-align: left;">
-                            <label class="form-label" for="postId">Instagram Post URL or ID:</label>
-                            <input type="text" id="postId" class="dark-input"
-                                placeholder="Paste Instagram URL or enter post ID">
-                            <div class="dark-info-box">
-                                <strong>Examples:</strong><br>
-                                • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
-                                • Shortcode: DTnrWNNk-WY<br>
-                                • Numeric ID: 17841400455970028
-                            </div>
-                            <button class="btn-blue-light" onclick="scanInstagramPost()" style="margin-top: 18px;">
-                                <i data-lucide="search"></i> Scan Comments
-                            </button>
-                            <p id="scanStatus" style="margin-top: 12px; color: #047857; font-size: 13px; font-weight: 700;">
-                            </p>
-                        </div>
-                    </div>
-
+                <div id="autoreply-view-section" class="view-section" style="display: none;">
                     <!-- Auto-Reply Link Triggers -->
-                    <div id="auto-reply-card" class="dark-panel" style="display: flex; flex-direction: column;">
+                    <div id="auto-reply-card" class="dark-panel"
+                        style="display: flex; flex-direction: column; margin-bottom: 32px;">
                         <h3><i data-lucide="message-square"></i> Auto-Reply Link Triggers</h3>
                         <div style="text-align: left; flex-grow: 1; display: flex; flex-direction: column;">
-                            <div style="display: grid; grid-template-columns: 1.2fr 1.2fr 2.6fr; gap: 12px; margin-bottom: 12px;">
+                            <!-- Keyword & Reply Type Row -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                                 <div>
                                     <label class="form-label" for="triggerKeywordInput">Keyword:</label>
-                                    <input type="text" id="triggerKeywordInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. link">
+                                    <input type="text" id="triggerKeywordInput" class="dark-input"
+                                        style="margin-bottom: 0;" placeholder="e.g. link">
                                 </div>
                                 <div>
                                     <label class="form-label" for="replyTypeSelect">Reply Type:</label>
-                                    <select id="replyTypeSelect" class="dark-input" style="margin-bottom: 0; padding: 12px 18px; border-radius: 9999px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 20px top 50%; background-size: 10px auto;">
+                                    <select id="replyTypeSelect" class="dark-input"
+                                        style="margin-bottom: 0; padding: 12px 18px; border-radius: 9999px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 20px top 50%; background-size: 10px auto;">
                                         <option value="public">Comment</option>
                                         <option value="dm">Direct Msg (DM)</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label class="form-label" for="replyTextInput">Reply Text / Link:</label>
-                                    <input type="text" id="replyTextInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. Here is the link: https://google.com">
+                            </div>
+
+                            <!-- Target Instagram Posts Section -->
+                            <div
+                                style="margin-bottom: 16px; padding: 16px; border: 2px solid var(--border-black); border-radius: 16px; background-color: rgba(0,0,0,0.02); box-shadow: 2px 2px 0px var(--border-black);">
+                                <label class="form-label" style="font-weight: 800; margin-bottom: 6px;">Target Instagram
+                                    Posts (URLs or IDs):</label>
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                    <input type="text" id="targetPostInput" class="dark-input"
+                                        style="margin-bottom: 0; flex-grow: 1;"
+                                        placeholder="Paste Instagram Post URL or enter post ID">
+                                    <button type="button" class="btn-blue-light" onclick="addTargetPost(event)"
+                                        style="margin: 0; padding: 10px 20px; font-size: 12px; height: 46px; border-radius: 9999px;">Add
+                                        Post</button>
+                                </div>
+                                <div id="targetPostsList"
+                                    style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                    <span style="color: var(--text-muted); font-size: 13px; font-style: italic;">No
+                                        target posts added yet.</span>
+                                </div>
+
+                                <!-- Question / Checkbox for Separate Links (visible only if posts count > 1) -->
+                                <div id="separateLinksToggleContainer"
+                                    style="display: none; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-black);">
+                                    <label class="checkbox-label"
+                                        style="margin-bottom: 0; display: inline-flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="useSeparateLinksCheckbox"
+                                            onchange="toggleSeparateLinks(event)">
+                                        <span class="custom-checkbox"></span>
+                                        Use separate reply link / text for each post?
+                                    </label>
                                 </div>
                             </div>
-                            <button class="btn-blue-light" onclick="addAutoReplyRule()" style="margin-top: 6px; margin-bottom: 18px;">
+
+                            <!-- Reply Text Input Containers -->
+                            <div id="singleReplyContainer" style="margin-bottom: 16px;">
+                                <label class="form-label" for="replyTextInput">Reply Text / Link:</label>
+                                <input type="text" id="replyTextInput" class="dark-input" style="margin-bottom: 0;"
+                                    placeholder="e.g. Here is the link: https://google.com">
+                            </div>
+
+                            <div id="separateRepliesContainer"
+                                style="display: none; margin-bottom: 16px; padding: 16px; border: 2px dashed var(--border-black); border-radius: 16px; background-color: rgba(255,255,255,0.02);">
+                                <label class="form-label" style="font-weight: 800; margin-bottom: 12px;">Configure
+                                    Separate Reply Links:</label>
+                                <div id="separateRepliesInputsList"
+                                    style="display: flex; flex-direction: column; gap: 12px;">
+                                    <!-- Inputs will be generated dynamically -->
+                                </div>
+                            </div>
+
+                            <button class="btn-blue-light" onclick="addAutoReplyRule()"
+                                style="margin-top: 6px; margin-bottom: 18px;">
                                 <i data-lucide="plus-circle"></i> Add Trigger Rule
                             </button>
 
                             <label class="form-label" style="margin-bottom: 8px;">Active Auto-Replies:</label>
-                            <div id="autoReplyRulesList" style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
-                                <p style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading triggers...</p>
+                            <div id="autoReplyRulesList"
+                                style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                                <p style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading
+                                    triggers...</p>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Dedicated Auto-Scan Shield Section -->
+                    <div class="dark-panel" style="text-align: left;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-black); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="shield-check" style="stroke: #10b981; width: 22px; height: 22px;"></i>
+                                Real-time Auto-Scan Shield
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <span id="autoScanBadge"
+                                    style="font-size: 11px; padding: 6px 14px; border: 2px solid var(--border-black); border-radius: 9999px; font-weight: 800; background: #e0f2fe; color: #0369a1; display: inline-flex; align-items: center; gap: 6px; box-shadow: 2px 2px 0px var(--border-black);">
+                                    <span
+                                        style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0369a1;"></span>
+                                    AUTO-SCAN ACTIVE
+                                </span>
+                                <button id="syncRecentBtn" class="btn-blue-light" onclick="syncRecentPosts()"
+                                    style="padding: 10px 20px; font-size: 13px; margin: 0; display: inline-flex; align-items: center; gap: 8px; box-shadow: 3px 3px 0px var(--border-black); cursor: pointer;">
+                                    <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sync Recent
+                                    Posts
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 32px;">
+                            <!-- Scanner settings / status -->
+                            <div style="border-right: 2px dashed var(--border-black); padding-right: 32px;">
+                                <h4
+                                    style="margin: 0 0 16px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="settings" style="width: 16px; height: 16px;"></i> Scanner Profile
+                                </h4>
+                                <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.2;">
+                                    <li
+                                        style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px;">
+                                        <strong>Status:</strong>
+                                        <span
+                                            style="color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                            <span
+                                                style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #059669;"></span>
+                                            Listening
+                                        </span>
+                                    </li>
+                                    <li
+                                        style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; margin-top: 4px;">
+                                        <strong>Interval:</strong>
+                                        <span style="color: var(--text-dark); font-weight: 700;">60 seconds</span>
+                                    </li>
+                                    <li
+                                        style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; margin-top: 4px;">
+                                        <strong>Target Scope:</strong>
+                                        <span style="color: var(--text-dark); font-weight: 700;">Last 5 posts</span>
+                                    </li>
+                                    <li style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                        <strong>Last Auto-Scan:</strong>
+                                        <span id="lastScanTime"
+                                            style="color: var(--text-dark); font-weight: 700;">Checking...</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Recent posts scanned list -->
+                            <div style="display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <h4
+                                        style="margin: 0 0 16px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                                        <i data-lucide="layout-grid" style="width: 16px; height: 16px;"></i> Recently
+                                        Monitored Posts
+                                    </h4>
+                                    <div id="recentScannedPostsList"
+                                        style="display: flex; flex-direction: column; gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 8px;">
+                                        <p
+                                            style="color: var(--text-muted); font-size: 13px; font-style: italic; margin: 0;">
+                                            No posts monitored yet. Click sync or wait for the automatic scan.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="syncStatus"
+                            style="margin-top: 18px; color: #047857; font-size: 13px; font-weight: 700; margin-bottom: 0; display: none;">
+                        </p>
                     </div>
                 </div>
 
-                <!-- Bottom Row: Recent Comments & Moderation Settings -->
-                <div class="stats-grid">
-
-                    <!-- Recent Comments panel -->
-                    <div class="dark-panel" style="display: flex; flex-direction: column;">
-                        <div class="comments-header-row">
-                            <h3><i data-lucide="message-square"></i> Recent Comments</h3>
-                            <button onclick="clearComments()" class="btn-pink-red">Clear Comments</button>
+                <div id="ai-view-section" class="view-section" style="display: none;">
+                    <!-- AI Content Strategy Card -->
+                    <div class="dark-panel" style="text-align: left; margin-bottom: 32px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-black); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="sparkles" style="stroke: #8b5cf6; width: 22px; height: 22px;"></i> AI
+                                Content Strategy & Idea Generator
+                            </h3>
+                            <div>
+                                <button id="generateIdeasBtn" class="btn-blue-light"
+                                    onclick="generateContentIdeas(event)"
+                                    style="padding: 10px 24px; font-size: 13px; margin: 0; display: inline-flex; align-items: center; gap: 8px; box-shadow: 3px 3px 0px var(--border-black); cursor: pointer; border-radius: 9999px;">
+                                    <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Generate Content
+                                    Ideas
+                                </button>
+                            </div>
                         </div>
-                        <div style="text-align: left;">
-                            <div class="comments-toolbar"
-                                style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-                                <button class="btn-pink-red" onclick="autoDeleteBadComments()">Auto delete bad</button>
-                                <button class="btn-toolbar-grey" onclick="deleteSelectedComments()">Delete
-                                    selected</button>
-                                <button class="btn-blue-light" style="padding: 10px 18px; font-size: 12px; margin: 0;"
-                                    onclick="resolveUncertainWithGroqAll()">Resolve Review with Groq</button>
-                                <button class="btn-pink-red" id="deleteSearchedBtn" onclick="deleteSearchedComments()"
-                                    style="display: none;">Delete matching</button>
 
-                                <div class="filter-links-group" role="group" aria-label="Comment filter">
-                                    <button type="button" class="filter-link-btn active"
-                                        data-filter="default">Default</button>
-                                    <button type="button" class="filter-link-btn" data-filter="negative">Negative
-                                        first</button>
-                                    <button type="button" class="filter-link-btn" data-filter="positive">Positive
-                                        first</button>
-                                    <button type="button" class="filter-link-btn" data-filter="sarcastic">Sarcastic
-                                        first</button>
-                                    <button type="button" class="filter-link-btn" data-filter="review">Review
-                                        first</button>
+                        <!-- Info Header -->
+                        <div
+                            style="background-color: rgba(0,0,0,0.02); border: 2px solid var(--border-black); border-radius: 16px; padding: 16px; margin-bottom: 24px; display: flex; gap: 16px; align-items: center; box-shadow: 2px 2px 0px var(--border-black);">
+                            <div style="font-size: 28px;">🤖</div>
+                            <div style="font-size: 13px; line-height: 1.5; color: var(--text-dark); font-weight: 700;">
+                                socialFuse AI will analyze your connected Instagram business profile, style, captions,
+                                and audience engagement themes.
+                                Click <strong>Generate Content Ideas</strong> to unlock personalized strategies and 3
+                                brand-new custom concepts for your profile.
+                            </div>
+                        </div>
+
+                        <!-- Loading Indicator -->
+                        <div id="aiLoadingSection" style="display: none; text-align: center; padding: 48px 0;">
+                            <div class="widget-preview-line purple"
+                                style="width: 80px; height: 6px; border-radius: 9999px; margin: 0 auto 16px auto; animation: pulse 1.5s infinite;">
+                            </div>
+                            <p style="font-weight: 800; font-size: 15px; color: var(--text-dark); margin: 0;">Analyzing
+                                profile captions & engagement metrics...</p>
+                            <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">This takes about
+                                10-15 seconds. Creating tailored hooks, captions, and hashtags.</p>
+                        </div>
+
+                        <!-- Results Section -->
+                        <div id="aiResultsSection" style="display: none;">
+                            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 32px; align-items: start;">
+                                <!-- Left Column: Profile Analysis -->
+                                <div
+                                    style="background-color: #ffffff; border: 2px solid var(--border-black); border-radius: 16px; padding: 20px; box-shadow: 4px 4px 0px var(--border-black);">
+                                    <h4
+                                        style="margin: 0 0 12px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; border-bottom: 2.5px solid var(--border-black); padding-bottom: 8px;">
+                                        <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i> Niche &
+                                        Style Audit
+                                    </h4>
+                                    <p id="aiAnalysisText"
+                                        style="font-size: 13px; line-height: 1.6; color: var(--text-dark); margin: 0; font-weight: 700; text-align: justify;">
+                                    </p>
+                                </div>
+
+                                <!-- Right Column: Suggested Concepts -->
+                                <div>
+                                    <h4
+                                        style="margin: 0 0 16px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                                        <i data-lucide="lightbulb"
+                                            style="width: 16px; height: 16px; stroke: #fbbf24;"></i> Customized Content
+                                        Concepts
+                                    </h4>
+                                    <div id="aiIdeasContainer"
+                                        style="display: flex; flex-direction: column; gap: 20px;">
+                                        <!-- Dynamic concept cards go here -->
+                                    </div>
                                 </div>
                             </div>
-
-                            <input type="text" id="searchInput" class="white-search-input"
-                                placeholder="Search comments by word..." onkeyup="renderComments()">
-
-                            <p id="statusMsg"
-                                style="color: var(--text-muted); font-size: 13px; font-weight: 600; margin-bottom: 12px;"></p>
-
-                            <div id="comments" class="comment-list-container">
-                                <p style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;">No
-                                    comments found. Try scanning an Instagram post!</p>
-                            </div>
                         </div>
+
+                        <!-- Placeholder when not generated yet -->
+                        <div id="aiPlaceholderSection"
+                            style="text-align: center; padding: 64px 0; border: 2px dashed rgba(0,0,0,0.2); border-radius: 20px; background-color: rgba(0,0,0,0.01);">
+                            <i data-lucide="sparkles"
+                                style="width: 48px; height: 48px; stroke: #94a3b8; margin-bottom: 12px; margin-left: auto; margin-right: auto; display: block;"></i>
+                            <p style="font-weight: 800; font-size: 15px; color: #64748b; margin: 0;">No ideas generated
+                                yet</p>
+                            <p
+                                style="font-size: 13px; color: var(--text-muted); margin-top: 6px; max-width: 400px; margin-left: auto; margin-right: auto;">
+                                Click the button in the top right to start profile analysis and get tailored concepts.
+                            </p>
+                        </div>
+
                     </div>
-
-                    <!-- Moderation Settings panel -->
-                    <div class="dark-panel">
-                        <h3><i data-lucide="sliders"></i> Moderation Settings</h3>
-                        <div style="text-align: left;">
-
-                            <!-- Toxicity Threshold slider -->
-                            <div class="slider-wrapper">
-                                <div class="slider-header">
-                                    <label class="form-label" style="margin-bottom: 0;">Toxicity Threshold:</label>
-                                    <span class="slider-value" id="thresholdValue">0.7</span>
-                                </div>
-                                <input type="range" id="thresholdSlider" min="0" max="1" step="0.05" value="0.7">
-                            </div>
-
-                            <!-- Keywords Input -->
-                            <label class="form-label">Keywords (comma separated):</label>
-                            <input type="text" id="keywordsInput" class="dark-input"
-                                placeholder="stupid,idiot,scam,fake,hate">
-
-                            <!-- Checkbox Sarcasm -->
-                            <label class="checkbox-label" style="margin-top: 18px;">
-                                <input type="checkbox" id="enableSarcasmDetection" checked>
-                                <span class="custom-checkbox"></span>
-                                Enable AI Sarcasm Detection
-                            </label>
-
-                            <!-- Sarcasm Threshold slider -->
-                            <div class="slider-wrapper">
-                                <div class="slider-header">
-                                    <label class="form-label" style="margin-bottom: 0;">Sarcasm Threshold:</label>
-                                    <span class="slider-value" id="sarcasmThresholdValue">0.5</span>
-                                </div>
-                                <input type="range" id="sarcasmThresholdSlider" min="0" max="1" step="0.05" value="0.5">
-                            </div>
-
-                            <button class="btn-blue-light" onclick="saveSettings()" style="margin-top: 12px;">
-                                <i data-lucide="save"></i> Save Settings
-                            </button>
-                            <p id="settingsStatus"
-                                style="margin-top: 12px; color: #047857; font-size: 13px; font-weight: 700;"></p>
-
-                            <!-- Connected account details footer inside settings -->
-                            <div class="connected-status-banner"
-                                style="margin-top: 32px; margin-bottom: 0; background-color: rgba(255,255,255,0.02); border: 2px solid var(--border-black);">
-                                📱 <strong>Connected Account Details</strong><br>
-                                Business Account ID: {{ account.ig_business_id }}<br>
-                                Connected: {{ account.connected_at|date:"M d, Y H:i" }}
-                                <div style="display: flex; gap: 12px; margin-top: 16px;">
-                                    <a href="/instagram/connect/" class="btn-pink-red"
-                                        style="text-decoration: none; padding: 6px 14px; font-size: 11px;">🔄
-                                        Reconnect</a>
-                                    <form method="post" action="/instagram/disconnect/" style="display: inline;">
-                                        {% csrf_token %}
-                                        <button class="btn-toolbar-grey" type="submit"
-                                            style="padding: 6px 14px; font-size: 11px;">Disconnect</button>
-                                    </form>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
                 </div>
 
                 {% endif %}
@@ -1727,17 +1966,125 @@
         let commentsCache = [];
         let currentFilter = "default";
 
-        // Initialize Lucide Icons & Auto-Reply Rules
+        // Initialize Lucide Icons, Auto-Reply Rules, and Auto-Scan Status
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) {
                 window.lucide.createIcons();
             }
             loadAutoReplyRules();
+            loadScanStatus();
+            // Handle routing on load
+            handleRouting();
+            // Poll scanner status every 15 seconds
+            setInterval(loadScanStatus, 15000);
         });
+
+        let addedTargetPosts = [];
+
+        function addTargetPost(e) {
+            if (e) e.preventDefault();
+            const inputEl = document.getElementById("targetPostInput");
+            if (!inputEl) return;
+            const val = inputEl.value.trim();
+            if (!val) return;
+            const postId = extractPostId(val);
+            if (addedTargetPosts.includes(postId)) {
+                alert("This post has already been added.");
+                return;
+            }
+            addedTargetPosts.push(postId);
+            inputEl.value = "";
+            renderTargetPostsUI();
+        }
+
+        function removeTargetPost(postId) {
+            addedTargetPosts = addedTargetPosts.filter(id => id !== postId);
+            renderTargetPostsUI();
+        }
+
+        function toggleSeparateLinks(e) {
+            renderTargetPostsUI();
+        }
+
+        function renderTargetPostsUI() {
+            const listEl = document.getElementById("targetPostsList");
+            const toggleContainer = document.getElementById("separateLinksToggleContainer");
+            const checkbox = document.getElementById("useSeparateLinksCheckbox");
+            const singleReplyContainer = document.getElementById("singleReplyContainer");
+            const separateRepliesContainer = document.getElementById("separateRepliesContainer");
+            const separateListEl = document.getElementById("separateRepliesInputsList");
+
+            if (!listEl) return;
+
+            if (addedTargetPosts.length === 0) {
+                listEl.innerHTML = `<span style="color: var(--text-muted); font-size: 13px; font-style: italic;">No target posts added yet.</span>`;
+                if (toggleContainer) toggleContainer.style.display = "none";
+                if (checkbox) checkbox.checked = false;
+                if (singleReplyContainer) singleReplyContainer.style.display = "block";
+                if (separateRepliesContainer) separateRepliesContainer.style.display = "none";
+                return;
+            }
+
+            // Render tags/badges
+            listEl.innerHTML = "";
+            addedTargetPosts.forEach(postId => {
+                const badge = document.createElement("span");
+                badge.style = "display: inline-flex; align-items: center; gap: 8px; background-color: #f1f5f9; border: 1.5px solid var(--border-black); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--text-dark); box-shadow: 2px 2px 0px var(--border-black); margin-bottom: 4px;";
+                badge.innerHTML = `
+                    <span>Post: ${postId}</span>
+                    <span style="cursor: pointer; color: #ef4444; font-weight: 900; font-size: 14px; margin-left: 4px;" onclick="removeTargetPost('${postId}')">&times;</span>
+                `;
+                listEl.appendChild(badge);
+            });
+
+            // Toggle separate links question
+            if (addedTargetPosts.length > 1) {
+                if (toggleContainer) toggleContainer.style.display = "block";
+                const useSeparate = checkbox && checkbox.checked;
+                if (useSeparate) {
+                    if (singleReplyContainer) singleReplyContainer.style.display = "none";
+                    if (separateRepliesContainer) separateRepliesContainer.style.display = "block";
+
+                    // Render separate input fields, preserving values if they exist
+                    const currentValues = {};
+                    if (separateListEl) {
+                        separateListEl.querySelectorAll(".separate-reply-input").forEach(input => {
+                            currentValues[input.dataset.postId] = input.value;
+                        });
+                        separateListEl.innerHTML = "";
+                        addedTargetPosts.forEach(postId => {
+                            const val = currentValues[postId] || "";
+                            const itemDiv = document.createElement("div");
+                            itemDiv.style = "display: flex; flex-direction: column; gap: 4px;";
+                            itemDiv.innerHTML = `
+                                <label class="form-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-dark); margin: 0;">Reply Text/Link for Post "${postId}":</label>
+                                <input type="text" class="dark-input separate-reply-input" data-post-id="${postId}" value="${val.replace(/"/g, '&quot;')}" placeholder="e.g. Here is the link for this post..." style="margin-bottom: 0;">
+                            `;
+                            separateListEl.appendChild(itemDiv);
+                        });
+                    }
+                } else {
+                    if (singleReplyContainer) singleReplyContainer.style.display = "block";
+                    if (separateRepliesContainer) separateRepliesContainer.style.display = "none";
+                }
+            } else {
+                if (toggleContainer) toggleContainer.style.display = "none";
+                if (checkbox) checkbox.checked = false;
+                if (singleReplyContainer) singleReplyContainer.style.display = "block";
+                if (separateRepliesContainer) separateRepliesContainer.style.display = "none";
+            }
+        }
 
         function loadAutoReplyRules() {
             fetch(autoReplyUrl)
-                .then(res => res.json())
+                .then(res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return res.json();
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
                 .then(data => {
                     const listContainer = document.getElementById("autoReplyRulesList");
                     if (!listContainer) return;
@@ -1753,9 +2100,16 @@
                         const badgeBg = isDm ? "var(--accent-purple)" : "var(--neon-lime)";
                         const badgeColor = isDm ? "#ffffff" : "var(--text-dark)";
                         const typeLabel = isDm ? "DM" : "Comment";
+
+                        // Show post ID or Shortcode badge
+                        const postBadge = rule.instagram_post_id
+                            ? `<span style="font-weight: 800; background-color: #e0f2fe; color: #0369a1; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">Post: ${rule.instagram_post_id}</span>`
+                            : `<span style="font-weight: 800; background-color: #fee2e2; color: #991b1b; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">Global</span>`;
+
                         div.innerHTML = `
                             <div style="text-align: left; flex-grow: 1; min-width: 0; padding-right: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 <span style="font-weight: 800; background-color: ${badgeBg}; color: ${badgeColor}; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 10px; margin-right: 6px; display: inline-block;">${typeLabel}</span>
+                                ${postBadge}
                                 <span style="font-weight: 800; background-color: #f1f5f9; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">"${rule.trigger_keyword}"</span>
                                 <span style="font-size: 12px; font-weight: 700; color: var(--text-dark);">${rule.reply_text}</span>
                             </div>
@@ -1769,15 +2123,66 @@
 
         function addAutoReplyRule() {
             const keywordInput = document.getElementById("triggerKeywordInput");
-            const replyInput = document.getElementById("replyTextInput");
             const typeSelect = document.getElementById("replyTypeSelect");
+            const checkbox = document.getElementById("useSeparateLinksCheckbox");
+
             const keyword = keywordInput ? keywordInput.value.trim() : "";
-            const reply = replyInput ? replyInput.value.trim() : "";
             const replyType = typeSelect ? typeSelect.value : "public";
 
-            if (!keyword || !reply) {
-                alert("Please fill in both the trigger keyword and the reply text/link.");
+            if (!keyword) {
+                alert("Please enter a trigger keyword.");
                 return;
+            }
+
+            if (addedTargetPosts.length === 0) {
+                alert("Please add at least one target Instagram Post URL or ID.");
+                return;
+            }
+
+            let payload = {
+                trigger_keyword: keyword,
+                reply_type: replyType
+            };
+
+            const useSeparate = checkbox && checkbox.checked && addedTargetPosts.length > 1;
+
+            if (useSeparate) {
+                const entries = [];
+                const inputs = document.querySelectorAll(".separate-reply-input");
+                let hasEmpty = false;
+                inputs.forEach(input => {
+                    const postId = input.dataset.postId;
+                    const val = input.value.trim();
+                    if (!val) {
+                        hasEmpty = true;
+                    }
+                    entries.push({
+                        instagram_post_id: postId,
+                        reply_text: val
+                    });
+                });
+                if (hasEmpty) {
+                    alert("Please fill in reply text/links for all target posts.");
+                    return;
+                }
+                payload.entries = entries;
+            } else {
+                const replyInput = document.getElementById("replyTextInput");
+                const reply = replyInput ? replyInput.value.trim() : "";
+                if (!reply) {
+                    alert("Please enter a reply text/link.");
+                    return;
+                }
+
+                if (addedTargetPosts.length === 1) {
+                    payload.instagram_post_id = addedTargetPosts[0];
+                    payload.reply_text = reply;
+                } else {
+                    payload.entries = addedTargetPosts.map(postId => ({
+                        instagram_post_id: postId,
+                        reply_text: reply
+                    }));
+                }
             }
 
             fetch(autoReplyUrl, {
@@ -1786,19 +2191,28 @@
                     "Content-Type": "application/json",
                     "X-CSRFToken": getCookie('csrftoken')
                 },
-                body: JSON.stringify({ trigger_keyword: keyword, reply_text: reply, reply_type: replyType })
+                body: JSON.stringify(payload)
             })
                 .then(async res => {
-                    const data = await res.json();
-                    if (!res.ok) {
-                        throw new Error(data.error || "Failed to add trigger.");
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.error || "Failed to add trigger.");
+                        }
+                        return data;
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
                     }
-                    return data;
                 })
                 .then(() => {
                     if (keywordInput) keywordInput.value = "";
+                    const replyInput = document.getElementById("replyTextInput");
                     if (replyInput) replyInput.value = "";
                     if (typeSelect) typeSelect.value = "public";
+                    if (checkbox) checkbox.checked = false;
+                    addedTargetPosts = [];
+                    renderTargetPostsUI();
                     loadAutoReplyRules();
                 })
                 .catch(err => {
@@ -1826,20 +2240,183 @@
                 .catch(err => console.error("Error deleting rule:", err));
         }
 
-        function scrollToAutoReply(e) {
-            e.preventDefault();
-            const el = document.getElementById("auto-reply-card");
-            if (el) {
-                el.scrollIntoView({ behavior: "smooth" });
-                el.style.transition = "border-color 0.5s ease, box-shadow 0.5s ease";
-                el.style.borderColor = "var(--accent-purple)";
-                el.style.boxShadow = "8px 8px 0px var(--accent-purple)";
-                setTimeout(() => {
-                    el.style.borderColor = "var(--border-black)";
-                    el.style.boxShadow = "6px 6px 0px var(--border-black)";
-                }, 2000);
+        function switchView(e, viewName) {
+            if (e) {
+                e.preventDefault();
+            }
+
+            document.querySelectorAll('.sidebar-menu .menu-item').forEach(el => el.classList.remove('active'));
+
+            const dashboardSec = document.getElementById('dashboard-view-section');
+            const autoreplySec = document.getElementById('autoreply-view-section');
+            const aiSec = document.getElementById('ai-view-section');
+
+            if (viewName === 'autoreply') {
+                if (dashboardSec) dashboardSec.style.display = 'none';
+                if (aiSec) aiSec.style.display = 'none';
+                if (autoreplySec) {
+                    autoreplySec.style.display = 'block';
+                    autoreplySec.style.opacity = 0;
+                    setTimeout(() => { autoreplySec.style.opacity = 1; }, 50);
+                }
+
+                const replyMenu = document.getElementById('menu-item-autoreply');
+                if (replyMenu) replyMenu.classList.add('active');
+
+                history.pushState(null, null, '#autoreply');
+            } else if (viewName === 'ai') {
+                if (dashboardSec) dashboardSec.style.display = 'none';
+                if (autoreplySec) autoreplySec.style.display = 'none';
+                if (aiSec) {
+                    aiSec.style.display = 'block';
+                    aiSec.style.opacity = 0;
+                    setTimeout(() => { aiSec.style.opacity = 1; }, 50);
+                }
+
+                const aiMenu = document.getElementById('menu-item-ai');
+                if (aiMenu) aiMenu.classList.add('active');
+
+                history.pushState(null, null, '#ai');
+            } else {
+                if (autoreplySec) autoreplySec.style.display = 'none';
+                if (aiSec) aiSec.style.display = 'none';
+                if (dashboardSec) {
+                    dashboardSec.style.display = 'block';
+                    dashboardSec.style.opacity = 0;
+                    setTimeout(() => { dashboardSec.style.opacity = 1; }, 50);
+                }
+
+                const dashMenu = document.getElementById('menu-item-dashboard');
+                if (dashMenu) dashMenu.classList.add('active');
+
+                history.pushState(null, null, window.location.pathname);
+            }
+
+            if (window.lucide) {
+                window.lucide.createIcons();
             }
         }
+
+        function handleRouting() {
+            if (window.location.hash === '#autoreply') {
+                switchView(null, 'autoreply');
+            } else if (window.location.hash === '#ai') {
+                switchView(null, 'ai');
+            } else {
+                switchView(null, 'dashboard');
+            }
+        }
+
+        function generateContentIdeas(e) {
+            if (e) e.preventDefault();
+            const btn = document.getElementById("generateIdeasBtn");
+            const loadingSec = document.getElementById("aiLoadingSection");
+            const resultsSec = document.getElementById("aiResultsSection");
+            const placeholderSec = document.getElementById("aiPlaceholderSection");
+
+            if (btn) btn.disabled = true;
+            if (loadingSec) loadingSec.style.display = "block";
+            if (resultsSec) resultsSec.style.display = "none";
+            if (placeholderSec) placeholderSec.style.display = "none";
+
+            fetch("/api/generate-content-ideas/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                }
+            })
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.error || "Failed to generate content ideas.");
+                        }
+                        return data;
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
+                .then(data => {
+                    const analysisText = document.getElementById("aiAnalysisText");
+                    if (analysisText) {
+                        analysisText.innerText = data.analysis || "No analysis provided.";
+                    }
+
+                    const ideasContainer = document.getElementById("aiIdeasContainer");
+                    if (ideasContainer) {
+                        ideasContainer.innerHTML = "";
+                        const ideas = data.ideas || [];
+                        if (ideas.length === 0) {
+                            ideasContainer.innerHTML = `<p style="color:var(--text-muted); font-size:13px; font-style:italic;">No concepts suggested.</p>`;
+                        } else {
+                            ideas.forEach((idea, idx) => {
+                                const card = document.createElement("div");
+                                card.style = "background-color: #ffffff; border: 2px solid var(--border-black); border-radius: 16px; padding: 20px; box-shadow: 4px 4px 0px var(--border-black); position: relative; margin-bottom: 16px;";
+
+                                const tagsHtml = (idea.hashtags || []).map(tag =>
+                                    `<span style="display: inline-block; background-color: #f1f5f9; border: 1.5px solid var(--border-black); border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: #475569; box-shadow: 1.5px 1.5px 0px var(--border-black); margin-right: 6px; margin-top: 4px;">${tag}</span>`
+                                ).join("");
+
+                                card.innerHTML = `
+                                    <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 2px solid var(--border-black); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                                        <div style="font-weight: 900; font-size: 15px; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                                            <span style="background-color: #8b5cf6; color: white; border: 1.5px solid var(--border-black); border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; box-shadow: 1px 1px 0px var(--border-black);">${idx + 1}</span>
+                                            ${idea.title}
+                                        </div>
+                                        <button class="btn-blue-light" style="padding: 6px 14px; font-size: 11px; margin: 0; box-shadow: 2px 2px 0px var(--border-black); border-radius: 9999px;" onclick="copyCaption(this, \`${idea.caption.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
+                                            Copy Caption
+                                        </button>
+                                    </div>
+                                    <div style="font-size: 13px; line-height: 1.6; color: var(--text-dark); font-weight: 700; margin-bottom: 12px; background: rgba(0,0,0,0.015); border: 2.5px dashed var(--border-black); padding: 12px; border-radius: 12px;">
+                                        <strong>Hook:</strong> <span style="font-style: italic; color: #4f46e5;">"${idea.hook}"</span>
+                                    </div>
+                                    <div style="font-size: 13px; line-height: 1.5; color: var(--text-dark); font-weight: 600; text-align: justify; margin-bottom: 16px; white-space: pre-line;">
+                                        ${idea.caption}
+                                    </div>
+                                    <div style="display: flex; flex-wrap: wrap; margin-top: 10px;">
+                                        ${tagsHtml}
+                                    </div>
+                                `;
+                                ideasContainer.appendChild(card);
+                            });
+                        }
+                    }
+
+                    if (loadingSec) loadingSec.style.display = "none";
+                    if (resultsSec) resultsSec.style.display = "block";
+                })
+                .catch(err => {
+                    alert(err.message);
+                    if (loadingSec) loadingSec.style.display = "none";
+                    if (placeholderSec) placeholderSec.style.display = "block";
+                })
+                .finally(() => {
+                    if (btn) btn.disabled = false;
+                    if (window.lucide) window.lucide.createIcons();
+                });
+        }
+
+        function copyCaption(btn, text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const originalText = btn.innerText;
+                    btn.innerText = "Copied! ✓";
+                    btn.style.backgroundColor = "var(--neon-lime)";
+                    btn.style.color = "var(--text-dark)";
+                    setTimeout(() => {
+                        btn.innerText = originalText;
+                        btn.style.backgroundColor = "";
+                        btn.style.color = "";
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error("Failed to copy text: ", err);
+                });
+        }
+
+        window.addEventListener('hashchange', handleRouting);
 
         function alertMessage(message, confirmUrl = '/logout/') {
             showPopup(message, () => { window.location.href = confirmUrl; });
@@ -1891,7 +2468,14 @@
 
         // Fetch and load Settings values
         fetch(settingsUrl)
-            .then(res => res.json())
+            .then(res => {
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return res.json();
+                } else {
+                    throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                }
+            })
             .then(data => {
                 const thresholdSlider = document.getElementById("thresholdSlider");
                 const thresholdValue = document.getElementById("thresholdValue");
@@ -1958,7 +2542,14 @@
                 },
                 body: JSON.stringify(payload)
             })
-                .then(res => res.json())
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return res.json();
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
                 .then(() => {
                     const settingsStatus = document.getElementById("settingsStatus");
                     if (settingsStatus) {
@@ -1966,6 +2557,16 @@
                         setTimeout(() => settingsStatus.innerText = "", 3000);
                     }
                     loadComments();
+                })
+                .catch(err => {
+                    const settingsStatus = document.getElementById("settingsStatus");
+                    if (settingsStatus) {
+                        settingsStatus.innerText = "❌ Failed to save settings: " + err.message;
+                        settingsStatus.style.color = "var(--danger)";
+                        setTimeout(() => settingsStatus.innerText = "", 5000);
+                    } else {
+                        alert("Failed to save settings: " + err.message);
+                    }
                 });
         }
 
@@ -2019,11 +2620,25 @@
 
         function loadComments() {
             fetch(commentsUrl)
-                .then(res => res.json())
+                .then(res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return res.json();
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
                 .then(data => {
                     commentsCache = Array.isArray(data) ? data : [];
                     updateAiEnhancements(commentsCache);
                     renderComments();
+                })
+                .catch(err => {
+                    console.error("Error loading comments:", err);
+                    const statusMsg = document.getElementById("statusMsg");
+                    if (statusMsg) {
+                        statusMsg.innerText = "❌ Error loading comments: " + err.message;
+                    }
                 });
         }
 
@@ -2213,7 +2828,14 @@
                     "X-CSRFToken": getCookie('csrftoken')
                 }
             })
-                .then(res => res.json())
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return res.json();
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
                 .then(data => {
                     if (data.success) {
                         document.getElementById("statusMsg").innerText = `✅ Resolved comment ${commentId}: Decision updated to ${data.decision.toUpperCase()}.`;
@@ -2247,7 +2869,14 @@
                     "X-CSRFToken": getCookie('csrftoken')
                 }
             })
-                .then(res => res.json())
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return res.json();
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
                 .then(data => {
                     if (data.success) {
                         document.getElementById("statusMsg").innerText = `✅ Successfully resolved ${data.resolved_count} comments using Groq AI.`;
@@ -2317,7 +2946,14 @@
                         "X-CSRFToken": getCookie('csrftoken')
                     },
                     body: JSON.stringify({ comment_id: item.id, instagram_id: instagramId })
-                }).then(res => res.json()).then(data => {
+                }).then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return res.json();
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                }).then(data => {
                     if (!data.success) {
                         throw new Error(data.error || "Failed to delete comment.");
                     }
@@ -2453,6 +3089,132 @@
             const url = new URL(window.location.href);
             url.searchParams.delete("payment");
             window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
+
+        function syncRecentPosts() {
+            const syncBtn = document.getElementById("syncRecentBtn");
+            const statusText = document.getElementById("syncStatus");
+
+            statusText.style.display = "block";
+            statusText.innerText = "🔄 Syncing and scanning recent posts...";
+            statusText.style.color = "#0369a1";
+            syncBtn.disabled = true;
+            syncBtn.innerHTML = "Syncing...";
+
+            fetch("/api/scan-recent/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                }
+            })
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.error || `HTTP error! status: ${res.status}`);
+                        }
+                        return data;
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
+                .then(data => {
+                    statusText.innerText = "✅ " + data.message;
+                    statusText.style.color = "#047857";
+                    setTimeout(() => { statusText.style.display = "none"; }, 5000);
+                    loadScanStatus();
+                    loadComments();
+                })
+                .catch(err => {
+                    statusText.innerText = "❌ " + err.message;
+                    statusText.style.color = "#b91c1c";
+                })
+                .finally(() => {
+                    syncBtn.disabled = false;
+                    syncBtn.innerHTML = `<i data-lucide="refresh-cw"></i> Sync Recent Posts`;
+                    if (window.lucide) window.lucide.createIcons();
+                });
+        }
+
+        function loadScanStatus() {
+            fetch("/api/scan-status/")
+                .then(res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return res.json();
+                    } else {
+                        throw new Error(`Server returned error: ${res.status}. Please check if the local server is running and try again.`);
+                    }
+                })
+                .then(data => {
+                    // Update last scan time
+                    document.getElementById("lastScanTime").innerText = data.last_scan_time || "Never";
+
+                    // Check if there is a scanner error
+                    const badge = document.getElementById("autoScanBadge");
+                    if (data.error) {
+                        badge.style.background = "#fee2e2";
+                        badge.style.color = "#b91c1c";
+                        badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #b91c1c;"></span> ERROR`;
+                        badge.title = data.error;
+                    } else {
+                        badge.style.background = "#e0f2fe";
+                        badge.style.color = "#0369a1";
+                        badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0369a1;"></span> AUTO-SCAN ACTIVE`;
+                        badge.removeAttribute("title");
+                    }
+
+                    // Update recent posts list
+                    const listContainer = document.getElementById("recentScannedPostsList");
+                    if (!listContainer) return;
+
+                    if (!data.recent_posts || data.recent_posts.length === 0) {
+                        listContainer.innerHTML = `<p style="color: var(--text-muted); font-size: 13px; font-style: italic; margin: 0;">No posts monitored yet. Click sync or wait for the automatic scan.</p>`;
+                        return;
+                    }
+
+                    listContainer.innerHTML = "";
+                    data.recent_posts.forEach(post => {
+                        const div = document.createElement("div");
+                        div.style.display = "flex";
+                        div.style.alignItems = "center";
+                        div.style.justifyContent = "space-between";
+                        div.style.padding = "10px 14px";
+                        div.style.background = "var(--bg-light)";
+                        div.style.border = "1.5px solid var(--border-black)";
+                        div.style.borderRadius = "12px";
+                        div.style.boxShadow = "2px 2px 0px var(--border-black)";
+                        div.style.fontSize = "12px";
+
+                        // Parse post shortcode from permalink if possible
+                        let shortcode = post.id;
+                        if (post.permalink) {
+                            const match = post.permalink.match(/\/(?:p|reel)\/([^\/]+)/);
+                            if (match) shortcode = match[1];
+                        }
+
+                        const postLink = post.permalink ? `<a href="${post.permalink}" target="_blank" style="color: #0369a1; font-weight: 700; text-decoration: underline;">Post: ${shortcode}</a>` : `<strong>Post ID: ${shortcode}</strong>`;
+
+                        const badgeText = post.new_comments > 0 ?
+                            `<span class="neon-tag-purple" style="font-size: 10px; padding: 2px 8px; border-radius: 9999px; background: #fee2e2; color: #b91c1c; border: 1px dashed #b91c1c;">+${post.new_comments} new</span>` :
+                            `<span style="font-size: 10px; color: var(--text-muted);">No new comments</span>`;
+
+                        div.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                ${postLink}
+                                <span style="font-size: 11px; color: var(--text-muted);">(${post.total_comments} comments total)</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${badgeText}
+                                <span style="font-size: 10px; color: var(--text-muted); font-style: italic;">Synced at ${post.scanned_at.split(' ')[1]}</span>
+                            </div>
+                        `;
+                        listContainer.appendChild(div);
+                    });
+                })
+                .catch(err => console.error("Error loading scan status:", err));
         }
 
         document.addEventListener('DOMContentLoaded', checkPaymentSuccess);

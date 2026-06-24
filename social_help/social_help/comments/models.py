@@ -146,6 +146,12 @@ class AutoReplyRule(models.Model):
         default="public",
         help_text="Whether to reply publicly or send a private DM"
     )
+    instagram_post_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Optional Instagram Post ID or Shortcode. If set, this rule will only trigger on comments of this post."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

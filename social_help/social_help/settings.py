@@ -34,19 +34,35 @@ elif IS_CLOUD:
 else:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+
 csrf_trusted_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 if csrf_trusted_origins:
     CSRF_TRUSTED_ORIGINS = [
         origin.strip() for origin in csrf_trusted_origins.split(",") if origin.strip()
     ]
-elif IS_CLOUD:
-    CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com", "https://*.azurewebsites.net"]
+else:
+    CSRF_TRUSTED_ORIGINS = []
+
+if IS_CLOUD:
+    CSRF_TRUSTED_ORIGINS.extend(["https://*.onrender.com", "https://*.azurewebsites.net"])
     render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
     azure_site_name = os.getenv("WEBSITE_SITE_NAME")
     if render_host:
         CSRF_TRUSTED_ORIGINS.append(f"https://{render_host}")
     if azure_site_name:
         CSRF_TRUSTED_ORIGINS.append(f"https://{azure_site_name}.azurewebsites.net")
+
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS.extend([
+        "https://*.loca.lt",
+        "https://*.ngrok-free.app",
+        "https://*.ngrok.io",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ])
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -150,6 +166,7 @@ INSTAGRAM_PAGE_ACCESS_TOKEN  = os.getenv("INSTAGRAM_PAGE_ACCESS_TOKEN", "")
 
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 
 INSTAGRAM_APP_ID = os.getenv("INSTAGRAM_APP_ID", "")
 INSTAGRAM_APP_SECRET = os.getenv("INSTAGRAM_APP_SECRET", "")

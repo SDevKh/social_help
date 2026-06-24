@@ -16,7 +16,7 @@ from django.utils import timezone
 
 from .serializers import CommentSerializer, BlogPostSerializer
 from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost
-from .instagram_service import InstagramService
+from .instagram_service import InstagramService, InstagramTokenExpiredException
 from .forms import SignUpForm
 
 import secrets
@@ -375,6 +375,9 @@ def facebook_oauth_login(request):
 
     facebook_app_id = (settings.FACEBOOK_APP_ID or "").strip()
     facebook_redirect_uri = (settings.FACEBOOK_OAUTH_REDIRECT_URI or settings.INSTAGRAM_REDIRECT_URI or "").strip()
+    host = request.get_host()
+    if host and ("loca.lt" in host or "ngrok" in host):
+        facebook_redirect_uri = f"https://{host}/instagram/callback/"
 
     if not facebook_app_id.isdigit() or not facebook_redirect_uri:
         return render(request, "comments/connect_error.html", {
@@ -389,6 +392,7 @@ def facebook_oauth_login(request):
         "pages_read_engagement",
         "instagram_basic",
         "instagram_manage_comments",
+        "instagram_manage_messages",
         "business_management",
     ])
 
@@ -746,6 +750,14 @@ class ScanInstagramPost(APIView):
             if isinstance(results, dict) and "error" in results:
                 return Response({"error": results["error"]}, status=400)
 
+            # Store in tracked posts cache if successful so background scanner tracks it
+            cache_key = f"tracked_posts_{request.user.id}"
+            tracked = cache.get(cache_key) or []
+            normalized_post = post_id.strip()
+            if normalized_post not in tracked:
+                tracked.append(normalized_post)
+                cache.set(cache_key, tracked, timeout=604800) # 7 days
+
             if sub and results:
                 sub.comments_processed_this_month += len(results)
                 sub.save()
@@ -756,6 +768,8 @@ class ScanInstagramPost(APIView):
                 "used": sub.comments_processed_this_month,
                 "max": sub.max_comments(),
             })
+        except InstagramTokenExpiredException as e:
+            return Response({"error": str(e)}, status=401)
         except Exception as e:
             import traceback
             import sys
@@ -765,6 +779,59 @@ class ScanInstagramPost(APIView):
                 "traceback": traceback.format_exc(),
                 "detail": "Internal Server Error captured by debug wrapper"
             }, status=500)
+
+
+class ScanRecentPosts(APIView):
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
+
+    def post(self, request):
+        try:
+            account = InstagramAccount.objects.filter(user=request.user).first()
+            if not account:
+                return Response({"error": "No Instagram account connected"}, status=400)
+
+            from .scanner import scan_account_posts
+            recent_posts = scan_account_posts(account)
+
+            # Check if there is an error logged in the cache
+            last_error = cache.get(f"last_scan_error_{request.user.id}")
+            if last_error and "limit reached" in last_error.lower():
+                return Response({"error": last_error}, status=403)
+
+            total_new_comments = sum(post.get("new_comments", 0) for post in recent_posts)
+
+            return Response({
+                "message": f"Successfully synced and scanned comments for your last {len(recent_posts)} posts.",
+                "total_scanned": total_new_comments,
+                "recent_posts": recent_posts
+            })
+        except InstagramTokenExpiredException as e:
+            return Response({"error": str(e)}, status=401)
+        except Exception as e:
+            import traceback
+            import sys
+            sys.stderr.write(f"[ERROR] ScanRecentPosts view failed: {e}\n{traceback.format_exc()}\n")
+            return Response({
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "detail": "Internal Server Error"
+            }, status=500)
+
+
+class ScanStatusAPI(APIView):
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
+
+    def get(self, request):
+        user_id = request.user.id
+        last_scan_time = cache.get(f"last_scan_time_{user_id}", "Never")
+        recent_posts = cache.get(f"recent_scanned_posts_{user_id}", [])
+        last_error = cache.get(f"last_scan_error_{user_id}", None)
+
+        return Response({
+            "last_scan_time": last_scan_time,
+            "recent_posts": recent_posts,
+            "error": last_error
+        })
 
 
 # -------------------------------------------------------------------
@@ -1361,6 +1428,9 @@ class GumroadCheckoutURL(APIView):
 
         # Build success URL with plan param so gumroad_success knows which tier
         domain = getattr(settings, "DOMAIN_URL", "http://localhost:8000")
+        host = request.get_host()
+        if host and ("loca.lt" in host or "ngrok" in host):
+            domain = f"https://{host}"
         success_url = f"{domain}/gumroad/success/?plan={plan}"
 
         parsed_url = urlsplit(base_url)
@@ -1463,6 +1533,7 @@ class AutoReplyRuleListCreateAPIView(APIView):
                 "trigger_keyword": rule.trigger_keyword,
                 "reply_text": rule.reply_text,
                 "reply_type": rule.reply_type,
+                "instagram_post_id": rule.instagram_post_id or "",
                 "created_at": rule.created_at.isoformat(),
             }
             for rule in rules
@@ -1471,29 +1542,93 @@ class AutoReplyRuleListCreateAPIView(APIView):
 
     def post(self, request):
         trigger_keyword = request.data.get("trigger_keyword", "").strip()
-        reply_text = request.data.get("reply_text", "").strip()
         reply_type = request.data.get("reply_type", "public").strip().lower()
-
-        if not trigger_keyword or not reply_text:
-            return Response({"error": "Both trigger keyword and reply text/link are required."}, status=400)
-
+        
+        # We can accept either a list of entries OR a single entry
+        entries = request.data.get("entries", [])
+        
+        if not trigger_keyword:
+            return Response({"error": "Trigger keyword is required."}, status=400)
+            
         if reply_type not in ["public", "dm"]:
             return Response({"error": "Invalid reply type. Must be 'public' or 'dm'."}, status=400)
-
-        if AutoReplyRule.objects.filter(user=request.user, trigger_keyword__iexact=trigger_keyword).exists():
-            return Response({"error": f"An auto-reply trigger for '{trigger_keyword}' already exists."}, status=400)
-
+            
+        # Handle list of entries
+        if entries:
+            created_rules = []
+            # Validate all entries first to ensure atomic correctness
+            for entry in entries:
+                post_id = entry.get("instagram_post_id", "").strip()
+                reply_text = entry.get("reply_text", "").strip()
+                if not post_id:
+                    return Response({"error": "Each entry must have a valid Instagram Post ID/URL."}, status=400)
+                if not reply_text:
+                    return Response({"error": f"Reply text/link is required for post '{post_id}'."}, status=400)
+                
+                # Check duplication
+                if AutoReplyRule.objects.filter(
+                    user=request.user, 
+                    trigger_keyword__iexact=trigger_keyword, 
+                    instagram_post_id=post_id
+                ).exists():
+                    return Response({"error": f"An auto-reply trigger for '{trigger_keyword}' already exists for post '{post_id}'."}, status=400)
+            
+            # Create all rules
+            for entry in entries:
+                post_id = entry.get("instagram_post_id", "").strip()
+                reply_text = entry.get("reply_text", "").strip()
+                rule = AutoReplyRule.objects.create(
+                    user=request.user,
+                    trigger_keyword=trigger_keyword,
+                    reply_text=reply_text,
+                    reply_type=reply_type,
+                    instagram_post_id=post_id
+                )
+                created_rules.append(rule)
+            
+            return Response({
+                "message": f"Successfully created {len(created_rules)} auto-reply rules.",
+                "rules": [
+                    {
+                        "id": r.id,
+                        "trigger_keyword": r.trigger_keyword,
+                        "reply_text": r.reply_text,
+                        "reply_type": r.reply_type,
+                        "instagram_post_id": r.instagram_post_id
+                    } for r in created_rules
+                ]
+            }, status=201)
+        
+        # Handle single entry
+        reply_text = request.data.get("reply_text", "").strip()
+        instagram_post_id = request.data.get("instagram_post_id", "").strip() or None
+        
+        if not reply_text:
+            return Response({"error": "Reply text/link is required."}, status=400)
+            
+        if not instagram_post_id:
+            return Response({"error": "Instagram post ID or URL is required. Global auto-replies are disabled."}, status=400)
+            
+        if AutoReplyRule.objects.filter(
+            user=request.user, 
+            trigger_keyword__iexact=trigger_keyword, 
+            instagram_post_id=instagram_post_id
+        ).exists():
+            return Response({"error": f"An auto-reply trigger for '{trigger_keyword}' already exists for post '{instagram_post_id}'."}, status=400)
+            
         rule = AutoReplyRule.objects.create(
             user=request.user,
             trigger_keyword=trigger_keyword,
             reply_text=reply_text,
-            reply_type=reply_type
+            reply_type=reply_type,
+            instagram_post_id=instagram_post_id
         )
         return Response({
             "id": rule.id,
             "trigger_keyword": rule.trigger_keyword,
             "reply_text": rule.reply_text,
             "reply_type": rule.reply_type,
+            "instagram_post_id": rule.instagram_post_id or "",
             "message": "Auto-reply rule created successfully."
         }, status=201)
 
@@ -1558,6 +1693,13 @@ class InstagramWebhookView(APIView):
                         if not comment_id or not comment_text:
                             continue
 
+                        # Skip comments made by the page owner themselves
+                        comment_username = value.get("from", {}).get("username", "")
+                        owner_username = service.get_instagram_username()
+                        if comment_username and owner_username and comment_username.lower() == owner_username.lower():
+                            logger.info("Skipping comment from owner: %s", comment_username)
+                            continue
+
                         # 1. Moderate comment toxicity & sentiment
                         analysis = service.scan_comment(comment_text, user=user)
 
@@ -1569,7 +1711,16 @@ class InstagramWebhookView(APIView):
                         auto_reply_rules = list(AutoReplyRule.objects.filter(user=user))
                         if auto_reply_rules and analysis["decision"] != "delete":
                             comment_text_lower = comment_text.lower()
+                            media_id = value.get("media", {}).get("id")
                             for rule in auto_reply_rules:
+                                rule_post_id = getattr(rule, "instagram_post_id", None)
+                                if rule_post_id and rule_post_id.strip() and media_id:
+                                    target_post = rule_post_id.strip()
+                                    target_shortcode = service.extract_shortcode(target_post)
+                                    resolved_rule_media_id = target_shortcode if target_shortcode.isdigit() else service.get_media_id(target_shortcode)
+                                    if str(media_id) != str(resolved_rule_media_id):
+                                        continue
+
                                 trigger = rule.trigger_keyword.strip().lower()
                                 if trigger and (re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower):
                                     rule_type = getattr(rule, "reply_type", "public")
@@ -1604,5 +1755,247 @@ class InstagramWebhookView(APIView):
             return Response({"success": True})
         except Exception as e:
             logger.exception("Error processing Instagram webhook event")
+            return Response({"error": str(e)}, status=500)
+
+
+class GenerateContentIdeasAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            account = InstagramAccount.objects.filter(user=request.user).first()
+            
+            # Fetch profile details for context & fallback
+            profile = getattr(request.user, "profile", None)
+            role = profile.role if profile else "creator"
+            handle = profile.instagram_handle or f"@{request.user.username}"
+            company = profile.company_name or ""
+            
+            posts_data = []
+            if account:
+                service = InstagramService(account=account)
+                # Fetch recent media posts with captions, likes, comments count
+                endpoint = f"{account.ig_business_id}/media"
+                params = {
+                    "fields": "id,caption,media_type,like_count,comments_count,permalink",
+                    "limit": 6
+                }
+                try:
+                    data = service.api_get(endpoint, params)
+                    if data and "data" in data:
+                        for media in data["data"]:
+                            posts_data.append({
+                                "id": media.get("id"),
+                                "caption": media.get("caption", ""),
+                                "media_type": media.get("media_type", ""),
+                                "likes": media.get("like_count", 0),
+                                "comments": media.get("comments_count", 0)
+                            })
+                except Exception as e:
+                    logger.warning(f"Failed to fetch real media posts: {e}")
+            
+            # Let's clean posts_data captions for the prompt
+            posts_summary = []
+            for idx, p in enumerate(posts_data):
+                caption_trimmed = p["caption"][:150] + "..." if len(p["caption"]) > 150 else p["caption"]
+                posts_summary.append(
+                    f"Post {idx+1}: Type={p['media_type']}, Likes={p['likes']}, Comments={p['comments']}, Caption=\"{caption_trimmed}\""
+                )
+            
+            # If no real post history was fetched, let's create a personalized fallback description
+            if not posts_summary:
+                niche_desc = f"a {role.upper()}"
+                if company:
+                    niche_desc += f" representing company '{company}'"
+                niche_desc += f" with handle '{handle}'"
+                
+                # Fetch some of the comments to give the AI context of what their followers say
+                comments_qs = Comment.objects.filter(user=request.user).order_by("-created_at")[:10]
+                comment_texts = [c.comment_text for c in comments_qs]
+                
+                context = f"The user is {niche_desc}. They do not have post history connected yet."
+                if comment_texts:
+                    context += f" However, here are some recent comments from their audience: {json.dumps(comment_texts)}"
+            else:
+                context = "\n".join(posts_summary)
+            
+            # Construct the AI system prompt and user prompt
+            groq_key = getattr(settings, "GROQ_API_KEY", "")
+            nvidia_key = getattr(settings, "NVIDIA_API_KEY", "")
+            
+            system_instruction = (
+                "You are an expert Instagram content strategist and copywriter. "
+                "Analyze the user's previous content history (or profile context if no history) to identify their niche, style, and content themes. "
+                "Then, generate exactly 3 new, highly engaging, and creative content creation ideas. "
+                "Each idea must have a catchy title, a powerful hook to stop the scroll, a full proposed caption with call-to-action (CTA), and 5 highly relevant hashtags. "
+                "Respond ONLY with a valid, clean JSON object (no markdown wrappers like ```json or ```). "
+                "The JSON object must have keys: 'analysis' (string summary of current niche, tone, and strategy advice) and 'ideas' (a list of exactly 3 objects, each with keys 'title', 'hook', 'caption', and 'hashtags' list)."
+            )
+            
+            user_content = (
+                f"Profile context / recent post history:\n{context}\n\n"
+                f"User handle: {handle}\n"
+                f"User role: {role}\n"
+                f"Company: {company}\n"
+            )
+            
+            providers = []
+            if groq_key:
+                providers.append("groq")
+            if nvidia_key:
+                providers.append("nvidia")
+            
+            import random
+            random.shuffle(providers)
+            
+            for provider in providers:
+                if provider == "groq":
+                    api_url = "https://api.groq.com/openai/v1/chat/completions"
+                    headers = {
+                        "Authorization": f"Bearer {groq_key}",
+                        "Content-Type": "application/json",
+                    }
+                    payload = {
+                        "model": "llama-3.1-8b-instant",
+                        "messages": [
+                            {"role": "system", "content": system_instruction},
+                            {"role": "user", "content": user_content}
+                        ],
+                        "response_format": {"type": "json_object"},
+                        "temperature": 0.7,
+                        "max_tokens": 1000
+                    }
+                    try:
+                        logger.info("Attempting to generate ideas via Groq...")
+                        res = requests.post(api_url, headers=headers, json=payload, timeout=15)
+                        if res.ok:
+                            resp_data = res.json()
+                            raw_content = resp_data["choices"][0]["message"]["content"].strip()
+                            ai_result = json.loads(raw_content)
+                            return Response(ai_result)
+                        else:
+                            logger.error(f"Groq API returned error status {res.status_code}: {res.text}")
+                    except Exception as e:
+                        logger.exception(f"Groq API call or parsing failed: {e}")
+                
+                elif provider == "nvidia":
+                    api_url = "https://integrate.api.nvidia.com/v1/chat/completions"
+                    headers = {
+                        "Authorization": f"Bearer {nvidia_key}",
+                        "Content-Type": "application/json",
+                    }
+                    payload = {
+                        "model": "meta/llama-3.1-8b-instruct",
+                        "messages": [
+                            {"role": "system", "content": system_instruction},
+                            {"role": "user", "content": user_content}
+                        ],
+                        "response_format": {"type": "json_object"},
+                        "temperature": 0.7,
+                        "max_tokens": 1000
+                    }
+                    try:
+                        logger.info("Attempting to generate ideas via NVIDIA NIM...")
+                        res = requests.post(api_url, headers=headers, json=payload, timeout=15)
+                        if res.ok:
+                            resp_data = res.json()
+                            raw_content = resp_data["choices"][0]["message"]["content"].strip()
+                            ai_result = json.loads(raw_content)
+                            return Response(ai_result)
+                        else:
+                            logger.error(f"NVIDIA API returned error status {res.status_code}: {res.text}")
+                    except Exception as e:
+                        logger.exception(f"NVIDIA API call or parsing failed: {e}")
+            
+            # Local fallback content generator (high quality!)
+            fallback_ideas = []
+            if role == "brand" or company:
+                category = company if company else "your brand"
+                analysis = (
+                    f"Based on your profile as a Brand/Agency ({handle}), your current focus is building trust, "
+                    f"showcasing product value, and driving audience engagement for {category}. "
+                    "We recommend focusing on behind-the-scenes content, customer success stories, and educational content."
+                )
+                fallback_ideas = [
+                    {
+                        "title": "Behind the Scenes / Meet the Team",
+                        "hook": "Ever wondered how the magic actually happens behind closed doors? 🤫",
+                        "caption": (
+                            "At the heart of every great project is a passionate team. Today, we're taking you "
+                            "behind the scenes to show you the hard work, laughs, and coffee that go into building "
+                            "what we do! We love turning ideas into reality, and we couldn't do it without you. "
+                            "What part of our workflow do you want to see next? Let us know in the comments! 👇"
+                        ),
+                        "hashtags": ["#behindthescenes", "#branding", "#teamwork", "#agencylife", "#companyculture"]
+                    },
+                    {
+                        "title": "Myth vs. Reality in our Industry",
+                        "hook": "They told you it was easy, but here's the cold hard truth... 🚫",
+                        "caption": (
+                            "There are so many misconceptions about what we do. Today, we're busting the top 3 myths "
+                            "and giving you the real facts. Swipe through to see the breakdown! Knowledge is power, "
+                            "and we want to help you stay ahead of the game. Save this post for later so you don't forget! 💾"
+                        ),
+                        "hashtags": ["#industrymyths", "#expertadvice", "#businessgrowth", "#transparency", "#factcheck"]
+                    },
+                    {
+                        "title": "Interactive Q&A / Customer Feedback",
+                        "hook": "We're letting YOU call the shots today. Ask us anything! 💬",
+                        "caption": (
+                            "We're opening up the floor! Whether you have questions about our services, our story, or "
+                            "need expert tips for your own business, comment below. We'll be responding to every single "
+                            "comment in the next 2 hours. Go ahead, drop your questions! 👇"
+                        ),
+                        "hashtags": ["#askusanything", "#customerfeedback", "#interactivepost", "#communityfirst", "#brandengagement"]
+                    }
+                ]
+            else:
+                analysis = (
+                    f"Based on your profile as a Creator ({handle}), your current focus is authenticity, "
+                    "personal connection, and storytelling. We recommend focusing on high-energy hooks, "
+                    "sharing personal wins/fails, and quick educational tips."
+                )
+                fallback_ideas = [
+                    {
+                        "title": "My Biggest Lesson This Year",
+                        "hook": "I made a massive mistake so that you don't have to... 🤦‍♂️",
+                        "caption": (
+                            "Let's get real for a second. We always see the highlight reels, but rarely the struggles. "
+                            "Here is the one mistake that cost me time and energy this year, and exactly how I overcame it. "
+                            "If you're trying to grow, remember that failures are just lessons in disguise. "
+                            "Have you ever faced a similar roadblock? Share your thoughts below! 👇"
+                        ),
+                        "hashtags": ["#creatorjourney", "#mindsetshift", "#growthlessons", "#authenticity", "#storytelling"]
+                    },
+                    {
+                        "title": "Quick Hack / Step-by-Step Tutorial",
+                        "hook": "Stop scrolling if you want to double your productivity in 3 simple steps! ⏱️",
+                        "caption": (
+                            "We all want more hours in the day. Here is the exact daily ritual I use to stay focused, "
+                            "organized, and get more done. It takes less than 5 minutes to set up! "
+                            "Check out the steps in the caption and save this to try tomorrow morning. "
+                            "Which step are you going to implement first? 👇"
+                        ),
+                        "hashtags": ["#productivityhacks", "#creatorlife", "#dailyhabits", "#focus", "#worksmarter"]
+                    },
+                    {
+                        "title": "Trendy / Hot Take on a Industry Topic",
+                        "hook": "Unpopular opinion: this standard advice is actually holding you back... 🫢",
+                        "caption": (
+                            "We've all heard the advice to 'just work harder'. But here's why I think that's incomplete. "
+                            "Instead, focus on consistency and leverage. Disagree? Let's discuss in the comments! "
+                            "Remember to keep it friendly—I want to hear all perspectives! 👇"
+                        ),
+                        "hashtags": ["#hottake", "#opinions", "#creatortalk", "#growthstrategy", "#perspective"]
+                    }
+                ]
+                
+            return Response({
+                "analysis": analysis,
+                "ideas": fallback_ideas
+            })
+            
+        except Exception as e:
+            logger.exception("Error in GenerateContentIdeasAPIView")
             return Response({"error": str(e)}, status=500)
 

@@ -17,11 +17,16 @@ from .views import (
     AutoReplyRuleDestroyAPIView,
     InstagramWebhookView,
     BlogPostListView,
+    ScanRecentPosts,
+    ScanStatusAPI,
+    GenerateContentIdeasAPIView,
 )
 from .polar_views import PolarCheckoutURL, PolarWebhookAPI
 
 urlpatterns = [
     path("scan-instagram/", ScanInstagramPost.as_view()),
+    path("scan-recent/", ScanRecentPosts.as_view()),
+    path("scan-status/", ScanStatusAPI.as_view()),
     path("comments/", RecentComments.as_view()),
     path("comments/clear/", ClearAllComments.as_view()),
     path("comments/<int:comment_id>/", DeleteComment.as_view()),
@@ -40,4 +45,5 @@ urlpatterns = [
     path("autoreply/<int:rule_id>/", AutoReplyRuleDestroyAPIView.as_view()),
     path("instagram/webhook/", InstagramWebhookView.as_view()),
     path("blog/", BlogPostListView.as_view()),
+    path("generate-content-ideas/", GenerateContentIdeasAPIView.as_view()),
 ]
