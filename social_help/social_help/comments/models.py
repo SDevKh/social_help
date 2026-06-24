@@ -167,6 +167,8 @@ class BlogPost(models.Model):
     date = models.DateField(help_text="Publication date shown to users")
     read_time = models.CharField(max_length=50, default="5 min read")
     image = models.CharField(max_length=50, default="📝", help_text="Emoji character or icon name for post image")
+    image_file = models.ImageField(upload_to="blog_images/", blank=True, null=True, help_text="Upload an image file for the blog post")
+    image_url = models.URLField(max_length=500, blank=True, null=True, help_text="Or specify an external image URL")
     featured = models.BooleanField(default=False)
     is_published = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

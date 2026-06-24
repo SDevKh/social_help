@@ -149,6 +149,9 @@ if DEBUG:
 else:
     STATICFILES_STORAGE_BACKEND = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
