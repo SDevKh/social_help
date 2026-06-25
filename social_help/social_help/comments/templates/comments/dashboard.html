@@ -28,22 +28,34 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-    <style>
+            <style>
         :root {
-            --neon-lime: #c2ff81;
-            --neon-lime-dark: #a9e56b;
-            --bg-dark: #0e111a;
-            --card-dark: #0f1319;
-            --border-dark: #222b3c;
-            --border-black: #000000;
-            --accent-purple: #6366f1;
-            --accent-purple-light: #818cf8;
+            /* Premium Light Theme Palette */
+            --bg-dark: #f5f7fb;              /* Soft off-white/ice-blue background to let white cards stand out */
+            --card-dark: #ffffff;            /* Clean crisp white card background */
+            --border-dark: rgba(0, 0, 0, 0.06); /* Soft, fine border instead of thick black */
+            --border-black: rgba(0, 0, 0, 0.06); /* Globally overrides brutalist borders */
+            
+            --neon-lime: rgba(255, 255, 255, 0.85); /* Sidebar/topbar background mapped to elegant frosted glass */
+            --neon-lime-dark: #f1f5f9;
+            
+            --accent-purple: #6366f1;        /* Main brand Indigo */
+            --accent-purple-light: #4f46e5;  /* Rich dark-purple for text contrast */
+            --accent-cyan: #06b6d4;          /* Brand Cyan */
+            --accent-coral: #f43f5e;         /* Brand Coral */
+            
             --success: #10b981;
             --danger: #f43f5e;
-            --warning: #f59e0b;
-            --peach: #ffb0a0;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
+            --warning: #fbbf24;
+            --peach: rgba(244, 63, 94, 0.05); /* Very light pastel pink tint */
+            
+            --text-dark: #0f172a;            /* Dark text for light mode compatibility */
+            --text-muted: #64748b;           /* Muted text */
+            
+            /* Custom glass elements */
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.06);
+            --glass-hover-bg: rgba(255, 255, 255, 0.95);
         }
 
         * {
@@ -54,10 +66,13 @@
 
         body {
             font-family: "Outfit", "Manrope", sans-serif;
-            background-color: #ffffff;
+            background-color: var(--bg-dark);
             color: var(--text-dark);
             min-height: 100vh;
             overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.03) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 45%);
         }
 
         a {
@@ -75,6 +90,7 @@
         .sidebar {
             width: 270px;
             background-color: var(--neon-lime);
+            border-right: 1px solid var(--border-dark);
             padding: 30px 24px;
             display: flex;
             flex-direction: column;
@@ -85,6 +101,8 @@
             overflow-y: auto;
             z-index: 100;
             transition: all 0.3s ease;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         /* Custom scrollbar for sidebar */
@@ -93,11 +111,11 @@
         }
 
         .sidebar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
+            background: rgba(0, 0, 0, 0.01);
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background: #000000;
+            background: rgba(0, 0, 0, 0.1);
             border-radius: 3px;
         }
 
@@ -111,16 +129,14 @@
             position: absolute;
             top: 0;
             right: 0;
-            width: 3px;
+            width: 1px;
             height: 100%;
             background: linear-gradient(to bottom,
-                    #000000 0%,
-                    var(--accent-purple) 25%,
-                    #000000 50%,
-                    var(--accent-purple) 75%,
-                    #000000 100%);
+                    rgba(99, 102, 241, 0.1) 0%,
+                    rgba(6, 182, 212, 0.4) 50%,
+                    rgba(99, 102, 241, 0.1) 100%);
             background-size: 100% 200%;
-            animation: lineFlow 3s linear infinite;
+            animation: lineFlow 4s linear infinite;
             pointer-events: none;
             z-index: 10;
         }
@@ -129,7 +145,6 @@
             0% {
                 background-position: 0% 0%;
             }
-
             100% {
                 background-position: 0% 200%;
             }
@@ -144,43 +159,49 @@
             margin-top: -2vh;
         }
 
-        /* White Profile Card */
+        /* Profile Card */
         .profile-card {
-            background: #ffffff;
-            border: 2px solid var(--border-black);
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid var(--border-dark);
             border-radius: 9999px;
             padding: 8px 16px;
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 32px;
-            box-shadow: 4px 4px 0px var(--border-black);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            backdrop-filter: blur(12px);
         }
 
         .profile-avatar {
             width: 38px;
             height: 38px;
             border-radius: 50%;
-            background: #f1f5f9;
-            border: 2px solid var(--border-black);
+            background: #ffffff;
+            border: 1px solid var(--border-dark);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .profile-info {
             display: flex;
             flex-direction: column;
             text-align: left;
+            min-width: 0;
         }
 
         .profile-username {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 800;
             color: var(--text-dark);
             line-height: 1.2;
             word-break: break-all;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .profile-role {
@@ -191,13 +212,14 @@
 
         /* Navigation Links */
         .menu-title {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-dark);
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
             margin-bottom: 12px;
             text-align: left;
+            padding-left: 12px;
         }
 
         .sidebar-menu {
@@ -213,13 +235,13 @@
             gap: 12px;
             padding: 12px 20px;
             border-radius: 9999px;
-            border: 2px solid var(--border-black);
+            border: 1px solid transparent;
             background-color: transparent;
-            color: var(--text-dark);
+            color: var(--text-muted);
             font-weight: 700;
             font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
             text-align: left;
         }
@@ -227,16 +249,19 @@
         .menu-item svg {
             width: 18px;
             height: 18px;
-            stroke-width: 2.5px;
+            stroke-width: 2.2px;
         }
 
         .menu-item.active {
-            background-color: #ffffff;
-            box-shadow: 4px 4px 0px var(--border-black);
+            background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
         }
 
         .menu-item:hover:not(.active) {
-            background-color: rgba(255, 255, 255, 0.4);
+            background-color: rgba(0, 0, 0, 0.03);
+            color: var(--text-dark);
+            border-color: var(--border-dark);
             transform: translateY(-2px);
         }
 
@@ -250,42 +275,48 @@
 
         /* Upgrade Plan Widget */
         .upgrade-widget {
-            background: #ffffff;
-            border: 2px solid var(--border-black);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(6, 182, 212, 0.03));
+            border: 1px solid rgba(99, 102, 241, 0.15);
             border-radius: 20px;
             padding: 20px 16px;
             text-align: center;
             margin-top: auto;
-            box-shadow: 4px 4px 0px var(--border-black);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
 
         .upgrade-widget:hover {
-            transform: translateY(-2px);
-            box-shadow: 6px 6px 0px var(--border-black);
+            transform: translateY(-3px);
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 
+                0 12px 30px rgba(0, 0, 0, 0.06),
+                0 0 15px rgba(99, 102, 241, 0.1);
         }
 
         .upgrade-icon-wrap {
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            border: 2px solid var(--border-black);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 12px;
-            background: var(--neon-lime);
+            background: #ffffff;
+            color: var(--accent-purple);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .upgrade-icon-wrap svg {
             width: 20px;
             height: 20px;
-            stroke-width: 2.5px;
+            stroke-width: 2.2px;
         }
 
         .upgrade-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 900;
             margin-bottom: 4px;
             color: var(--text-dark);
@@ -311,7 +342,7 @@
         .topbar {
             height: 80px;
             background-color: var(--neon-lime);
-            border-bottom: 2px solid var(--border-black);
+            border-bottom: 1px solid var(--border-dark);
             padding: 0 40px;
             display: flex;
             justify-content: space-between;
@@ -319,6 +350,8 @@
             position: sticky;
             top: 0;
             z-index: 90;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         .topbar-left {
@@ -344,14 +377,14 @@
         /* Plan Pro Button */
         .plan-pro-pill {
             background-color: #ffffff;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             border-radius: 9999px;
             padding: 8px 20px;
             color: var(--text-dark);
             font-weight: 800;
             font-size: 14px;
-            box-shadow: 3px 3px 0px var(--border-black);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -359,23 +392,31 @@
 
         .plan-pro-pill:hover {
             transform: translateY(-2px);
-            box-shadow: 5px 5px 0px var(--border-black);
+            background-color: #f8fafc;
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
         }
-
 
         .topbar-avatar {
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background-color: #000000;
-            color: #ffffff;
+            background-color: #ffffff;
+            color: var(--text-dark);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             cursor: pointer;
             position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .topbar-avatar:hover {
+            border-color: rgba(0, 0, 0, 0.12);
+            background-color: #f8fafc;
         }
 
         /* Profile Dropdown */
@@ -384,11 +425,11 @@
             top: 55px;
             right: 0;
             background: #ffffff;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             border-radius: 16px;
             width: 200px;
             padding: 8px 0;
-            box-shadow: 6px 6px 0px var(--border-black);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             display: none;
             flex-direction: column;
             z-index: 110;
@@ -403,7 +444,7 @@
             font-size: 13px;
             font-weight: 800;
             color: var(--text-muted);
-            border-bottom: 2px solid var(--border-black);
+            border-bottom: 1px solid var(--border-dark);
             margin-bottom: 4px;
             text-align: left;
         }
@@ -418,7 +459,7 @@
         }
 
         .dropdown-item:hover {
-            background: var(--neon-lime);
+            background: rgba(0, 0, 0, 0.03);
         }
 
         .dropdown-item.danger {
@@ -426,7 +467,7 @@
         }
 
         .dropdown-item.danger:hover {
-            background: #fee2e2;
+            background: rgba(244, 63, 94, 0.05);
         }
 
         /* Page Body Container */
@@ -455,26 +496,40 @@
 
         /* Base Card Style */
         .card-container {
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             border-radius: 28px;
             padding: 28px;
             position: relative;
-            box-shadow: 6px 6px 0px var(--border-black);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: var(--card-dark);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .card-container:hover {
-            transform: translateY(-2px);
-            box-shadow: 8px 8px 0px var(--border-black);
+            transform: translateY(-4px);
+            box-shadow: 
+                0 20px 40px -15px rgba(0, 0, 0, 0.08),
+                0 0 20px rgba(99, 102, 241, 0.03);
         }
 
         /* Scanned Comments Card */
         .card-scanned {
-            background-color: var(--neon-lime);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.02), rgba(6, 182, 212, 0.02));
+            border: 1px solid rgba(99, 102, 241, 0.12);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             gap: 24px;
+            box-shadow: 
+                0 10px 30px -10px rgba(0, 0, 0, 0.03),
+                0 0 25px rgba(6, 182, 212, 0.02);
+        }
+
+        .card-scanned:hover {
+            border-color: rgba(99, 102, 241, 0.25);
+            box-shadow: 
+                0 20px 40px -15px rgba(0, 0, 0, 0.06),
+                0 0 30px rgba(6, 182, 212, 0.08);
         }
 
         .card-scanned-top {
@@ -490,11 +545,11 @@
         }
 
         .scanned-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.02em;
-            color: var(--text-dark);
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
             margin-bottom: 8px;
         }
 
@@ -504,12 +559,15 @@
             color: var(--text-dark);
             line-height: 1.1;
             letter-spacing: -2px;
+            background: linear-gradient(135deg, var(--text-dark) 40%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         /* Breakdown Details Capsule */
         .breakdown-capsule {
-            background-color: var(--peach);
-            border: 2px solid var(--border-black);
+            background-color: rgba(0, 0, 0, 0.015);
+            border: 1px solid var(--border-dark);
             border-radius: 16px;
             padding: 12px 16px;
             display: flex;
@@ -518,6 +576,7 @@
             font-size: 12px;
             font-weight: 900;
             min-width: 140px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
         .breakdown-row {
@@ -528,7 +587,7 @@
         }
 
         .breakdown-label {
-            color: var(--text-dark);
+            color: var(--text-muted);
         }
 
         .breakdown-count {
@@ -544,32 +603,46 @@
         .btn-capsule {
             padding: 12px 28px;
             border-radius: 9999px;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             font-size: 14px;
             font-weight: 800;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 3px 3px 0px var(--border-black);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .btn-capsule:hover {
             transform: translateY(-2px);
-            box-shadow: 5px 5px 0px var(--border-black);
         }
 
         .btn-capsule-white {
             background-color: #ffffff;
-            color: #000000;
+            color: var(--text-dark);
+            border-color: var(--border-dark);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-capsule-white:hover {
+            background-color: #f8fafc;
+            border-color: rgba(0, 0, 0, 0.12);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
         }
 
         .btn-capsule-black {
-            background-color: #000000;
+            background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%);
             color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-capsule-black:hover {
+            box-shadow: 
+                0 10px 25px rgba(6, 182, 212, 0.25),
+                0 0 15px rgba(99, 102, 241, 0.08);
         }
 
         /* AI Enhancements Card */
         .card-enhancements {
-            background-color: #f8f9fa;
+            background-color: transparent;
             display: flex;
             flex-direction: column;
             gap: 18px;
@@ -596,83 +669,95 @@
 
         /* Widgets inside AI Card */
         .enhancement-widget {
-            background-color: #ffffff;
-            border: 2px solid var(--border-black);
+            background-color: var(--card-dark);
+            border: 1px solid var(--border-dark);
             border-radius: 20px;
             padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: 4px 4px 0px var(--border-black);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
             min-height: 120px;
+            transition: all 0.3s ease;
+        }
+
+        .enhancement-widget:hover {
+            border-color: rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
         }
 
         .widget-score-title {
             font-size: 13px;
             font-weight: 900;
-            color: var(--text-dark);
+            color: var(--text-muted);
             margin-bottom: 12px;
             line-height: 1.3;
         }
 
         .widget-progress-container {
             width: 100%;
-            height: 18px;
-            background-color: var(--neon-lime);
-            border: 2px solid var(--border-black);
-            border-radius: 4px;
+            height: 12px;
+            background-color: #f1f5f9;
+            border: 1px solid var(--border-dark);
+            border-radius: 6px;
             overflow: hidden;
             position: relative;
         }
 
         .widget-progress-fill {
             height: 100%;
-            background-color: #000000;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+            border-radius: 6px;
         }
 
         /* Mini Preview Graph Widget */
         .widget-preview {
-            background-color: var(--bg-dark);
+            background-color: #f8fafc;
             padding: 14px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             justify-content: center;
+            border-radius: 12px;
+            border: 1px solid var(--border-dark);
         }
 
         .widget-preview-line {
             height: 6px;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: #e2e8f0;
             border-radius: 3px;
             width: 80%;
         }
 
         .widget-preview-line.purple {
-            background-color: var(--accent-purple);
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
             width: 55%;
-            box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
         }
 
         /* Empty Dotted Widget */
         .widget-empty {
-            border: 2px dashed #cccccc;
+            border: 1.5px dashed rgba(0, 0, 0, 0.1);
             box-shadow: none;
             background: transparent;
         }
 
         /* Dark Tools Panels base */
         .dark-panel {
-            background-color: #ffffff;
-            border: 2px solid var(--border-black);
+            background-color: var(--card-dark);
+            border: 1px solid var(--border-dark);
             color: var(--text-dark);
             padding: 32px;
             border-radius: 28px;
-            box-shadow: 6px 6px 0px var(--border-black);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
         }
 
         .dark-panel:hover {
-            box-shadow: 8px 8px 0px var(--border-black);
+            box-shadow: 
+                0 20px 40px -15px rgba(0, 0, 0, 0.08),
+                0 0 20px rgba(99, 102, 241, 0.03);
         }
 
         .dark-panel h2,
@@ -706,8 +791,8 @@
         /* Input Styles inside Dark Panels */
         .dark-input {
             width: 100%;
-            background-color: #ffffff;
-            border: 2px solid var(--border-black);
+            background-color: #f8fafc;
+            border: 1px solid var(--border-dark);
             border-radius: 9999px;
             padding: 14px 24px;
             color: var(--text-dark);
@@ -715,14 +800,17 @@
             font-size: 14px;
             font-weight: 600;
             outline: none;
-            transition: all 0.2s ease;
-            box-shadow: 3px 3px 0px var(--border-black);
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
             margin-bottom: 12px;
         }
 
         .dark-input:focus {
             border-color: var(--accent-purple);
-            background-color: #f8fafc;
+            background-color: #ffffff;
+            box-shadow: 
+                0 0 12px rgba(99, 102, 241, 0.15),
+                inset 0 1px 3px rgba(0, 0, 0, 0.01);
         }
 
         /* Sliders */
@@ -756,28 +844,30 @@
 
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 8px;
+            height: 6px;
             cursor: pointer;
-            background: var(--accent-purple);
-            border-radius: 4px;
-            border: 1.5px solid var(--border-black);
+            background: #e2e8f0;
+            border-radius: 3px;
+            border: none;
         }
 
         input[type=range]::-webkit-slider-thumb {
-            height: 22px;
-            width: 22px;
+            height: 18px;
+            width: 18px;
             border-radius: 50%;
             background: #ffffff;
             cursor: pointer;
             -webkit-appearance: none;
-            margin-top: -8px;
-            border: 2px solid var(--border-black);
-            box-shadow: 2px 2px 0px var(--border-black);
-            transition: transform 0.1s ease;
+            margin-top: -6px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.15s ease, background 0.15s ease;
         }
 
         input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
+            background: var(--accent-purple-light);
+            border-color: transparent;
         }
 
         /* Checkbox styling */
@@ -800,17 +890,18 @@
         .custom-checkbox {
             width: 22px;
             height: 22px;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             border-radius: 6px;
             display: inline-block;
             position: relative;
-            background-color: #ffffff;
-            box-shadow: 2px 2px 0px var(--border-black);
+            background-color: #f8fafc;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: all 0.2s ease;
         }
 
         .checkbox-label input[type=checkbox]:checked+.custom-checkbox {
             background-color: var(--accent-purple);
+            border-color: transparent;
         }
 
         .checkbox-label input[type=checkbox]:checked+.custom-checkbox::after {
@@ -826,8 +917,8 @@
 
         /* Help/Info boxes in Dark Panels */
         .dark-info-box {
-            background-color: #f1f5f9;
-            border: 2px solid var(--border-black);
+            background-color: rgba(99, 102, 241, 0.03);
+            border: 1px solid rgba(99, 102, 241, 0.12);
             border-radius: 16px;
             padding: 16px 20px;
             font-size: 12px;
@@ -843,16 +934,16 @@
 
         /* Buttons inside Dark Panels */
         .btn-blue-light {
-            background: #58a6ff;
-            color: #040d1a;
+            background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%);
+            color: #ffffff;
             padding: 12px 28px;
+            border: none;
             border-radius: 9999px;
-            border: 2px solid var(--border-black);
             font-weight: 800;
             font-size: 14px;
             cursor: pointer;
-            box-shadow: 3px 3px 0px var(--border-black);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -860,14 +951,15 @@
 
         .btn-blue-light:hover {
             transform: translateY(-2px);
-            box-shadow: 5px 5px 0px var(--border-black);
-            background: #79b6ff;
+            box-shadow: 
+                0 10px 25px rgba(6, 182, 212, 0.25),
+                0 0 15px rgba(99, 102, 241, 0.08);
         }
 
         .btn-blue-light svg {
             width: 16px;
             height: 16px;
-            stroke-width: 2.5px;
+            stroke-width: 2.2px;
         }
 
         /* Connect / OAuth Styles */
@@ -875,7 +967,7 @@
             background: linear-gradient(135deg, #1877f2, #3b82f6);
             color: #ffffff;
             padding: 14px 28px;
-            border: 2px solid var(--border-black);
+            border: none;
             border-radius: 9999px;
             cursor: pointer;
             font-weight: 800;
@@ -883,21 +975,21 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 4px 4px 0px var(--border-black);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(24, 119, 242, 0.2);
+            transition: all 0.3s ease;
             text-decoration: none;
         }
 
         .btn-facebook-oauth:hover {
             transform: translateY(-2px);
-            box-shadow: 6px 6px 0px var(--border-black);
+            box-shadow: 0 8px 25px rgba(24, 119, 242, 0.3);
         }
 
         .btn-direct-token {
-            background-color: var(--neon-lime);
-            color: var(--border-black);
+            background-color: #ffffff;
+            color: var(--text-dark);
             padding: 14px 28px;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             border-radius: 9999px;
             cursor: pointer;
             font-weight: 900;
@@ -905,20 +997,21 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 4px 4px 0px var(--border-black);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
             text-decoration: none;
         }
 
         .btn-direct-token:hover {
+            background-color: #f8fafc;
+            border-color: rgba(0, 0, 0, 0.12);
             transform: translateY(-2px);
-            box-shadow: 6px 6px 0px var(--border-black);
         }
 
         /* Connected state banner */
         .connected-status-banner {
-            background-color: rgba(16, 185, 129, 0.08);
-            border: 2px solid var(--success);
+            background-color: rgba(16, 185, 129, 0.05);
+            border: 1px solid var(--success);
             border-radius: 20px;
             padding: 20px;
             color: #065f46;
@@ -929,8 +1022,8 @@
         }
 
         .not-connected-status-banner {
-            background-color: rgba(244, 63, 94, 0.08);
-            border: 2px solid var(--danger);
+            background-color: rgba(244, 63, 94, 0.05);
+            border: 1px solid var(--danger);
             border-radius: 20px;
             padding: 20px;
             color: #991b1b;
@@ -954,17 +1047,17 @@
             color: #ffffff;
             padding: 10px 20px;
             border-radius: 9999px;
-            border: 2px solid var(--border-black);
+            border: none;
             font-weight: 800;
             font-size: 13px;
             cursor: pointer;
-            box-shadow: 3px 3px 0px var(--border-black);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.2);
+            transition: all 0.3s ease;
         }
 
         .btn-pink-red:hover {
             transform: translateY(-2px);
-            box-shadow: 5px 5px 0px var(--border-black);
+            box-shadow: 0 8px 25px rgba(244, 63, 94, 0.35);
             background-color: #ff5f78;
         }
 
@@ -977,22 +1070,22 @@
         }
 
         .btn-toolbar-grey {
-            background-color: #334155;
-            color: #ffffff;
+            background-color: #ffffff;
+            color: var(--text-dark);
             padding: 10px 20px;
             border-radius: 9999px;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             font-weight: 800;
             font-size: 13px;
             cursor: pointer;
-            box-shadow: 3px 3px 0px var(--border-black);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
         }
 
         .btn-toolbar-grey:hover {
+            background-color: #f8fafc;
+            border-color: rgba(0, 0, 0, 0.12);
             transform: translateY(-2px);
-            box-shadow: 5px 5px 0px var(--border-black);
-            background-color: #475569;
         }
 
         .filter-links-group {
@@ -1005,7 +1098,7 @@
         .filter-link-btn {
             background: none;
             border: none;
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 13px;
             font-weight: 800;
             cursor: pointer;
@@ -1029,11 +1122,11 @@
             background-color: var(--accent-purple-light);
         }
 
-        /* White search input inside Dark Recent Comments */
+        /* search input inside Recent Comments */
         .white-search-input {
             width: 100%;
-            background-color: #ffffff;
-            border: 2px solid var(--border-black);
+            background-color: #f8fafc;
+            border: 1px solid var(--border-dark);
             border-radius: 9999px;
             padding: 12px 24px;
             color: var(--text-dark);
@@ -1041,11 +1134,20 @@
             font-size: 13px;
             font-weight: 600;
             outline: none;
-            box-shadow: 3px 3px 0px var(--border-black);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
             margin-bottom: 20px;
+            transition: all 0.3s ease;
         }
 
-        /* Comment List Layout inside Dark Panel */
+        .white-search-input:focus {
+            border-color: var(--accent-purple);
+            background-color: #ffffff;
+            box-shadow: 
+                0 0 12px rgba(99, 102, 241, 0.15),
+                inset 0 1px 3px rgba(0, 0, 0, 0.01);
+        }
+
+        /* Comment List Layout */
         .comment-list-container {
             display: flex;
             flex-direction: column;
@@ -1057,8 +1159,8 @@
 
         /* Comment Item Card */
         .comment-item {
-            background-color: #f8fafc;
-            border: 2px solid var(--border-black);
+            background-color: #ffffff;
+            border: 1px solid var(--border-dark);
             border-radius: 20px;
             padding: 18px 20px;
             display: flex;
@@ -1066,7 +1168,14 @@
             gap: 8px;
             text-align: left;
             position: relative;
-            box-shadow: 3px 3px 0px var(--border-black);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+        }
+
+        .comment-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
         }
 
         .comment-item.keep {
@@ -1083,7 +1192,7 @@
 
         .comment-badge-review {
             display: inline-block;
-            background-color: rgba(251, 191, 36, 0.15);
+            background-color: rgba(251, 191, 36, 0.08);
             color: #d97706;
             font-size: 11px;
             font-weight: 800;
@@ -1127,9 +1236,9 @@
         .comment-item-meta {
             font-size: 11px;
             font-weight: 600;
-            color: #64748b;
+            color: var(--text-muted);
             line-height: 1.5;
-            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
             padding-top: 8px;
         }
 
@@ -1148,7 +1257,7 @@
         .popup-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.4);
             backdrop-filter: blur(8px);
             display: none;
             align-items: center;
@@ -1158,12 +1267,12 @@
         }
 
         .popup {
-            background: #ffffff;
-            border: 2px solid var(--border-black);
+            background: var(--card-dark);
+            border: 1px solid var(--border-dark);
             border-radius: 24px;
             max-width: 420px;
             width: 100%;
-            box-shadow: 8px 8px 0px var(--border-black);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
             padding: 28px;
             text-align: center;
         }
@@ -1185,34 +1294,35 @@
         .popup-buttons button {
             padding: 10px 20px;
             border-radius: 9999px;
-            border: 2px solid var(--border-black);
+            border: 1px solid var(--border-dark);
             cursor: pointer;
             font-size: 13px;
             font-weight: 800;
-            box-shadow: 3px 3px 0px var(--border-black);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
             transition: all 0.2s ease;
         }
 
         .popup-buttons button:hover {
             transform: translateY(-2px);
-            box-shadow: 5px 5px 0px var(--border-black);
+            background-color: #f8fafc;
         }
 
         .popup-cancel {
-            background: #f1f5f9;
+            background: #ffffff;
             color: var(--text-dark);
         }
 
         .popup-confirm {
             background: var(--danger);
             color: #ffffff;
+            border-color: transparent !important;
         }
 
         /* Success modal */
         .success-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(14, 17, 26, 0.85);
+            background: rgba(15, 23, 42, 0.5);
             backdrop-filter: blur(8px);
             display: none;
             align-items: center;
@@ -1222,14 +1332,14 @@
         }
 
         .success-popup {
-            background: #ffffff;
-            border: 3px solid var(--success);
+            background: var(--card-dark);
+            border: 1px solid var(--success);
             border-radius: 32px;
             max-width: 480px;
             width: 100%;
             padding: 40px;
             text-align: center;
-            box-shadow: 8px 8px 0px var(--border-black);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
             transform: scale(0.95);
             transition: all 0.3s ease;
         }
@@ -1237,8 +1347,8 @@
         .success-icon-wrap {
             width: 76px;
             height: 76px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 3px solid var(--success);
+            background: rgba(16, 185, 129, 0.05);
+            border: 1.5px solid var(--success);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1272,19 +1382,19 @@
             background-color: var(--success);
             color: #ffffff;
             padding: 14px 28px;
-            border: 2px solid var(--border-black);
+            border: none;
             border-radius: 9999px;
             font-weight: 800;
             font-size: 14px;
             cursor: pointer;
-            box-shadow: 4px 4px 0px var(--border-black);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
             transition: all 0.2s ease;
             width: 100%;
         }
 
         .btn-success-close:hover {
             transform: translateY(-2px);
-            box-shadow: 6px 6px 0px var(--border-black);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35);
         }
 
         /* Responsiveness for mobile navigation */
@@ -1295,6 +1405,7 @@
                 top: 0;
                 bottom: 0;
                 height: 100vh;
+                background-color: #ffffff;
                 transition: left 0.3s ease;
             }
 
@@ -1317,6 +1428,98 @@
 
         .view-section {
             transition: opacity 0.25s ease-in-out;
+        }
+    
+        .scanner-shield-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 2fr;
+            gap: 32px;
+        }
+        .scanner-profile-column {
+            border-right: 1px dashed var(--border-dark);
+            padding-right: 32px;
+        }
+        .ai-results-grid {
+            display: grid;
+            grid-template-columns: 1fr 2.2fr;
+            gap: 32px;
+            align-items: start;
+        }
+        .auto-reply-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .scanned-post-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(99, 102, 241, 0.02);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            font-size: 12px;
+            gap: 12px;
+            flex-wrap: wrap;
+            transition: all 0.2s ease;
+        }
+        .scanned-post-item:hover {
+            background: rgba(99, 102, 241, 0.04);
+            border-color: rgba(99, 102, 241, 0.15);
+        }
+        .auto-reply-rule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border: 1px solid var(--border-dark);
+            border-radius: 16px;
+            background-color: var(--card-dark);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            gap: 12px;
+            flex-wrap: wrap;
+            transition: all 0.2s ease;
+        }
+        .auto-reply-rule-item:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+        }
+        @media (max-width: 992px) {
+            .scanner-shield-grid,
+            .ai-results-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .scanner-profile-column {
+                border-right: none;
+                border-bottom: 1px dashed var(--border-dark);
+                padding-right: 0;
+                padding-bottom: 24px;
+            }
+        }
+        @media (max-width: 576px) {
+            .auto-reply-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .scanned-post-item,
+            .auto-reply-rule-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .dark-panel {
+                padding: 20px;
+                border-radius: 20px;
+            }
+            .dashboard-body {
+                padding: 16px;
+                gap: 20px;
+            }
+            .topbar {
+                padding: 0 16px;
+                height: 70px;
+            }
         }
     </style>
 </head>
@@ -1649,7 +1852,7 @@
 
                                 <!-- Connected account details footer inside settings -->
                                 <div class="connected-status-banner"
-                                    style="margin-top: 32px; margin-bottom: 0; background-color: rgba(255,255,255,0.02); border: 2px solid var(--border-black);">
+                                    style="margin-top: 32px; margin-bottom: 0; background-color: rgba(99,102,241,0.04); border: 1px solid var(--border-dark); border-radius: 16px;">
                                     📱 <strong>Connected Account Details</strong><br>
                                     Business Account ID: {{ account.ig_business_id }}<br>
                                     Connected: {{ account.connected_at|date:"M d, Y H:i" }}
@@ -1678,7 +1881,7 @@
                         <h3><i data-lucide="message-square"></i> Auto-Reply Link Triggers</h3>
                         <div style="text-align: left; flex-grow: 1; display: flex; flex-direction: column;">
                             <!-- Keyword & Reply Type Row -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <div class="auto-reply-grid">
                                 <div>
                                     <label class="form-label" for="triggerKeywordInput">Keyword:</label>
                                     <input type="text" id="triggerKeywordInput" class="dark-input"
@@ -1696,7 +1899,7 @@
 
                             <!-- Target Instagram Posts Section -->
                             <div
-                                style="margin-bottom: 16px; padding: 16px; border: 2px solid var(--border-black); border-radius: 16px; background-color: rgba(0,0,0,0.02); box-shadow: 2px 2px 0px var(--border-black);">
+                                style="margin-bottom: 16px; padding: 16px; border: 1px solid var(--border-dark); border-radius: 16px; background-color: rgba(99,102,241,0.04); box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
                                 <label class="form-label" style="font-weight: 800; margin-bottom: 6px;">Target Instagram
                                     Posts (URLs or IDs):</label>
                                 <div style="display: flex; gap: 8px; margin-bottom: 8px;">
@@ -1715,7 +1918,7 @@
 
                                 <!-- Question / Checkbox for Separate Links (visible only if posts count > 1) -->
                                 <div id="separateLinksToggleContainer"
-                                    style="display: none; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-black);">
+                                    style="display: none; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-dark);">
                                     <label class="checkbox-label"
                                         style="margin-bottom: 0; display: inline-flex; align-items: center; cursor: pointer;">
                                         <input type="checkbox" id="useSeparateLinksCheckbox"
@@ -1734,7 +1937,7 @@
                             </div>
 
                             <div id="separateRepliesContainer"
-                                style="display: none; margin-bottom: 16px; padding: 16px; border: 2px dashed var(--border-black); border-radius: 16px; background-color: rgba(255,255,255,0.02);">
+                                style="display: none; margin-bottom: 16px; padding: 16px; border: 1px dashed var(--border-dark); border-radius: 16px; background-color: rgba(99,102,241,0.04);">
                                 <label class="form-label" style="font-weight: 800; margin-bottom: 12px;">Configure
                                     Separate Reply Links:</label>
                                 <div id="separateRepliesInputsList"
@@ -1760,29 +1963,29 @@
                     <!-- Dedicated Auto-Scan Shield Section -->
                     <div class="dark-panel" style="text-align: left;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-black); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-dark); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <i data-lucide="shield-check" style="stroke: #10b981; width: 22px; height: 22px;"></i>
                                 Real-time Auto-Scan Shield
                             </h3>
                             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                                 <span id="autoScanBadge"
-                                    style="font-size: 11px; padding: 6px 14px; border: 2px solid var(--border-black); border-radius: 9999px; font-weight: 800; background: #e0f2fe; color: #0369a1; display: inline-flex; align-items: center; gap: 6px; box-shadow: 2px 2px 0px var(--border-black);">
+                                    style="font-size: 11px; padding: 6px 14px; border: 1px solid rgba(3, 105, 161, 0.15); border-radius: 9999px; font-weight: 700; background: rgba(3, 105, 161, 0.08); color: #0369a1; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(3, 105, 161, 0.03);">
                                     <span
                                         style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0369a1;"></span>
                                     AUTO-SCAN ACTIVE
                                 </span>
                                 <button id="syncRecentBtn" class="btn-blue-light" onclick="syncRecentPosts()"
-                                    style="padding: 10px 20px; font-size: 13px; margin: 0; display: inline-flex; align-items: center; gap: 8px; box-shadow: 3px 3px 0px var(--border-black); cursor: pointer;">
+                                    style="padding: 10px 20px; font-size: 13px; margin: 0; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
                                     <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sync Recent
                                     Posts
                                 </button>
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 32px;">
+                        <div class="scanner-shield-grid">
                             <!-- Scanner settings / status -->
-                            <div style="border-right: 2px dashed var(--border-black); padding-right: 32px;">
+                            <div class="scanner-profile-column">
                                 <h4
                                     style="margin: 0 0 16px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
                                     <i data-lucide="settings" style="width: 16px; height: 16px;"></i> Scanner Profile
@@ -1843,7 +2046,7 @@
                     <!-- AI Content Strategy Card -->
                     <div class="dark-panel" style="text-align: left; margin-bottom: 32px;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-black); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-dark); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
                             <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <i data-lucide="sparkles" style="stroke: #8b5cf6; width: 22px; height: 22px;"></i> AI
                                 Content Strategy & Idea Generator
@@ -1851,7 +2054,7 @@
                             <div>
                                 <button id="generateIdeasBtn" class="btn-blue-light"
                                     onclick="generateContentIdeas(event)"
-                                    style="padding: 10px 24px; font-size: 13px; margin: 0; display: inline-flex; align-items: center; gap: 8px; box-shadow: 3px 3px 0px var(--border-black); cursor: pointer; border-radius: 9999px;">
+                                    style="padding: 10px 24px; font-size: 13px; margin: 0; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 9999px;">
                                     <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Generate Content
                                     Ideas
                                 </button>
@@ -1860,7 +2063,7 @@
 
                         <!-- Info Header -->
                         <div
-                            style="background-color: rgba(0,0,0,0.02); border: 2px solid var(--border-black); border-radius: 16px; padding: 16px; margin-bottom: 24px; display: flex; gap: 16px; align-items: center; box-shadow: 2px 2px 0px var(--border-black);">
+                            style="background-color: rgba(99,102,241,0.04); border: 1px solid var(--border-dark); border-radius: 16px; padding: 16px; margin-bottom: 24px; display: flex; gap: 16px; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
                             <div style="font-size: 28px;">🤖</div>
                             <div style="font-size: 13px; line-height: 1.5; color: var(--text-dark); font-weight: 700;">
                                 socialFuse AI will analyze your connected Instagram business profile, style, captions,
@@ -1883,12 +2086,12 @@
 
                         <!-- Results Section -->
                         <div id="aiResultsSection" style="display: none;">
-                            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 32px; align-items: start;">
+                            <div class="ai-results-grid">
                                 <!-- Left Column: Profile Analysis -->
                                 <div
-                                    style="background-color: #ffffff; border: 2px solid var(--border-black); border-radius: 16px; padding: 20px; box-shadow: 4px 4px 0px var(--border-black);">
+                                    style="background-color: var(--card-dark); border: 1px solid var(--border-dark); border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
                                     <h4
-                                        style="margin: 0 0 12px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; border-bottom: 2.5px solid var(--border-black); padding-bottom: 8px;">
+                                        style="margin: 0 0 12px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-dark); padding-bottom: 8px;">
                                         <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i> Niche &
                                         Style Audit
                                     </h4>
@@ -2039,7 +2242,7 @@
             listEl.innerHTML = "";
             addedTargetPosts.forEach(postId => {
                 const badge = document.createElement("span");
-                badge.style = "display: inline-flex; align-items: center; gap: 8px; background-color: #f1f5f9; border: 1.5px solid var(--border-black); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--text-dark); box-shadow: 2px 2px 0px var(--border-black); margin-bottom: 4px;";
+                badge.style = "display: inline-flex; align-items: center; gap: 8px; background-color: rgba(255,255,255,0.05); border: 1px solid var(--border-dark); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 700; color: var(--text-dark); box-shadow: 0 2px 10px rgba(0,0,0,0.15); margin-bottom: 4px;";
                 badge.innerHTML = `
                     <span>Post: ${postId}</span>
                     <span style="cursor: pointer; color: #ef4444; font-weight: 900; font-size: 14px; margin-left: 4px;" onclick="removeTargetPost('${postId}')">&times;</span>
@@ -2105,7 +2308,7 @@
                     }
                     data.forEach(rule => {
                         const div = document.createElement("div");
-                        div.style = "display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border: 2px solid var(--border-black); border-radius: 16px; background-color: #ffffff; box-shadow: 2px 2px 0px var(--border-black);";
+                        div.className = "auto-reply-rule-item";
                         const isDm = rule.reply_type === "dm";
                         const badgeBg = isDm ? "var(--accent-purple)" : "var(--neon-lime)";
                         const badgeColor = isDm ? "#ffffff" : "var(--text-dark)";
@@ -2113,17 +2316,17 @@
 
                         // Show post ID or Shortcode badge
                         const postBadge = rule.instagram_post_id
-                            ? `<span style="font-weight: 800; background-color: #e0f2fe; color: #0369a1; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">Post: ${rule.instagram_post_id}</span>`
-                            : `<span style="font-weight: 800; background-color: #fee2e2; color: #991b1b; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">Global</span>`;
+                            ? `<span style="font-weight: 700; background-color: rgba(3, 105, 161, 0.08); color: #0369a1; padding: 2px 6px; border: 1px solid rgba(3, 105, 161, 0.15); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">Post: ${rule.instagram_post_id}</span>`
+                            : `<span style="font-weight: 700; background-color: rgba(153, 27, 27, 0.08); color: #991b1b; padding: 2px 6px; border: 1px solid rgba(153, 27, 27, 0.15); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">Global</span>`;
 
                         div.innerHTML = `
-                            <div style="text-align: left; flex-grow: 1; min-width: 0; padding-right: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <span style="font-weight: 800; background-color: ${badgeBg}; color: ${badgeColor}; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 10px; margin-right: 6px; display: inline-block;">${typeLabel}</span>
+                            <div style="text-align: left; flex-grow: 1; min-width: 0; padding-right: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                                <span style="font-weight: 700; background-color: ${badgeBg}; color: ${badgeColor}; padding: 2px 6px; border: 1px solid var(--border-dark); border-radius: 6px; font-size: 10px; display: inline-block;">${typeLabel}</span>
                                 ${postBadge}
-                                <span style="font-weight: 800; background-color: #f1f5f9; padding: 2px 6px; border: 1.5px solid var(--border-black); border-radius: 6px; font-size: 11px; margin-right: 8px; display: inline-block;">"${rule.trigger_keyword}"</span>
-                                <span style="font-size: 12px; font-weight: 700; color: var(--text-dark);">${rule.reply_text}</span>
+                                <span style="font-weight: 700; background-color: rgba(99, 102, 241, 0.04); color: var(--accent-purple); padding: 2px 6px; border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 6px; font-size: 11px; display: inline-block;">"${rule.trigger_keyword}"</span>
+                                <span style="font-size: 12px; font-weight: 700; color: var(--text-dark); margin-left: 4px; word-break: break-word;">${rule.reply_text}</span>
                             </div>
-                            <button class="btn-pink-red" style="padding: 4px 10px; font-size: 11px; margin: 0; box-shadow: 1.5px 1.5px 0px var(--border-black); flex-shrink: 0;" onclick="deleteAutoReplyRule(${rule.id})">Delete</button>
+                            <button class="btn-pink-red" style="padding: 4px 10px; font-size: 11px; margin: 0; border: none; flex-shrink: 0;" onclick="deleteAutoReplyRule(${rule.id})">Delete</button>
                         `;
                         listContainer.appendChild(div);
                     });
@@ -2363,24 +2566,24 @@
                         } else {
                             ideas.forEach((idea, idx) => {
                                 const card = document.createElement("div");
-                                card.style = "background-color: #ffffff; border: 2px solid var(--border-black); border-radius: 16px; padding: 20px; box-shadow: 4px 4px 0px var(--border-black); position: relative; margin-bottom: 16px;";
+                                card.style = "background-color: var(--card-dark); border: 1px solid var(--border-dark); border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); position: relative; margin-bottom: 16px;";
 
                                 const tagsHtml = (idea.hashtags || []).map(tag =>
-                                    `<span style="display: inline-block; background-color: #f1f5f9; border: 1.5px solid var(--border-black); border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: #475569; box-shadow: 1.5px 1.5px 0px var(--border-black); margin-right: 6px; margin-top: 4px;">${tag}</span>`
+                                    `<span style="display: inline-block; background-color: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: var(--accent-cyan); margin-right: 6px; margin-top: 4px;">${tag}</span>`
                                 ).join("");
 
                                 card.innerHTML = `
                                     <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 2px solid var(--border-black); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
                                         <div style="font-weight: 900; font-size: 15px; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
-                                            <span style="background-color: #8b5cf6; color: white; border: 1.5px solid var(--border-black); border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; box-shadow: 1px 1px 0px var(--border-black);">${idx + 1}</span>
+                                            <span style="background-color: var(--accent-purple); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900;">${idx + 1}</span>
                                             ${idea.title}
                                         </div>
-                                        <button class="btn-blue-light" style="padding: 6px 14px; font-size: 11px; margin: 0; box-shadow: 2px 2px 0px var(--border-black); border-radius: 9999px;" onclick="copyCaption(this, \`${idea.caption.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
+                                        <button class="btn-blue-light" style="padding: 6px 14px; font-size: 11px; margin: 0; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); border: none; border-radius: 9999px;" onclick="copyCaption(this, \`${idea.caption.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
                                             Copy Caption
                                         </button>
                                     </div>
-                                    <div style="font-size: 13px; line-height: 1.6; color: var(--text-dark); font-weight: 700; margin-bottom: 12px; background: rgba(0,0,0,0.015); border: 2.5px dashed var(--border-black); padding: 12px; border-radius: 12px;">
-                                        <strong>Hook:</strong> <span style="font-style: italic; color: #4f46e5;">"${idea.hook}"</span>
+                                    <div style="font-size: 13px; line-height: 1.6; color: var(--text-dark); font-weight: 700; margin-bottom: 12px; background: rgba(99, 102, 241, 0.05); border: 1px dashed rgba(99, 102, 241, 0.3); padding: 12px; border-radius: 12px;">
+                                        <strong>Hook:</strong> <span style="font-style: italic; color: var(--accent-purple-light);">"${idea.hook}"</span>
                                     </div>
                                     <div style="font-size: 13px; line-height: 1.5; color: var(--text-dark); font-weight: 600; text-align: justify; margin-bottom: 16px; white-space: pre-line;">
                                         ${idea.caption}
@@ -2756,9 +2959,9 @@
 
                 const actionButtons = [];
                 if (item.decision === "review") {
-                    actionButtons.push(`<button class="btn-blue-light" style="padding: 5px 12px; font-size: 11px; margin: 0; box-shadow: 2px 2px 0px var(--border-black);" onclick="resolveCommentWithGroq(${item.id})">🧠 Resolve with Groq</button>`);
+                    actionButtons.push(`<button class="btn-blue-light" style="padding: 5px 12px; font-size: 11px; margin: 0;" onclick="resolveCommentWithGroq(${item.id})">🧠 Resolve with Groq</button>`);
                 }
-                actionButtons.push(`<button class="btn-pink-red" style="padding: 5px 12px; font-size: 11px; margin: 0; box-shadow: 2px 2px 0px var(--border-black);" onclick="deleteComment(${item.id}, '${item.instagram_id || ''}')">Delete</button>`);
+                actionButtons.push(`<button class="btn-pink-red" style="padding: 5px 12px; font-size: 11px; margin: 0;" onclick="deleteComment(${item.id}, '${item.instagram_id || ''}')">Delete</button>`);
 
                 div.innerHTML = `
                     <div class="comment-item-header">
@@ -3165,13 +3368,17 @@
                     // Check if there is a scanner error
                     const badge = document.getElementById("autoScanBadge");
                     if (data.error) {
-                        badge.style.background = "#fee2e2";
+                        badge.style.background = "rgba(185, 28, 28, 0.08)";
                         badge.style.color = "#b91c1c";
+                        badge.style.borderColor = "rgba(185, 28, 28, 0.15)";
+                        badge.style.boxShadow = "0 2px 6px rgba(185, 28, 28, 0.03)";
                         badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #b91c1c;"></span> ERROR`;
                         badge.title = data.error;
                     } else {
-                        badge.style.background = "#e0f2fe";
+                        badge.style.background = "rgba(3, 105, 161, 0.08)";
                         badge.style.color = "#0369a1";
+                        badge.style.borderColor = "rgba(3, 105, 161, 0.15)";
+                        badge.style.boxShadow = "0 2px 6px rgba(3, 105, 161, 0.03)";
                         badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0369a1;"></span> AUTO-SCAN ACTIVE`;
                         badge.removeAttribute("title");
                     }
@@ -3188,15 +3395,7 @@
                     listContainer.innerHTML = "";
                     data.recent_posts.forEach(post => {
                         const div = document.createElement("div");
-                        div.style.display = "flex";
-                        div.style.alignItems = "center";
-                        div.style.justifyContent = "space-between";
-                        div.style.padding = "10px 14px";
-                        div.style.background = "var(--bg-light)";
-                        div.style.border = "1.5px solid var(--border-black)";
-                        div.style.borderRadius = "12px";
-                        div.style.boxShadow = "2px 2px 0px var(--border-black)";
-                        div.style.fontSize = "12px";
+                        div.className = "scanned-post-item";
 
                         // Parse post shortcode from permalink if possible
                         let shortcode = post.id;
@@ -3212,11 +3411,11 @@
                             `<span style="font-size: 10px; color: var(--text-muted);">No new comments</span>`;
 
                         div.innerHTML = `
-                            <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                                 ${postLink}
                                 <span style="font-size: 11px; color: var(--text-muted);">(${post.total_comments} comments total)</span>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 ${badgeText}
                                 <span style="font-size: 10px; color: var(--text-muted); font-style: italic;">Synced at ${post.scanned_at.split(' ')[1]}</span>
                             </div>
