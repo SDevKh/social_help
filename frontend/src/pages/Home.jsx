@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import instagramIcon from '../assets/instagram.png';
 import CommentVisualiser from '../components/CommentVisualiser';
+import InstagramAutomation from '../components/InstagramAutomation';
+import heroBg from '../assets/hero_bg.jpg';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -19,109 +21,171 @@ export default function Home() {
     <div className="w-full bg-white text-black landing-page-container relative select-none">
 
       {/* ── 1. HERO SECTION ── */}
-      <div className="relative w-full min-h-[90vh] flex flex-col justify-between py-12 md:py-20 overflow-hidden">
-        {/* Decorative Green Blobs */}
-        <div className="absolute top-[12%] -left-[10%] w-[320px] h-[320px] sm:w-[480px] sm:h-[480px] bg-[#b5ff66] rounded-full opacity-60 filter blur-[90px] pointer-events-none z-0" />
-        <div className="absolute bottom-[8%] -right-[15%] w-[320px] h-[320px] sm:w-[480px] sm:h-[480px] bg-[#b5ff66] rounded-full opacity-60 filter blur-[90px] pointer-events-none z-0" />
+      <div className="relative w-full min-h-[95vh] flex flex-col justify-between overflow-hidden text-white bg-[#0c0d14]">
+
+        {/* Background Hero Image */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none z-0 select-none overflow-hidden ">
+          <img
+            src={heroBg}
+            alt="Man with a phone in hand"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+            sizes="100vw"
+            className="absolute fixed top-0 left-0 h-full w-full object-cover object-center"
+            style={{ color: 'transparent' }}
+          />
+
+          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black via-black/50 to-transparent z-2" />
+        </div>
+
+        {/* Ambient Neon Blobs */}
+        <div className="absolute top-[10%] -left-[10%] w-[320px] h-[320px] sm:w-[480px] sm:h-[480px] bg-[#9333ea] rounded-full opacity-35 filter blur-[120px] pointer-events-none z-[1]" />
+        <div className="absolute bottom-[10%] -right-[10%] w-[320px] h-[320px] sm:w-[480px] sm:h-[480px] bg-[#A855F7] rounded-full opacity-20 filter blur-[120px] pointer-events-none z-[1]" />
 
         {/* Main Hero Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center items-center text-center relative z-10 py-12 space-y-10">
+        <div className="mx-auto px-6 sm:px-8 lg:px-12 w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 ">
 
-          {/* Main Headline */}
-          <div className="flex">
-            <img
-              src={instagramIcon}
-              alt="Instagram"
-              className="w-6 h-6 object-contain mr-2"
-            />
+          {/* Left Side: Copy and Floating Bubbles */}
+          <div className="lg:col-span-7 flex flex-col items-start text-left space-y-4 font-sans pt-30">
+
+            {/* Main Headline */}
             <motion.h1
               custom={0}
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              className='text-black font-black'
+              className="text-4xl sm:text-6xl md:text-[5rem] font-black uppercase tracking-tight leading-[0.9] text-white"
+              style={{ fontFamily: 'Sora, sans-serif' }}
             >
-              Meta api Approved
+              GROW SMARTER,<br />
+              <span className="text-transparent md:text-[5rem] bg-clip-text bg-gradient-to-r from-[#7C3AED] to-[#A855F7]">NOT HARDER</span>
             </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              custom={1}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="text-base sm:text-lg md:text-xl text-neutral-300 max-w-xl leading-relaxed font-semibold font-sans"
+            >
+              Focus on Product & Creation. Our Automation will handle the social protection and ideation.
+            </motion.p>
+
+            {/* Start Now CTA Button */}
+            <motion.div
+              custom={2}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="pt-2"
+            >
+              <a
+                href="/signup/"
+                className="inline-block bg-[#9333ea] hover:bg-[#7e22ce] text-white text-md font-bold uppercase tracking-wider px-10 py-4 rounded-full transition-all duration-300 shadow-[0_10px_25px_rgba(147,51,234,0.3)] hover:scale-105"
+              >
+                Start Now
+              </a>
+            </motion.div>
+
+            {/* Floating Chat Bubbles Stack */}
+            <div className="w-full max-w-md pt-8 space-y-4">
+
+              {/* Bubble 1: AI Auto Reply (Purple) */}
+              <motion.div
+                initial={{ opacity: 0, x: -50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.6 }}
+                className="ml-[8vw] w-[15vw] bg-gradient-to-r from-[#7C3AED] to-[#A855F7] text-white rounded-3xl p-4 shadow-[0_10px_30px_rgba(124,58,237,0.25)]"
+              >
+                <p className="text-xs font-bold text-white/80 uppercase tracking-wider mb-1 flex justify-between">
+                </p>
+                <p className="text-sm font-semibold mb-3">
+                  Hi, here's your PDF link you asked! 🚀
+                </p>
+                <a
+                  href="#pdf"
+                  onClick={(e) => e.preventDefault()}
+                  className="w-full inline-flex place-content-center items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold uppercase tracking-wider py-2 px-4 rounded-xl border border-white/20 transition-all"
+                >
+                  Grab Your PDF
+                </a>
+              </motion.div>
+
+              {/* Bubble 2: User Comment (Grey) */}
+              <motion.div
+                initial={{ opacity: 0, x: -50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.8 }}
+                className="flex items-start gap-2.5 max-w-[85%]"
+              >
+                <div className="w-8 h-8 rounded-full bg-neutral-600 text-xs font-bold text-white flex items-center justify-center shrink-0 uppercase">
+                  U
+                </div>
+                <div className="w-[18vw] bg-[#2a2b36] text-white rounded-[20px] p-3.5 shadow-md border border-white/5 text-left">
+                  <p className="text-xs font-bold text-neutral-400 mb-0.5">@buyer_max</p>
+                  <p className="text-sm font-medium text-neutral-200">
+                    Can i get more information or website?
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Bubble 3: AI Auto DM (Purple) */}
+              <motion.div
+                initial={{ opacity: 0, x: -50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 100, damping: 15, delay: 1.0 }}
+                className="ml-[8vw] w-[15vw] bg-gradient-to-r from-[#7C3AED] to-[#A855F7] text-white rounded-[24px] p-4 shadow-[0_10px_30px_rgba(124,58,237,0.25)] border border-white/10"
+              >
+                <p className="text-xs font-bold text-white/80 uppercase tracking-wider mb-1 flex justify-between">
+                  <span>AI Auto DM</span>
+                  <span className="font-medium lowercase opacity-70">now</span>
+                </p>
+                <p className="text-sm font-semibold mb-3">
+                  YES Sure! Check this out 👇
+                </p>
+                <a
+                  href="#website"
+                  onClick={(e) => e.preventDefault()}
+                  className="w-full place-content-center inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold uppercase tracking-wider py-2 px-4 rounded-xl border border-white/20 transition-all"
+                >
+                  Let's Go!
+                </a>
+              </motion.div>
+
+            </div>
+
           </div>
-          <motion.h1
-            custom={0}
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="hero-header-text max-w-5xl tracking-tighter"
-          >
-            STOP TOXIC COMMENTS<br />BEFORE THEY DAMAGE YOUR BRAND
-          </motion.h1>
 
-          {/* Subtitle */}
-          <motion.p
-            custom={1}
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="text-base sm:text-lg md:text-xl text-slate-800 max-w-3xl leading-relaxed mx-auto font-medium font-sans"
-          >
-            AI-powered social media moderation that detects spam, hate speech, and harmful comments in real time—so creators and brands can focus on growing their audience.
-          </motion.p>
-
-          {/* Trust line */}
-          <motion.p
-            custom={2}
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="trusted-serif-text"
-          >
-            Trusted by: <span className="font-bold">Creators, Startups, and Growing Brands.</span>
-          </motion.p>
-
-          {/* Centered CTA Action Buttons */}
-          <motion.div
-            custom={3}
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col items-center gap-5 pt-4"
-          >
-            {/* Start Now Pill Button */}
-            <a href="/signup/" className="btn-start-now group">
-              <span className="text-lg md:text-xl">Start Now</span>
-              <div className="arrow-circle">
-                <ArrowUpRight className="w-6 h-6 stroke-[3]" />
-              </div>
-            </a>
-
-            {/* Live Demo Pill Button */}
-            <Link to="/demo" className="btn-live-demo-pill text-lg md:text-xl">
-              Live Demo
-            </Link>
-          </motion.div>
-
-
+          {/* Right Side: Empty to keep creator photo visible */}
+          <div className="hidden lg:block lg:col-span-5" />
 
         </div>
 
-        {/* Three point features strip at the very bottom */}
-        <motion.div
-          custom={4}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10 mt-12"
-        >
-          <div className="flex flex-col md:flex-row items-center justify-center gap-y-5 md:gap-x-16 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-center text-black">
-            <div>
-              Protect your <span className="highlight-brush">community.</span>
+        {/* Bottom Logo Bar */}
+        <div className="max-w-7xl w-full mx-auto px-6 sm:px-8 lg:px-12 relative z-10 mb-8 flex justify-center lg:justify-end">
+          <div className="flex items-center gap-3.5 bg-black/45 backdrop-blur-md border border-white/10 px-6 py-3 rounded-full shadow-lg">
+            <div className="flex gap-2">
+              <span className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center p-1">
+                <svg className="w-full h-full fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.914 1.46 5.518 3.753 7.158v3.584c0 .325.263.59.588.59.13 0 .256-.043.36-.123l3.966-3.05a10.822 10.822 0 0 0 3.333.518c5.523 0 10-4.145 10-9.258C22 6.145 17.523 2 12 2zm1.03 12.268-2.624-2.8-5.116 2.8 5.617-5.967 2.624 2.8 5.116-2.8-5.617 5.967z" />
+                </svg>
+              </span>
+              <span className="w-6 h-6 rounded-full bg-blue-650 text-white flex items-center justify-center font-bold text-sm">f</span>
+              <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#FFB800] via-[#FF007A] to-[#7600FF] text-white flex items-center justify-center p-1.5">
+                <svg className="w-full h-full stroke-current" fill="none" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                </svg>
+              </span>
             </div>
-            <div>
-              Save hours <span className="highlight-brush">every week.</span>
-            </div>
-            <div>
-              <span className="highlight-brush">Respond</span> faster with AI.
-            </div>
+            <span className="text-white font-extrabold text-xs tracking-widest uppercase font-sans">
+              META API APPROVED
+            </span>
           </div>
-        </motion.div>
+        </div>
+
       </div>
 
       {/* ── 2. SCROLLING TICKER STRIP ── */}
@@ -376,6 +440,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* ── 6.2 INSTAGRAM AI AUTOMATION ANIMATION SECTION ── */}
+      <InstagramAutomation />
 
       {/* ── 6.5 INTERACTIVE COMMENT THREAT VISUALISER ── */}
       <div className="w-full bg-[#f8fafc] py-24 relative z-10 text-center border-y border-slate-200">
