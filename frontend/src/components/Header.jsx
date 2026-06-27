@@ -54,7 +54,7 @@ export default function Header() {
     <header
       className="fixed top-0 left-0 right-0 z-50 w-full bg-transparent"
       style={{
-        paddingTop: scrolled ? '0.75rem' : '0px',
+        paddingTop: scrolled ? '0.75rem' : '20px',
         paddingBottom: scrolled ? '0.75rem' : '0px',
         transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
@@ -89,17 +89,17 @@ export default function Header() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden ml-[30%] lg:flex items-center gap-1 fixed">
+        <div className="hidden lg:flex items-center gap-1">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`relative px-4 py-2 text-[1vw] font-bold rounded-full border transition-all duration-200 font-epunda uppercase tracking-wider ${isActive
+                className={`relative px-4 py-2 text-[13px] font-bold rounded-full border transition-all duration-200 font-epunda uppercase tracking-wider ${isActive
                   ? (isLightPage
                     ? 'bg-black text-white border-transparent'
-                    : 'bg-gradient-to-r from-brand-purple to-brand-cyan text-white border-transparent shadow-[0_4px_15px_rgba(99,102,241,0.25)]')
+                    : 'text-white border-transparent')
                   : (isLightPage
                     ? 'text-slate-800 border-transparent hover:border-black/10 hover:bg-black/5 hover:text-black'
                     : 'text-slate-300 border-transparent hover:border-white/10 hover:bg-white/5 hover:text-white')
@@ -112,13 +112,13 @@ export default function Header() {
         </div>
 
         {/* Right side */}
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
           {isAuthenticated ? (
             <>
-              <span className={`text-[1vw] font-semibold px-3 py-1.5 rounded-full font-epunda border ${isLightPage
+              <span className={`text-xs font-semibold px-3 py-1.5 rounded-full font-epunda border max-w-[140px] truncate inline-block ${isLightPage
                 ? 'text-slate-800 bg-slate-100 border-slate-200'
                 : 'text-slate-400 bg-white/5 border-white/10'
-                }`}>
+                }`} title={userEmail}>
                 👤 {userEmail}
               </span>
               {isSubscriber ? (
@@ -147,7 +147,7 @@ export default function Header() {
             <>
               <a
                 href="/login/"
-                className={`text-[0.9vw] font-bold transition-colors font-epunda uppercase tracking-wider ${isLightPage
+                className={`text-xs font-bold transition-colors font-epunda uppercase tracking-wider ${isLightPage
                   ? 'text-slate-800 hover:text-black'
                   : 'text-white hover:text-purple-300'
                   }`}
@@ -156,7 +156,7 @@ export default function Header() {
               </a>
               <a
                 href="/signup/"
-                className={`text-[1vw] px-5 py-2.5 font-epunda rounded-full font-bold uppercase tracking-wider transition-all duration-200 border ${isLightPage
+                className={`text-xs px-5 py-2.5 font-epunda rounded-full font-bold uppercase tracking-wider transition-all duration-200 border ${isLightPage
                   ? 'bg-[#C2FF81] hover:bg-[#b8fa73] text-black border-black/10 shadow-sm'
                   : 'bg-transparent text-white border-[white] hover:bg-[#7C3AED]/20 shadow-none'
                   }`}

@@ -461,7 +461,7 @@
   background-color: #ffffff;
   color: #000000;
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
   font-family: 'Stack Sans Headline', sans-serif;
 }
 
