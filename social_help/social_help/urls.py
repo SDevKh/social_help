@@ -26,4 +26,8 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # Serve media files in production as well (for uploaded blog images, etc.)
+    # In a large-scale deployment, consider using a CDN or cloud storage instead.
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

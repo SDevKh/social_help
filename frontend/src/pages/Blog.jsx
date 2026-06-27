@@ -166,6 +166,7 @@ export default function Blog() {
             image: post.image || '📝',
             image_file: post.image_file,
             image_url: post.image_url,
+            image_src: post.image_src,
             featured: post.featured,
             contentHtml: post.content_html
           }));
@@ -324,8 +325,8 @@ export default function Blog() {
 
           {/* Hero visual header */}
           <div className="aspect-[21/9] bg-[#C2FF81]/15 border border-slate-200/80 rounded-3xl flex items-center justify-center select-none mb-12 shadow-inner overflow-hidden">
-            {activePost.image_file || activePost.image_url ? (
-              <img src={activePost.image_file || activePost.image_url} alt={activePost.title} className="w-full h-full object-cover" />
+            {activePost.image_src || activePost.image_file || activePost.image_url ? (
+              <img src={activePost.image_src || activePost.image_file || activePost.image_url} alt={activePost.title} className="w-full h-full object-cover" />
             ) : (
               <span className="text-7xl">{activePost.image}</span>
             )}
@@ -445,8 +446,8 @@ export default function Blog() {
           <div className="mb-16">
             <div className="glass-panel rounded-3xl overflow-hidden border border-slate-200/80 grid grid-cols-1 lg:grid-cols-12 gap-0 text-left group">
               <div className="lg:col-span-7 bg-[#C2FF81]/10 flex items-center justify-center select-none border-b lg:border-b-0 lg:border-r border-slate-200/60 overflow-hidden min-h-[300px]">
-                {featuredPost.image_file || featuredPost.image_url ? (
-                  <img src={featuredPost.image_file || featuredPost.image_url} alt={featuredPost.title} className="w-full h-full object-cover" />
+                {featuredPost.image_src || featuredPost.image_file || featuredPost.image_url ? (
+                  <img src={featuredPost.image_src || featuredPost.image_file || featuredPost.image_url} alt={featuredPost.title} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-7xl p-12 lg:p-20">{featuredPost.image}</span>
                 )}
@@ -531,8 +532,8 @@ export default function Blog() {
             >
               {/* Header Visual icon */}
               <div className="aspect-video bg-[#C2FF81]/15 border-b border-slate-200/60 flex items-center justify-center select-none overflow-hidden">
-                {post.image_file || post.image_url ? (
-                  <img src={post.image_file || post.image_url} alt={post.title} className="w-full h-full object-cover" />
+                {post.image_src || post.image_file || post.image_url ? (
+                  <img src={post.image_src || post.image_file || post.image_url} alt={post.title} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-5xl">{post.image}</span>
                 )}

@@ -161,7 +161,7 @@ function ProductShowcaseTabs() {
   );
 }
 
-const bgColors = ["#f1fff7ff", "#e4faffff", "#ffe4e7ff", "rgba(255, 234, 250, 1)", "#f7deffff"];
+const bgColors = ["#f1fff7ff", "#e4faffff", "#f2ffd2ff", "rgba(255, 234, 250, 1)", "#ddfff7ff"];
 
 export default function Home() {
   const [heroLoaded, setHeroLoaded] = useState(false);
@@ -186,7 +186,7 @@ export default function Home() {
     },
     {
       tag: "Brands",
-      bg: "#fc5162ff",
+      bg: "#c3ff2bff",
       title: "For Brands",
       desc: "Stay consistent across every channel, without a large team. Schedule campaigns and track growth from one command center.",
       image: tabAutomation,
@@ -200,7 +200,7 @@ export default function Home() {
     },
     {
       tag: "Influencers",
-      bg: "#ba4bffff",
+      bg: "#67ffdbff",
       title: "For Influencers",
       desc: "Grow your audience faster with AI content planning, scheduling and moderation.",
       image: tabAicreation,
@@ -818,7 +818,7 @@ export default function Home() {
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full mx-auto">
             {/* Card 1 */}
-            <div className="parallax-step-card flex flex-col p-10 bg-gradient-to-b from-[#0b240c] to-[#040e05] rounded-[32px] text-left border border-[#164319] hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300">
+            <div className="parallax-step-card flex flex-col p-10 rounded-[32px] text-left hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300" style={{ background: 'linear-gradient(to left, rgba(34,211,238,1) 11.2%, rgba(79,57,246,1) 100%)' }}>
               <span className="text-[#b5ff66] font-display text-5xl md:text-6xl font-black mb-6">01</span>
               <h3 className="text-white text-xl md:text-2xl font-black tracking-tight uppercase mb-4">Connect Channels</h3>
               <p className="text-[#a4df87] text-[11px] md:text-xs font-bold leading-relaxed uppercase tracking-wider">
@@ -827,7 +827,7 @@ export default function Home() {
             </div>
 
             {/* Card 2 */}
-            <div className="parallax-step-card flex flex-col p-10 bg-gradient-to-b from-[#0b240c] to-[#040e05] rounded-[32px] text-left border border-[#164319] hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300">
+            <div className="parallax-step-card flex flex-col p-10 rounded-[32px] text-left hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300" style={{ background: 'linear-gradient(to left, rgba(34,211,238,1) 11.2%, rgba(79,57,246,1) 100%)' }}>
               <span className="text-[#b5ff66] font-display text-5xl md:text-6xl font-black mb-6">02</span>
               <h3 className="text-white text-xl md:text-2xl font-black tracking-tight uppercase mb-4">Automate & Schedule</h3>
               <p className="text-[#a4df87] text-[11px] md:text-xs font-bold leading-relaxed uppercase tracking-wider">
@@ -836,7 +836,7 @@ export default function Home() {
             </div>
 
             {/* Card 3 */}
-            <div className="parallax-step-card flex flex-col p-10 bg-gradient-to-b from-[#0b240c] to-[#040e05] rounded-[32px] text-left border border-[#164319] hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300">
+            <div className="parallax-step-card flex flex-col p-10 rounded-[32px] text-left hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300" style={{ background: 'linear-gradient(to left, rgba(34,211,238,1) 11.2%, rgba(79,57,246,1) 100%)' }}>
               <span className="text-[#b5ff66] font-display text-5xl md:text-6xl font-black mb-6">03</span>
               <h3 className="text-white text-xl md:text-2xl font-black tracking-tight uppercase mb-4">Track Growth</h3>
               <p className="text-[#a4df87] text-[11px] md:text-xs font-bold leading-relaxed uppercase tracking-wider">
