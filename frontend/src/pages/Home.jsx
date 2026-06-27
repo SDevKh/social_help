@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Link2, Calendar, TrendingUp, ChevronRight, Shield, Check, Clock, Sparkles } from 'lucide-react';
 import instagramIcon from '../assets/instagram.png';
 import CommentVisualiser from '../components/CommentVisualiser';
 import InstagramAutomation from '../components/InstagramAutomation';
@@ -804,45 +804,201 @@ export default function Home() {
 
       {/* ── 6. HOW IT WORKS (SIMPLE, AUTONOMOUS EXECUTION.) ── */}
       <div className="w-full bg-white py-24 relative z-10 text-center">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Pill Tag */}
-          <span className="bg-black text-[#b5ff66] text-[11px] font-black px-5 py-2 rounded-full uppercase tracking-widest inline-block mb-6 font-sans">
+          <span className="inline-flex items-center gap-1.5 bg-[#f5f3ff] text-[#6366f1] text-[11px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider mb-6 border border-[#e0e7ff] font-sans">
+            <Sparkles className="w-3.5 h-3.5 fill-[#6366f1]/10" />
             How It Works
           </span>
 
           {/* Heading */}
-          <h2 className="parallax-heading text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-[#0a0a0a] uppercase mb-16 font-sans">
-            Simple, autonomous execution.
+          <h2 className="parallax-heading text-3xl sm:text-5xl font-black tracking-tight text-slate-900 mb-4 font-sans">
+            Simple, <span className="text-[#6366f1]">Autonomous</span> Execution.
           </h2>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full mx-auto">
-            {/* Card 1 */}
-            <div className="parallax-step-card flex flex-col p-10 rounded-[32px] text-left hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300" style={{ background: 'linear-gradient(to left, rgba(34,211,238,1) 11.2%, rgba(79,57,246,1) 100%)' }}>
-              <span className="text-[#b5ff66] font-display text-5xl md:text-6xl font-black mb-6">01</span>
-              <h3 className="text-white text-xl md:text-2xl font-black tracking-tight uppercase mb-4">Connect Channels</h3>
-              <p className="text-[#a4df87] text-[11px] md:text-xs font-bold leading-relaxed uppercase tracking-wider">
-                Securely link your social profiles via official Meta authentication. No passwords, fully compliant.
-              </p>
+          {/* Subtitle */}
+          <p className="text-slate-500 max-w-xl mx-auto text-sm sm:text-base leading-relaxed mb-16">
+            SocialFuse runs in the background so you can focus on creating while we handle the noise.
+          </p>
+
+          {/* Cards Flex Container (Horizontal on Desktop, Vertical on Mobile) */}
+          <div className="flex flex-col lg:flex-row items-stretch justify-between gap-8 lg:gap-3 w-full mx-auto">
+            
+            {/* Card 1: Connect Channels */}
+            <div className="parallax-step-card flex-1 bg-white border border-slate-100 rounded-[32px] p-8 text-left shadow-[0_20px_50px_rgba(243,232,255,0.45)] hover:shadow-[0_20px_50px_rgba(243,232,255,0.7)] transition-all duration-300 flex flex-col justify-between min-h-[460px]">
+              <div>
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+                    <Link2 className="w-6 h-6" />
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-white border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex items-center justify-center text-xs font-bold text-slate-700">
+                    01
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mt-6">Connect Channels</h3>
+                <div className="w-8 h-1 bg-purple-500 rounded-full mt-2.5 mb-4" />
+                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                  Securely link your social profiles via official Meta authentication. No passwords. Fully compliant.
+                </p>
+              </div>
+
+              {/* Bottom Visual: Connected Nodes */}
+              <div className="relative h-32 flex items-center justify-center mt-4">
+                {/* Connecting dash circles */}
+                <div className="absolute w-40 h-40 border border-dashed border-slate-200/80 rounded-full animate-[spin_40s_linear_infinite]" />
+                <div className="absolute w-28 h-28 border border-dashed border-slate-200/50 rounded-full" />
+                
+                {/* Instagram Node (Center) */}
+                <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-0.5 shadow-lg shadow-purple-500/20 flex items-center justify-center">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <img src={instagramIcon} alt="Instagram" className="w-8 h-8 object-contain" />
+                  </div>
+                  {/* Purple Check badge at bottom right */}
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-indigo-600 border-2 border-white flex items-center justify-center text-white shadow-sm">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                </div>
+
+                {/* Left Node: Facebook */}
+                <div className="absolute left-10 w-10 h-10 rounded-full bg-white border border-slate-100 shadow-md flex items-center justify-center text-blue-600">
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                </div>
+
+                {/* Right Node: Chat Bubble */}
+                <div className="absolute right-10 w-10 h-10 rounded-full bg-white border border-slate-100 shadow-md flex items-center justify-center text-purple-600">
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.477 2 2 6.14 2 11.24c0 2.91 1.455 5.513 3.75 7.234V22l3.354-1.84c.907.25 1.874.39 2.896.39 5.523 0 10-4.14 10-9.24C22 6.14 17.523 2 12 2zm1.18 11.65l-2.02-2.15-3.94 2.15 4.33-4.6 2.07 2.15 3.89-2.15-4.33 4.6z"/>
+                  </svg>
+                </div>
+              </div>
             </div>
 
-            {/* Card 2 */}
-            <div className="parallax-step-card flex flex-col p-10 rounded-[32px] text-left hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300" style={{ background: 'linear-gradient(to left, rgba(34,211,238,1) 11.2%, rgba(79,57,246,1) 100%)' }}>
-              <span className="text-[#b5ff66] font-display text-5xl md:text-6xl font-black mb-6">02</span>
-              <h3 className="text-white text-xl md:text-2xl font-black tracking-tight uppercase mb-4">Automate & Schedule</h3>
-              <p className="text-[#a4df87] text-[11px] md:text-xs font-bold leading-relaxed uppercase tracking-wider">
-                Use our AI workspace to draft content, schedule posts, and activate automated comment moderation.
-              </p>
+            {/* Desktop Connector Arrow 1 */}
+            <div className="hidden lg:flex items-center justify-center self-center px-1 text-slate-300">
+              <div className="w-8 h-8 rounded-full border border-slate-100 bg-white shadow-sm flex items-center justify-center">
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
             </div>
 
-            {/* Card 3 */}
-            <div className="parallax-step-card flex flex-col p-10 rounded-[32px] text-left hover:shadow-[0_15px_30px_rgba(11,36,12,0.25)] transition-all duration-300" style={{ background: 'linear-gradient(to left, rgba(34,211,238,1) 11.2%, rgba(79,57,246,1) 100%)' }}>
-              <span className="text-[#b5ff66] font-display text-5xl md:text-6xl font-black mb-6">03</span>
-              <h3 className="text-white text-xl md:text-2xl font-black tracking-tight uppercase mb-4">Track Growth</h3>
-              <p className="text-[#a4df87] text-[11px] md:text-xs font-bold leading-relaxed uppercase tracking-wider">
-                Watch your reach expand and monitor automated actions in real-time through a data-packed analytics dashboard.
-              </p>
+            {/* Card 2: Automate & Schedule */}
+            <div className="parallax-step-card flex-1 bg-white border border-slate-100 rounded-[32px] p-8 text-left shadow-[0_20px_50px_rgba(219,234,254,0.45)] hover:shadow-[0_20px_50px_rgba(219,234,254,0.7)] transition-all duration-300 flex flex-col justify-between min-h-[460px]">
+              <div>
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-blue-500 to-sky-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-white border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex items-center justify-center text-xs font-bold text-slate-700">
+                    02
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mt-6">Automate & Schedule</h3>
+                <div className="w-8 h-1 bg-blue-500 rounded-full mt-2.5 mb-4" />
+                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                  Use our AI workspace to draft content, schedule posts, and activate automated comment moderation.
+                </p>
+              </div>
+
+              {/* Bottom Visual: Calendar & Moderation Mockup */}
+              <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 mt-4 flex flex-col gap-2.5 relative overflow-hidden h-32 justify-center">
+                {/* Visual Calendar Grid Background */}
+                <div className="absolute inset-0 grid grid-cols-5 grid-rows-3 gap-2 p-3 opacity-20 pointer-events-none">
+                  {Array.from({ length: 15 }).map((_, i) => (
+                    <div key={i} className="border border-slate-300 rounded bg-white" />
+                  ))}
+                </div>
+
+                {/* Badge 1: Schedule Post */}
+                <div className="relative z-10 flex items-center gap-2 bg-white border border-slate-100 px-3 py-2 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.04)] w-fit self-start">
+                  <div className="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <Clock className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-800">Schedule Post</div>
+                    <div className="text-[8px] text-slate-400">Tomorrow, 10:00 AM</div>
+                  </div>
+                </div>
+
+                {/* Badge 2: Auto Moderation */}
+                <div className="relative z-10 flex items-center gap-2 bg-white border border-slate-100 px-3 py-2 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.04)] w-fit self-end -mt-1">
+                  <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-800">Auto Moderation</div>
+                    <div className="text-[8px] text-emerald-500 font-semibold">Active</div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Desktop Connector Arrow 2 */}
+            <div className="hidden lg:flex items-center justify-center self-center px-1 text-slate-300">
+              <div className="w-8 h-8 rounded-full border border-slate-100 bg-white shadow-sm flex items-center justify-center">
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </div>
+            </div>
+
+            {/* Card 3: Track Growth */}
+            <div className="parallax-step-card flex-1 bg-white border border-slate-100 rounded-[32px] p-8 text-left shadow-[0_20px_50px_rgba(220,252,231,0.45)] hover:shadow-[0_20px_50px_rgba(220,252,231,0.7)] transition-all duration-300 flex flex-col justify-between min-h-[460px]">
+              <div>
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-white border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex items-center justify-center text-xs font-bold text-slate-700">
+                    03
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mt-6">Track Growth</h3>
+                <div className="w-8 h-1 bg-emerald-500 rounded-full mt-2.5 mb-4" />
+                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                  Watch your reach expand and monitor automated actions in real-time through a data-packed analytics dashboard.
+                </p>
+              </div>
+
+              {/* Bottom Visual: Analytics Charts */}
+              <div className="grid grid-cols-2 gap-3 mt-4 h-32 items-center">
+                {/* Left Card: Reach */}
+                <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-3 flex flex-col justify-between h-full">
+                  <div>
+                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Reach</div>
+                    <div className="text-sm font-extrabold text-slate-800 mt-0.5">128.4K</div>
+                    <span className="text-[7px] text-emerald-500 font-extrabold flex items-center gap-0.5 mt-0.5">
+                      ▲ 24.6%
+                    </span>
+                  </div>
+                  {/* SVG Sparkline Graph */}
+                  <svg className="w-full h-8 stroke-emerald-500 fill-emerald-500/5 mt-1" viewBox="0 0 100 30" preserveAspectRatio="none">
+                    <path d="M0,25 Q15,10 30,20 T60,5 T90,15 T100,8 L100,30 L0,30 Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+
+                {/* Right Card: Filtered Comments */}
+                <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-3 flex flex-col justify-between h-full">
+                  <div>
+                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-none">Comments Filtered</div>
+                    <div className="text-sm font-extrabold text-slate-800 mt-1">1,293</div>
+                  </div>
+                  {/* Miniature Bar Chart */}
+                  <div className="flex items-end gap-1 h-10 mt-1">
+                    <div className="bg-emerald-400/30 rounded-t w-full h-4" />
+                    <div className="bg-emerald-400/50 rounded-t w-full h-6" />
+                    <div className="bg-emerald-400/30 rounded-t w-full h-3" />
+                    <div className="bg-emerald-400/80 rounded-t w-full h-8" />
+                    <div className="bg-emerald-500 rounded-t w-full h-10" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Footer Badge */}
+          <div className="inline-flex items-center gap-2 bg-[#f8fafc]/80 border border-slate-100 px-6 py-2.5 rounded-full text-[11px] font-semibold text-slate-500 mx-auto mt-16 shadow-sm">
+            <Shield className="w-3.5 h-3.5 text-indigo-500" />
+            Built for creators. Backed by automation. Driven by results.
           </div>
         </div>
       </div>
