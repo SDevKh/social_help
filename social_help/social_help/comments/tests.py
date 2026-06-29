@@ -293,6 +293,29 @@ class TieredModerationAndGroqTests(TestCase):
         self.assertEqual(result["reason"], "spam_keyword")
         self.assertEqual(result["sentiment"], "neutral")
 
+    @patch("social_help.comments.instagram_service.InstagramService.analyze_hinglish_and_keywords_with_groq")
+    def test_scan_comment_hinglish_ai_spam(self, mock_groq_hinglish):
+        from social_help.comments.instagram_service import InstagramService
+        service = InstagramService()
+        
+        mock_groq_hinglish.return_value = {
+            "is_spam_or_toxic": True,
+            "matched_keyword": "cheap",
+            "reason": "Matches Hinglish translation of key: cheap"
+        }
+        
+        from social_help.comments.models import ModerationSetting
+        setting, _ = ModerationSetting.objects.get_or_create(user=self.user)
+        setting.keywords = "cheap,free,collab"
+        setting.save()
+        
+        with self.settings(GROQ_API_KEY="dummy_key"):
+            result = service.scan_comment("Main saste mai krdunga", user=self.user)
+            
+        self.assertEqual(result["decision"], "delete")
+        self.assertTrue(result["reason"].startswith("groq_hinglish:"))
+        self.assertIn("Matches Hinglish translation of key: cheap", result["reason"])
+
     def test_sarcastic_backhanded_compliment_is_detected(self):
         from social_help.comments.instagram_service import InstagramService
         service = InstagramService()

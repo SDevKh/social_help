@@ -441,6 +441,89 @@ class InstagramService:
             return "delete", "fallback_vader_delete"
         return "keep", "fallback_vader_keep"
 
+    def is_likely_hinglish_or_hindi(self, text):
+        """
+        Detects if text contains Devanagari (Hindi script) or common Hinglish
+        transliterated words and patterns.
+        """
+        # Devanagari script range for Hindi
+        if re.search(r'[\u0900-\u097F]', text):
+            return True
+
+        # Common Hinglish stopwords, pronouns, and verbs
+        hinglish_markers = {
+            "main", "nhi", "nahi", "hai", "ko", "se", "me", "mein", "pe", "bhi", "toh",
+            "aur", "ek", "kya", "kyu", "kyon", "aise", "tum", "aap", "rha", "raha",
+            "rahi", "kr", "kro", "karo", "de", "do", "dena", "le", "lo", "sasta",
+            "saste", "krdunga", "kardunga", "kam", "daam", "paisey", "paise", "rupay",
+            "rupye", "yaar", "bhai", "kuch", "bohot", "bahut", "wala", "wali", "wale",
+            "hoga", "hogi", "kar", "ki", "ka"
+        }
+        words = set(re.findall(r'\b\w+\b', text.lower()))
+        return not words.isdisjoint(hinglish_markers)
+
+    def analyze_hinglish_and_keywords_with_groq(self, text, keywords):
+        """
+        Uses Groq LLM to check if a comment (especially in Hindi/Hinglish)
+        contains toxic content or matches custom keywords/themes semantically.
+        """
+        groq_key = getattr(settings, "GROQ_API_KEY", "")
+        if not groq_key:
+            return None
+
+        keywords_list = [k.strip() for k in keywords if k.strip()]
+
+        api_url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {groq_key}",
+            "Content-Type": "application/json",
+        }
+
+        prompt = (
+            "You are an expert multilingual social media comment moderation AI. "
+            "Analyze the given comment which may be in English, Hindi, or Hinglish "
+            "(Hindi written in the Latin/English alphabet, e.g. 'saste me', 'krdunga', 'nhi').\n\n"
+        )
+        if keywords_list:
+            prompt += f"Blocked Keywords/Themes: {', '.join(keywords_list)}\n\n"
+
+        prompt += (
+            "Tasks:\n"
+            "1. Detect if the comment contains or refers to any of the blocked keywords/themes "
+            "directly or semantically, including their Hinglish/Hindi translations or transliterations.\n"
+            "2. Detect if the comment is promotional/spam (e.g., offering cheap services like 'saste me krdunga', "
+            "hijacking comments, self-promotion, asking to DM, or link-sharing) or highly toxic (abusive/harassment/hate speech) in Hindi or Hinglish.\n\n"
+            "Respond ONLY with a valid JSON object containing these keys:\n"
+            "- 'is_spam_or_toxic': boolean (true if it matches any blocked keywords/themes or is promotional/spam/toxic in Hinglish/Hindi)\n"
+            "- 'matched_keyword': string or null (the matched keyword, or category like 'spam' / 'toxicity')\n"
+            "- 'reason': string (a short, clear explanation in English, e.g., 'Matches Hinglish translation of key: cheap' or 'Promotional Hinglish spam')"
+        )
+
+        payload = {
+            "model": "llama-3.1-8b-instant",
+            "messages": [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": f"Analyze this comment:\n\"{text}\""}
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.0,
+            "max_tokens": 150,
+        }
+
+        try:
+            res = requests.post(api_url, headers=headers, json=payload, timeout=10)
+            if res.ok:
+                import json
+                resp_data = res.json()
+                content = resp_data["choices"][0]["message"]["content"]
+                return json.loads(content)
+            else:
+                print(f"[ERROR] Groq Hinglish API returned error {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f"[ERROR] Groq Hinglish API call failed: {e}")
+
+        return None
+
     def scan_comment(self, text, user=None):
         if user:
             settings_obj = ModerationSetting.objects.filter(user=user).first() or ModerationSetting.objects.create(user=user)
@@ -513,7 +596,7 @@ class InstagramService:
             "visit my website", "promo code", "discount code", "use code", "buy now",
             "visit my page", "check out my page", "check out my profile",
             "follow me for", "free guide", "free ebook", "check link",
-            "send me a message", "message me to get", "dm me", "dm us", "in bio"
+            "send me a message", "message me to get", "dm me", "dm us", "in bio", "mai saste mai kardunga"
         ]
         if any(phrase in text_lower for phrase in promo_phrases):
             try:
@@ -536,6 +619,25 @@ class InstagramService:
                 "sarcasm_detected": False, 
                 "sarcasm_confidence": 0.0
             }
+
+        # 4b. AI Hinglish and Keyword Semantic check using Groq
+        groq_key = getattr(settings, "GROQ_API_KEY", "")
+        if groq_key:
+            is_hinglish = self.is_likely_hinglish_or_hindi(text)
+            has_keywords = any(k.strip() for k in settings_obj.keyword_list())
+            if is_hinglish or has_keywords:
+                groq_result = self.analyze_hinglish_and_keywords_with_groq(text, settings_obj.keyword_list())
+                if groq_result and groq_result.get("is_spam_or_toxic"):
+                    matched_kw = groq_result.get("matched_keyword")
+                    reason = groq_result.get("reason", "Hinglish AI detected spam/toxicity")
+                    return {
+                        "toxicity_score": 0.95,
+                        "decision": "delete",
+                        "reason": f"groq_hinglish: {reason}",
+                        "sentiment": "negative",
+                        "sarcasm_detected": False,
+                        "sarcasm_confidence": 0.0
+                    }
 
         # 5. Hugging Face Toxicity Model & Fallback
         score = self.analyze_toxicity_hf(text)

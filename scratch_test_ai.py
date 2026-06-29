@@ -8,7 +8,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "social_help.settings")
 import django
 django.setup()
 
-from comments.instagram_service import InstagramService
+from social_help.comments.instagram_service import InstagramService
 
 service = InstagramService()
 

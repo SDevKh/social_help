@@ -7,8 +7,8 @@ django.setup()
 
 from django.test import RequestFactory, TestCase
 from django.contrib.auth.models import User
-from comments.views import facebook_oauth_callback
-from comments.models import InstagramAccount
+from social_help.comments.views import facebook_oauth_callback
+from social_help.comments.models import InstagramAccount
 
 class OAuthFallbackTest(TestCase):
     def setUp(self):
