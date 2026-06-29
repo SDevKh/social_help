@@ -92,7 +92,7 @@ const tabsData = [
       'Engagement score predictions.',
       'Batch content generation.',
     ],
-    image: contentai,
+    image: tabAicreation,
   },
 ];
 
