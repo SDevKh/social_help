@@ -491,8 +491,7 @@ class InstagramService:
             "Tasks:\n"
             "1. Detect if the comment contains or refers to any of the blocked keywords/themes "
             "directly or semantically, including their Hinglish/Hindi translations or transliterations.\n"
-            "2. Detect if the comment is promotional/spam (e.g., offering cheap services like 'saste me krdunga', "
-            "hijacking comments, self-promotion, asking to DM, or link-sharing) or highly toxic (abusive/harassment/hate speech) in Hindi or Hinglish.\n\n"
+            "2. Detect if the comment is promotional/spam (e.g., self-promotional spam offering cheap services like 'saste me krdunga', hijacking comments for self-promotion, or posting external links/urls to spam the section) or highly toxic (abusive/harassment/hate speech) in Hindi or Hinglish. Note: simple user comments asking/requesting for a link, info, or help (e.g., 'link', 'send link', 'details') are NOT spam/toxic and should NOT be blocked.\n\n"
             "Respond ONLY with a valid JSON object containing these keys:\n"
             "- 'is_spam_or_toxic': boolean (true if it matches any blocked keywords/themes or is promotional/spam/toxic in Hinglish/Hindi)\n"
             "- 'matched_keyword': string or null (the matched keyword, or category like 'spam' / 'toxicity')\n"
@@ -535,6 +534,24 @@ class InstagramService:
         sarcasm_threshold = getattr(settings_obj, "sarcasm_threshold", 0.5)
 
         text_lower = text.lower().strip()
+        cleaned_text = re.sub(r'[^\w\s]', '', text_lower).strip()
+
+        # 0. Bypass validation for exact trigger keywords (e.g. "link", "details")
+        if user:
+            try:
+                from social_help.comments.models import AutoReplyRule
+                triggers = {r.trigger_keyword.strip().lower() for r in AutoReplyRule.objects.filter(user=user) if r.trigger_keyword.strip()}
+                if cleaned_text in triggers:
+                    return {
+                        "toxicity_score": 0.0,
+                        "decision": "keep",
+                        "reason": "matches_trigger_keyword",
+                        "sentiment": "neutral",
+                        "sarcasm_detected": False,
+                        "sarcasm_confidence": 0.0
+                    }
+            except Exception as e:
+                print(f"[WARN] Error checking trigger keywords: {e}")
 
         # 1. Custom Keywords (Highest Priority)
         for keyword in settings_obj.keyword_list():

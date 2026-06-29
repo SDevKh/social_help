@@ -698,6 +698,22 @@ class InstagramPrivateReplyTests(TestCase):
         self.assertFalse(res["success"])
         self.assertEqual(res["error"], "Invalid parameter")
 
+    def test_scan_comment_trigger_keyword_bypass(self):
+        from social_help.comments.instagram_service import InstagramService
+        # Create an AutoReplyRule
+        AutoReplyRule.objects.create(
+            user=self.user,
+            trigger_keyword="link",
+            reply_text="Here is the link: http://example.com",
+            reply_type="dm"
+        )
+        
+        service = InstagramService(account=self.account)
+        res = service.scan_comment("Link!!!", user=self.user)
+        self.assertEqual(res["decision"], "keep")
+        self.assertEqual(res["reason"], "matches_trigger_keyword")
+
+
 
 
 
