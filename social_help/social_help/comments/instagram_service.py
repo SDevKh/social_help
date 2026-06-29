@@ -865,7 +865,8 @@ class InstagramService:
                     if rule_post_id and rule_post_id.strip():
                         target_post = rule_post_id.strip()
                         target_shortcode = self.extract_shortcode(target_post)
-                        if target_shortcode not in (current_shortcode, current_media_id):
+                        target_media_id = target_shortcode if target_shortcode.isdigit() else self.get_media_id(target_shortcode)
+                        if str(current_shortcode) not in (str(target_shortcode), str(target_media_id)) and str(current_media_id) not in (str(target_shortcode), str(target_media_id)):
                             continue
 
                     trigger = rule.trigger_keyword.strip().lower()
