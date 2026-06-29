@@ -92,7 +92,7 @@ const tabsData = [
       'Engagement score predictions.',
       'Batch content generation.',
     ],
-    image: tabAicreation,
+    image: contentai,
   },
 ];
 
@@ -823,7 +823,7 @@ export default function Home() {
 
           {/* Cards Flex Container (Horizontal on Desktop, Vertical on Mobile) */}
           <div className="flex flex-col lg:flex-row items-stretch justify-between gap-8 lg:gap-3 w-full mx-auto">
-            
+
             {/* Card 1: Connect Channels */}
             <div className="parallax-step-card flex-1 bg-white border border-slate-100 rounded-[32px] p-8 text-left shadow-[0_20px_50px_rgba(243,232,255,0.45)] hover:shadow-[0_20px_50px_rgba(243,232,255,0.7)] transition-all duration-300 flex flex-col justify-between min-h-[460px]">
               <div>
@@ -847,7 +847,7 @@ export default function Home() {
                 {/* Connecting dash circles */}
                 <div className="absolute w-40 h-40 border border-dashed border-slate-200/80 rounded-full animate-[spin_40s_linear_infinite]" />
                 <div className="absolute w-28 h-28 border border-dashed border-slate-200/50 rounded-full" />
-                
+
                 {/* Instagram Node (Center) */}
                 <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-0.5 shadow-lg shadow-purple-500/20 flex items-center justify-center">
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
@@ -862,14 +862,14 @@ export default function Home() {
                 {/* Left Node: Facebook */}
                 <div className="absolute left-10 w-10 h-10 rounded-full bg-white border border-slate-100 shadow-md flex items-center justify-center text-blue-600">
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                   </svg>
                 </div>
 
                 {/* Right Node: Chat Bubble */}
                 <div className="absolute right-10 w-10 h-10 rounded-full bg-white border border-slate-100 shadow-md flex items-center justify-center text-purple-600">
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                    <path d="M12 2C6.477 2 2 6.14 2 11.24c0 2.91 1.455 5.513 3.75 7.234V22l3.354-1.84c.907.25 1.874.39 2.896.39 5.523 0 10-4.14 10-9.24C22 6.14 17.523 2 12 2zm1.18 11.65l-2.02-2.15-3.94 2.15 4.33-4.6 2.07 2.15 3.89-2.15-4.33 4.6z"/>
+                    <path d="M12 2C6.477 2 2 6.14 2 11.24c0 2.91 1.455 5.513 3.75 7.234V22l3.354-1.84c.907.25 1.874.39 2.896.39 5.523 0 10-4.14 10-9.24C22 6.14 17.523 2 12 2zm1.18 11.65l-2.02-2.15-3.94 2.15 4.33-4.6 2.07 2.15 3.89-2.15-4.33 4.6z" />
                   </svg>
                 </div>
               </div>
