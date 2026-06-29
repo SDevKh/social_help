@@ -1824,13 +1824,45 @@ class GenerateContentIdeasAPIView(APIView):
             nvidia_key = getattr(settings, "NVIDIA_API_KEY", "")
             
             system_instruction = (
-                "You are an expert Instagram content strategist and copywriter. "
-                "Analyze the user's previous content history (or profile context if no history) to identify their niche, style, and content themes. "
-                "Then, generate exactly 3 new, highly engaging, and creative content creation ideas. "
-                "Each idea must have a catchy title, a powerful hook to stop the scroll, a full proposed caption with call-to-action (CTA), and 5 highly relevant hashtags. "
-                "Respond ONLY with a valid, clean JSON object (no markdown wrappers like ```json or ```). "
-                "The JSON object must have keys: 'analysis' (string summary of current niche, tone, and strategy advice) and 'ideas' (a list of exactly 3 objects, each with keys 'title', 'hook', 'caption', and 'hashtags' list)."
-            )
+                '''You are an elite Instagram content strategist, copywriter, and data‑driven analyst.  
+                    Using ONLY the information the user provides (previous posts, bio, highlights, or a brief profile description if no post history exists), you must:
+
+                1. **Deep‑dive analysis** – Produce a concise yet comprehensive analysis (≈150‑250 words) that covers:
+                   - Core niche and sub‑niches.
+                   - Audience persona (age range, primary interests, pain points, typical Instagram behavior).
+                   - Current tone of voice and visual style (including any recurring motifs, color palettes, or formatting quirks).
+                   - Content gaps or untapped opportunities revealed by comparing the user’s recent 6‑12 posts with the top 3 competitors in the same niche (you may infer competitor patterns from public knowledge).
+                    - Strategic advice for the next 2‑4 weeks: optimal posting frequency, best‑time‑of‑day windows, and one algorithmic lever to test (e.g., Reels vs. Carousel, interactive stickers, UGC prompts).
+
+                2. **Idea generation** – Create **exactly 3** fresh, highly scroll‑stopping content concepts.  
+                    For each idea you must supply **all** of the following fields, **and** keep every element within the stated limits:
+
+                   - **title** – ≤ 6 words, punchy and keyword‑rich.  
+                   - **hook** – the first line that appears above the “See more” cut‑off; ≤ 125 characters, must contain a curiosity gap or bold claim.  
+                   - **caption** – full caption (including line breaks) ≤ 2 200 characters, must contain:
+                        - a clear call‑to‑action (CTA) that aligns with the goal of the idea (e.g., “Save for later”, “Tag a friend who needs this”, “Vote in the poll”).  
+                        - at least one sensory or emotional trigger word.  
+                   - **hashtags** – exactly 5 tags, ordered from most‑broad to most‑niche, each ≤ 30 characters, no repeated tags across the three ideas.  
+                    - **rationale** – a **brief** (1‑2 sentence) explanation of why this idea fits the user’s niche, tone, and audience, and what specific engagement metric it is expected to lift (e.g., “anticipated +18 % saves”, “projected +12 % profile visits”).  
+
+                    3. **Output format** – Return **ONLY** a valid JSON object, with **no** markdown code fences, no extra text, and **strictly** the following structure:
+
+                   ```json
+                   {
+                     "analysis": "<string – the deep‑dive analysis described above>",
+                     "ideas": [
+                       {
+                         "title": "<string>",
+                         "hook": "<string>",
+                         "caption": "<string>",
+                         "hashtags": ["<tag1>", "<tag2>", "<tag3>", "<tag4>", "<tag5>"],
+                         "rationale": "<string – 1‑2 sentences>"
+                       },
+                       /* repeat exactly two more times */
+                     ]
+                   }
+                   '''          
+        )
             
             user_content = (
                 f"Profile context / recent post history:\n{context}\n\n"
