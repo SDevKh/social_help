@@ -653,6 +653,53 @@ class AIContentGeneratorTests(TestCase):
         self.assertEqual(data["ideas"][0]["title"], "N1")
 
 
+class InstagramPrivateReplyTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="replytestuser", password="password123")
+        self.account = InstagramAccount.objects.create(
+            user=self.user,
+            ig_business_id="ig_biz_12345",
+            page_id="fb_page_999",
+            page_access_token="test_token",
+            auth_method="direct_token"
+        )
+
+    @patch("requests.post")
+    def test_send_private_reply_success(self, mock_post):
+        mock_response = Mock()
+        mock_response.json.return_value = {"message_id": "mid.123"}
+        mock_post.return_value = mock_response
+
+        from social_help.comments.instagram_service import InstagramService
+        service = InstagramService(account=self.account)
+        res = service.send_private_reply("comment_abc", "Hello there!")
+
+        self.assertTrue(res["success"])
+        self.assertEqual(res["id"], "mid.123")
+
+        # Verify requests.post was called with the correct URL using ig_business_id
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://graph.facebook.com/v20.0/ig_biz_12345/messages")
+        self.assertEqual(kwargs["params"]["access_token"], "test_token")
+        self.assertEqual(kwargs["json"]["recipient"]["comment_id"], "comment_abc")
+        self.assertEqual(kwargs["json"]["message"]["text"], "Hello there!")
+
+    @patch("requests.post")
+    def test_send_private_reply_error(self, mock_post):
+        mock_response = Mock()
+        mock_response.json.return_value = {"error": {"message": "Invalid parameter"}}
+        mock_post.return_value = mock_response
+
+        from social_help.comments.instagram_service import InstagramService
+        service = InstagramService(account=self.account)
+        res = service.send_private_reply("comment_abc", "Hello there!")
+
+        self.assertFalse(res["success"])
+        self.assertEqual(res["error"], "Invalid parameter")
+
+
+
 
 
 

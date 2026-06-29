@@ -762,7 +762,7 @@ class InstagramService:
         if not comment_id or not message:
             return {"success": False, "error": "comment_id and message are required"}
         
-        url = f"https://graph.facebook.com/v20.0/{self.page_id}/messages"
+        url = f"https://graph.facebook.com/v20.0/{self.ig_business_id}/messages"
         headers = {
             "Content-Type": "application/json"
         }
