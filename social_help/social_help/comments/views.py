@@ -364,7 +364,211 @@ def instagram_disconnect(request):
 
 
 # -------------------------------------------------------------------
-# INSTAGRAM LOGIN OAUTH (NO FACEBOOK PAGE REQUIRED)
+# DYNAMIC OAUTH REDIRECT HELPERS
+# -------------------------------------------------------------------
+
+def get_facebook_redirect_uri(request):
+    """
+    Get the Facebook OAuth redirect URI dynamically based on the current host.
+    """
+    host = request.get_host()
+    scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else "http"
+    if not host:
+        return (settings.FACEBOOK_OAUTH_REDIRECT_URI or settings.INSTAGRAM_REDIRECT_URI or "").strip()
+    return f"{scheme}://{host}/instagram/callback/"
+
+
+def get_instagram_redirect_uri(request):
+    """
+    Get the Instagram OAuth redirect URI dynamically based on the current host.
+    """
+    host = request.get_host()
+    scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else "http"
+    if not host:
+        return (settings.INSTAGRAM_OAUTH_REDIRECT_URI or "").strip()
+    return f"{scheme}://{host}/instagram/oauth/callback/"
+
+
+# -------------------------------------------------------------------
+# FACEBOOK LOGIN OAUTH (REQUIRED FOR INSTAGRAM GRAPH API)
+# -------------------------------------------------------------------
+
+@login_required
+def facebook_oauth_login(request):
+    """
+    Start Facebook OAuth to connect Instagram Business / Creator account
+    """
+
+    facebook_app_id = (settings.FACEBOOK_APP_ID or settings.INSTAGRAM_APP_ID or "").strip()
+    facebook_redirect_uri = get_facebook_redirect_uri(request)
+
+    if not facebook_app_id.isdigit() or not facebook_redirect_uri:
+        return render(request, "comments/connect_error.html", {
+            "error": "Facebook OAuth is not configured correctly. Please set FACEBOOK_APP_ID and FACEBOOK_OAUTH_REDIRECT_URI."
+        })
+
+    state = secrets.token_urlsafe(16)
+    request.session["fb_oauth_state"] = state
+
+    scope = ",".join([
+        "pages_show_list",
+        "pages_read_engagement",
+        "instagram_basic",
+        "instagram_manage_comments",
+        "instagram_manage_messages",
+        "business_management",
+    ])
+
+    oauth_url = (
+        "https://www.facebook.com/v20.0/dialog/oauth"
+        f"?client_id={facebook_app_id}"
+        f"&redirect_uri={facebook_redirect_uri}"
+        f"&response_type=code"
+        f"&scope={scope}"
+        f"&state={state}"
+        f"&auth_type=rerequest"
+    )
+
+    return redirect(oauth_url)
+
+
+@login_required
+def facebook_oauth_callback(request):
+    """
+    OAuth callback – exchanges code, finds Page, links Instagram account
+    """
+
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+
+    saved_state = request.session.get("fb_oauth_state")
+
+    if not code or not state:
+        return render(request, "comments/connect_error.html", {
+            "error": "Missing authorization code or state parameter."
+        })
+
+    # More lenient state validation - just check if state exists
+    if saved_state:
+        del request.session["fb_oauth_state"]
+
+    facebook_app_id = (settings.FACEBOOK_APP_ID or "").strip()
+    facebook_app_secret = (settings.FACEBOOK_APP_SECRET or "").strip()
+    facebook_redirect_uri = get_facebook_redirect_uri(request)
+
+    logger.warning("=== FACEBOOK OAUTH DEBUG ===")
+    logger.warning("Using App ID: %s", facebook_app_id)
+    logger.warning("Using Redirect URI: %s", facebook_redirect_uri)
+    
+    # 1️⃣ Exchange code → user access token
+    token_res = requests.get(
+        "https://graph.facebook.com/v20.0/oauth/access_token",
+        params={
+            "client_id": facebook_app_id,
+            "client_secret": facebook_app_secret,
+            "redirect_uri": facebook_redirect_uri,
+            "code": code,
+        },
+        timeout=10,
+    )
+
+    token_data = token_res.json()
+    logger.warning("Token response: %s", {k: v for k, v in token_data.items() if k != "access_token"})
+    user_token = token_data.get("access_token")
+
+    if not user_token:
+        logger.warning("TOKEN EXCHANGE FAILED: %s", token_data)
+        return render(request, "comments/connect_error.html", {
+            "error": f"Token exchange failed: {token_data}"
+        })
+
+    # 1.5️⃣ Diagnostic: Check Permissions
+    perm_res = requests.get(
+        "https://graph.facebook.com/v20.0/me/permissions",
+        params={"access_token": user_token},
+        timeout=10,
+    )
+    logger.warning("GRANTED PERMISSIONS: %s", perm_res.json().get("data", []))
+
+    # 2️⃣ Consolidated Discovery: Get User, Pages, and Direct IG accounts in one go
+    # This is often more reliable than separate endpoint calls
+    discovery_res = requests.get(
+        "https://graph.facebook.com/v20.0/me",
+        params={
+            "fields": "id,name,accounts{id,name,access_token,instagram_business_account}",
+            "access_token": user_token
+        },
+        timeout=10,
+    )
+    
+    discovery_data = discovery_res.json()
+    logger.warning("CONSOLIDATED DISCOVERY DATA: %s", discovery_data)
+
+    pages = discovery_data.get("accounts", {}).get("data", [])
+    
+    # Check if direct_ig_accounts are present in discovery data
+    direct_ig_accounts = discovery_data.get("instagram_business_accounts", {}).get("data", [])
+    
+    # If not found directly under 'me', query the 'me/instagram_business_accounts' endpoint
+    if not direct_ig_accounts:
+        try:
+            direct_ig_res = requests.get(
+                "https://graph.facebook.com/v20.0/me/instagram_business_accounts",
+                params={"access_token": user_token},
+                timeout=10,
+            )
+            direct_ig_accounts = direct_ig_res.json().get("data", [])
+            logger.warning("DIRECT IG ACCOUNTS QUERY DATA: %s", direct_ig_accounts)
+        except Exception as e:
+            logger.warning("Failed to query me/instagram_business_accounts: %s", e)
+
+    ig_account = None
+    access_token_to_save = None
+    page_id_to_save = None
+
+    # Try Page-based discovery first
+    for p in pages:
+        ig = p.get("instagram_business_account")
+        if ig:
+            logger.warning("Found IG account via Page: %s (%s)", ig.get("id"), p.get("name"))
+            ig_account = ig
+            access_token_to_save = p["access_token"]
+            page_id_to_save = p["id"]
+            break
+
+    # Fallback to direct discovery
+    if not ig_account and direct_ig_accounts:
+        logger.warning("Falling back to direct IG account discovery...")
+        ig_account = direct_ig_accounts[0]
+        access_token_to_save = user_token
+        page_id_to_save = None
+        logger.warning("Found IG account directly: %s", ig_account.get("id"))
+
+    if not ig_account:
+        return render(request, "comments/connect_error.html", {
+            "error": "No linked Instagram Business/Creator account found.",
+            "pages_found": len(pages),
+            "direct_accounts_found": len(direct_ig_accounts)
+        })
+
+    logger.warning("SUCCESS: Final Instagram account ID: %s", ig_account["id"])
+
+    # 4️⃣ Save account
+    InstagramAccount.objects.update_or_create(
+        user=request.user,
+        defaults={
+            "page_id": page_id_to_save,
+            "ig_business_id": ig_account["id"],
+            "page_access_token": access_token_to_save,
+            "auth_method": "facebook_oauth",
+        },
+    )
+
+    return redirect("/dashboard/")
+
+
+# -------------------------------------------------------------------
+# INSTAGRAM LOGIN OAUTH (NO FACEBOOK PAGE REQUIRED - ALTERNATE FLOW)
 # -------------------------------------------------------------------
 
 @login_required
@@ -374,10 +578,7 @@ def instagram_oauth_login(request):
     """
 
     instagram_app_id = (settings.INSTAGRAM_APP_ID or settings.FACEBOOK_APP_ID or "").strip()
-    instagram_redirect_uri = (settings.INSTAGRAM_REDIRECT_URI or settings.FACEBOOK_OAUTH_REDIRECT_URI or "").strip()
-    host = request.get_host()
-    if host and ("loca.lt" in host or "ngrok" in host):
-        instagram_redirect_uri = f"https://{host}/instagram/callback/"
+    instagram_redirect_uri = get_instagram_redirect_uri(request)
 
     if not instagram_app_id or not instagram_redirect_uri:
         return render(request, "comments/connect_error.html", {
@@ -422,10 +623,7 @@ def instagram_oauth_callback(request):
 
     instagram_app_id = (settings.INSTAGRAM_APP_ID or settings.FACEBOOK_APP_ID or "").strip()
     instagram_app_secret = (settings.INSTAGRAM_APP_SECRET or settings.FACEBOOK_APP_SECRET or "").strip()
-    instagram_redirect_uri = (settings.INSTAGRAM_REDIRECT_URI or settings.FACEBOOK_OAUTH_REDIRECT_URI or "").strip()
-    host = request.get_host()
-    if host and ("loca.lt" in host or "ngrok" in host):
-        instagram_redirect_uri = f"https://{host}/instagram/callback/"
+    instagram_redirect_uri = get_instagram_redirect_uri(request)
 
     logger.warning("=== INSTAGRAM OAUTH DEBUG ===")
     logger.warning("Using App ID: %s", instagram_app_id)
