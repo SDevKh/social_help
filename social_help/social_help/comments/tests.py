@@ -714,6 +714,41 @@ class InstagramPrivateReplyTests(TestCase):
         self.assertEqual(res["reason"], "matches_trigger_keyword")
 
 
+class RecentInstagramMediaAPITests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="password123")
+        self.client.login(username="testuser", password="password123")
+        self.subscription = Subscription.objects.create(user=self.user, tier="starter", is_active=True)
+
+    def test_unauthenticated_request_rejected(self):
+        self.client.logout()
+        response = self.client.get("/api/instagram/media/")
+        # DRF returns 403 Forbidden for unauthenticated request when IsAuthenticated is checked
+        self.assertEqual(response.status_code, 403)
+
+    def test_authenticated_no_instagram_account(self):
+        response = self.client.get("/api/instagram/media/")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json().get("error"), "No Instagram account connected")
+
+    @patch("social_help.comments.instagram_service.InstagramService.get_recent_media")
+    def test_authenticated_with_instagram_account(self, mock_get_recent_media):
+        InstagramAccount.objects.create(
+            user=self.user,
+            ig_business_id="12345",
+            page_access_token="fake_token"
+        )
+        mock_get_recent_media.return_value = [
+            {"id": "post1", "caption": "Hello world", "media_type": "IMAGE", "permalink": "https://instagram.com/p/1"}
+        ]
+        response = self.client.get("/api/instagram/media/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json().get("success"))
+        self.assertEqual(len(response.json().get("media")), 1)
+        self.assertEqual(response.json().get("media")[0]["id"], "post1")
+
+
+
 
 
 

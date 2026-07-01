@@ -368,78 +368,77 @@ def instagram_disconnect(request):
 # -------------------------------------------------------------------
 
 @login_required
-def facebook_oauth_login(request):
+def instagram_oauth_login(request):
     """
-    Start Facebook OAuth to connect Instagram Business / Creator account
+    Start Instagram OAuth to connect Instagram Business / Creator account
     """
 
-    facebook_app_id = (settings.FACEBOOK_APP_ID or "").strip()
-    facebook_redirect_uri = (settings.FACEBOOK_OAUTH_REDIRECT_URI or settings.INSTAGRAM_REDIRECT_URI or "").strip()
+    instagram_app_id = (settings.INSTAGRAM_APP_ID or settings.FACEBOOK_APP_ID or "").strip()
+    instagram_redirect_uri = (settings.INSTAGRAM_REDIRECT_URI or settings.FACEBOOK_OAUTH_REDIRECT_URI or "").strip()
     host = request.get_host()
     if host and ("loca.lt" in host or "ngrok" in host):
-        facebook_redirect_uri = f"https://{host}/instagram/callback/"
+        instagram_redirect_uri = f"https://{host}/instagram/callback/"
 
-    if not facebook_app_id.isdigit() or not facebook_redirect_uri:
+    if not instagram_app_id or not instagram_redirect_uri:
         return render(request, "comments/connect_error.html", {
-            "error": "Facebook OAuth is not configured correctly. Please set FACEBOOK_APP_ID and FACEBOOK_OAUTH_REDIRECT_URI."
+            "error": "Instagram OAuth is not configured correctly. Please set INSTAGRAM_APP_ID and INSTAGRAM_REDIRECT_URI."
         })
 
     state = secrets.token_urlsafe(16)
-    request.session["fb_oauth_state"] = state
+    request.session["instagram_oauth_state"] = state
 
-    scope = ",".join([
-        "pages_show_list",
-        "pages_read_engagement",
-        "instagram_basic",
-        "instagram_manage_comments",
-        "instagram_manage_messages",
-        "business_management",
-    ])
+    scope = "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages"
 
     oauth_url = (
-        "https://www.facebook.com/v20.0/dialog/oauth"
-        f"?client_id={facebook_app_id}"
-        f"&redirect_uri={facebook_redirect_uri}"
-        f"&response_type=code"
+        "https://api.instagram.com/oauth/authorize"
+        f"?client_id={instagram_app_id}"
+        f"&redirect_uri={instagram_redirect_uri}"
         f"&scope={scope}"
+        f"&response_type=code"
         f"&state={state}"
-        f"&auth_type=rerequest"
     )
 
     return redirect(oauth_url)
 
 
 @login_required
-def facebook_oauth_callback(request):
+def instagram_oauth_callback(request):
     """
-    OAuth callback – exchanges code, finds Page, links Instagram account
+    OAuth callback – exchanges code, retrieves Instagram user info, links account
     """
 
     code = request.GET.get("code")
     state = request.GET.get("state")
 
-    saved_state = request.session.get("fb_oauth_state")
+    saved_state = request.session.get("instagram_oauth_state")
 
     if not code or not state:
         return render(request, "comments/connect_error.html", {
             "error": "Missing authorization code or state parameter."
         })
 
-    # More lenient state validation - just check if state exists
     if saved_state:
-        del request.session["fb_oauth_state"]
+        del request.session["instagram_oauth_state"]
 
-    # 1️⃣ Exchange code → user access token
-    logger.warning("=== FACEBOOK OAUTH DEBUG ===")
-    logger.warning("Using App ID: %s", settings.FACEBOOK_APP_ID)
-    logger.warning("Using Redirect URI: %s", settings.FACEBOOK_OAUTH_REDIRECT_URI)
+    instagram_app_id = (settings.INSTAGRAM_APP_ID or settings.FACEBOOK_APP_ID or "").strip()
+    instagram_app_secret = (settings.INSTAGRAM_APP_SECRET or settings.FACEBOOK_APP_SECRET or "").strip()
+    instagram_redirect_uri = (settings.INSTAGRAM_REDIRECT_URI or settings.FACEBOOK_OAUTH_REDIRECT_URI or "").strip()
+    host = request.get_host()
+    if host and ("loca.lt" in host or "ngrok" in host):
+        instagram_redirect_uri = f"https://{host}/instagram/callback/"
+
+    logger.warning("=== INSTAGRAM OAUTH DEBUG ===")
+    logger.warning("Using App ID: %s", instagram_app_id)
+    logger.warning("Using Redirect URI: %s", instagram_redirect_uri)
     
-    token_res = requests.get(
-        "https://graph.facebook.com/v20.0/oauth/access_token",
-        params={
-            "client_id": settings.FACEBOOK_APP_ID,
-            "client_secret": settings.FACEBOOK_APP_SECRET,
-            "redirect_uri": settings.FACEBOOK_OAUTH_REDIRECT_URI,
+    # 1️⃣ Exchange code → short-lived access token
+    token_res = requests.post(
+        "https://api.instagram.com/oauth/access_token",
+        data={
+            "client_id": instagram_app_id,
+            "client_secret": instagram_app_secret,
+            "grant_type": "authorization_code",
+            "redirect_uri": instagram_redirect_uri,
             "code": code,
         },
         timeout=10,
@@ -447,78 +446,61 @@ def facebook_oauth_callback(request):
 
     token_data = token_res.json()
     logger.warning("Token response: %s", {k: v for k, v in token_data.items() if k != "access_token"})
-    user_token = token_data.get("access_token")
+    short_lived_token = token_data.get("access_token")
 
-    if not user_token:
+    if not short_lived_token:
         logger.warning("TOKEN EXCHANGE FAILED: %s", token_data)
         return render(request, "comments/connect_error.html", {
             "error": f"Token exchange failed: {token_data}"
         })
 
-    # 1.5️⃣ Diagnostic: Check Permissions
-    perm_res = requests.get(
-        "https://graph.facebook.com/v20.0/me/permissions",
-        params={"access_token": user_token},
-        timeout=10,
-    )
-    logger.warning("GRANTED PERMISSIONS: %s", perm_res.json().get("data", []))
+    # 2️⃣ Exchange short-lived token → long-lived token
+    long_lived_token = short_lived_token
+    try:
+        long_lived_res = requests.get(
+            "https://graph.instagram.com/access_token",
+            params={
+                "grant_type": "ig_exchange_token",
+                "client_secret": instagram_app_secret,
+                "access_token": short_lived_token,
+            },
+            timeout=10,
+        )
+        long_lived_data = long_lived_res.json()
+        logger.warning("Long-lived token response status: %s", long_lived_res.status_code)
+        if "access_token" in long_lived_data:
+            long_lived_token = long_lived_data["access_token"]
+    except Exception as e:
+        logger.warning(f"Failed to exchange for long-lived token: {e}")
 
-    # 2️⃣ Consolidated Discovery: Get User, Pages, and Direct IG accounts in one go
-    # This is often more reliable than separate endpoint calls
-    discovery_res = requests.get(
-        "https://graph.facebook.com/v20.0/me",
+    # 3️⃣ Get Instagram user details
+    user_res = requests.get(
+        "https://graph.instagram.com/me",
         params={
-            "fields": "id,name,accounts{id,name,access_token,instagram_business_account}",
-            "access_token": user_token
+            "fields": "id,username",
+            "access_token": long_lived_token,
         },
         timeout=10,
     )
-    
-    discovery_data = discovery_res.json()
-    logger.warning("CONSOLIDATED DISCOVERY DATA: %s", discovery_data)
+    user_data = user_res.json()
+    logger.warning("Instagram User info: %s", user_data)
+    ig_id = user_data.get("id")
 
-    pages = discovery_data.get("accounts", {}).get("data", [])
-    direct_ig_accounts = discovery_data.get("instagram_business_accounts", {}).get("data", [])
-
-    ig_account = None
-    access_token_to_save = None
-    page_id_to_save = None
-
-    # Try Page-based discovery first
-    for p in pages:
-        ig = p.get("instagram_business_account")
-        if ig:
-            logger.warning("Found IG account via Page: %s (%s)", ig.get("id"), p.get("name"))
-            ig_account = ig
-            access_token_to_save = p["access_token"]
-            page_id_to_save = p["id"]
-            break
-
-    # Fallback to direct discovery
-    if not ig_account and direct_ig_accounts:
-        logger.warning("Falling back to direct IG account discovery...")
-        ig_account = direct_ig_accounts[0]
-        access_token_to_save = user_token
-        page_id_to_save = None
-        logger.warning("Found IG account directly: %s", ig_account.get("id"))
-
-    if not ig_account:
+    if not ig_id:
         return render(request, "comments/connect_error.html", {
-            "error": "No linked Instagram Business/Creator account found.",
-            "pages_found": len(pages),
-            "direct_accounts_found": len(direct_ig_accounts)
+            "error": f"Could not retrieve Instagram user details: {user_data}"
         })
 
-    logger.warning("SUCCESS: Final Instagram account ID: %s", ig_account["id"])
+    logger.warning("SUCCESS: Final Instagram user ID: %s", ig_id)
 
     # 4️⃣ Save account
     InstagramAccount.objects.update_or_create(
         user=request.user,
         defaults={
-            "page_id": page_id_to_save,
-            "ig_business_id": ig_account["id"],
-            "page_access_token": access_token_to_save,
-            "auth_method": "facebook_oauth",
+            "page_id": None,
+            "ig_business_id": ig_id,
+            "page_access_token": long_lived_token,
+            "auth_method": "instagram_oauth",
         },
     )
 
@@ -832,6 +814,34 @@ class ScanStatusAPI(APIView):
             "recent_posts": recent_posts,
             "error": last_error
         })
+
+
+class RecentInstagramMediaAPI(APIView):
+    permission_classes = [IsAuthenticated, HasActivePaidSubscription]
+
+    def get(self, request):
+        try:
+            account = InstagramAccount.objects.filter(user=request.user).first()
+            if not account:
+                return Response({"error": "No Instagram account connected"}, status=400)
+
+            service = InstagramService(account=account)
+            media = service.get_recent_media()
+            
+            if isinstance(media, dict) and "error" in media:
+                return Response({"error": media["error"]}, status=400)
+
+            return Response({
+                "success": True,
+                "media": media
+            })
+        except InstagramTokenExpiredException as e:
+            return Response({"error": str(e)}, status=401)
+        except Exception as e:
+            import traceback
+            import sys
+            sys.stderr.write(f"[ERROR] RecentInstagramMediaAPI failed: {e}\n{traceback.format_exc()}\n")
+            return Response({"error": str(e)}, status=500)
 
 
 # -------------------------------------------------------------------

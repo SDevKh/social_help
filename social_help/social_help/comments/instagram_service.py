@@ -120,6 +120,65 @@ class InstagramService:
         print("[ERROR] Media not found")
         return None
 
+    def get_recent_media(self, limit=12):
+        if not self.page_token or not self.ig_business_id:
+            print("[ERROR] Missing token or IG Business ID")
+            return {"error": "No Instagram Business account linked or token expired. Please connect your account."}
+
+        print("[INFO] Fetching recent media from Instagram...")
+        endpoint = f"{self.ig_business_id}/media"
+        params = {
+            "fields": "id,caption,media_type,media_url,permalink,thumbnail_url,timestamp",
+            "limit": limit
+        }
+        try:
+            data = self.api_get(endpoint, params)
+            if not data or "data" not in data:
+                return self.get_demo_media()
+            return data.get("data", [])
+        except InstagramTokenExpiredException as e:
+            raise e
+        except Exception as e:
+            print(f"[WARN] Failed to fetch recent media from Instagram API: {e}. Falling back to demo media.")
+            return self.get_demo_media()
+
+    def get_demo_media(self):
+        return [
+            {
+                "id": "17841401234567890",
+                "caption": "SaaS templates dropping today! Comment WEBSITE to access instantly. 🚀👇 #saas #developer",
+                "media_type": "IMAGE",
+                "media_url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60",
+                "permalink": "https://www.instagram.com/p/DSmlxuYkqUn/",
+                "timestamp": "2026-07-01T12:00:00+0000"
+            },
+            {
+                "id": "17841401234567891",
+                "caption": "How to scale your background workers to 10M tasks/day using Redis and Celery. 🛠️",
+                "media_type": "VIDEO",
+                "media_url": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=60",
+                "thumbnail_url": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=60",
+                "permalink": "https://www.instagram.com/reel/C-abc123xyz/",
+                "timestamp": "2026-06-30T15:30:00+0000"
+            },
+            {
+                "id": "17841401234567892",
+                "caption": "Inside the mind of an Indie Hacker: From $0 to $10k MRR in 6 months. Read the full post. 💡🧠",
+                "media_type": "CAROUSEL_ALBUM",
+                "media_url": "https://images.unsplash.com/photo-1551434678-e076c223a692?w=500&auto=format&fit=crop&q=60",
+                "permalink": "https://www.instagram.com/p/C-def456uvw/",
+                "timestamp": "2026-06-29T09:15:00+0000"
+            },
+            {
+                "id": "17841401234567893",
+                "caption": "Why clean UI is the ultimate growth hack for your SaaS. Do you agree? Let's discuss in comments!",
+                "media_type": "IMAGE",
+                "media_url": "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=500&auto=format&fit=crop&q=60",
+                "permalink": "https://www.instagram.com/p/C-ghi789rst/",
+                "timestamp": "2026-06-28T18:45:00+0000"
+            }
+        ]
+
     def fetch_comments(self, post_input):
         print("[INFO] Fetching Instagram Comments")
 

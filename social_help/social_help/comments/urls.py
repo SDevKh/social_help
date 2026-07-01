@@ -20,6 +20,7 @@ from .views import (
     ScanRecentPosts,
     ScanStatusAPI,
     GenerateContentIdeasAPIView,
+    RecentInstagramMediaAPI,
 )
 from .polar_views import PolarCheckoutURL, PolarWebhookAPI
 
@@ -27,6 +28,7 @@ urlpatterns = [
     path("scan-instagram/", ScanInstagramPost.as_view()),
     path("scan-recent/", ScanRecentPosts.as_view()),
     path("scan-status/", ScanStatusAPI.as_view()),
+    path("instagram/media/", RecentInstagramMediaAPI.as_view()),
     path("comments/", RecentComments.as_view()),
     path("comments/clear/", ClearAllComments.as_view()),
     path("comments/<int:comment_id>/", DeleteComment.as_view()),

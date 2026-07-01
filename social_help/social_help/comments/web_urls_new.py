@@ -15,7 +15,8 @@ def landing(request):
 from .views import (
     dashboard,
     signup,
-    facebook_oauth_login,
+    instagram_oauth_login,
+    instagram_oauth_callback,
     instagram_connect_direct,
     privacy_policy,
     terms_of_service,
@@ -32,9 +33,9 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(template_name="registration/login.html")),
     path("logout/", auth_views.LogoutView.as_view(next_page="/login/")),
     
-    # Facebook Business OAuth (required for Instagram Graph API)
-    path("instagram/connect/", facebook_oauth_login),
-    path("instagram/callback/", facebook_oauth_callback),
+    # Instagram Login OAuth
+    path("instagram/connect/", instagram_oauth_login),
+    path("instagram/callback/", instagram_oauth_callback),
     
     # Direct Token Entry
     path("instagram/connect-direct/", instagram_connect_direct),

@@ -1521,6 +1521,469 @@
                 height: 70px;
             }
         }
+
+        /* Recent Instagram Media Styling */
+        .media-item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border-dark);
+            background-color: var(--card-dark);
+            margin-bottom: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .media-item-row:hover {
+            border-color: var(--accent-purple);
+            background-color: rgba(99, 102, 241, 0.02);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+        .media-thumbnail {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background-color: #1e293b;
+            border: 1px solid var(--border-dark);
+        }
+        .media-fallback-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f1f5f9;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            border: 1px solid var(--border-dark);
+        }
+        .media-info {
+            flex-grow: 1;
+            min-width: 0;
+            text-align: left;
+        }
+        .media-caption {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+        .media-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .media-badge {
+            font-size: 8px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .media-badge.image { background-color: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+        .media-badge.video { background-color: rgba(244, 63, 94, 0.1); color: #f43f5e; }
+        .media-badge.carousel_album { background-color: rgba(168, 85, 247, 0.1); color: #a855f7; }
+        
+        .media-action-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 9999px;
+            border: 1px solid var(--border-dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #f8fafc;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .media-action-btn:hover {
+            background-color: var(--accent-purple);
+            color: #ffffff;
+            border-color: var(--accent-purple);
+        }
+
+        /* Mini spinner animation */
+        .spinner-mini {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(99, 102, 241, 0.1);
+            border-top: 2px solid var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* AutoDM Layout Styles */
+        .autodm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .autodm-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-dark);
+            font-family: "Outfit", sans-serif;
+        }
+        .autodm-btn-create {
+            background-color: #2563eb;
+            color: #ffffff;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            transition: all 0.2s ease;
+        }
+        .autodm-btn-create:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .autodm-banner {
+            background-color: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            border-radius: 16px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 16px;
+            text-align: left;
+        }
+        .autodm-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .autodm-banner-icon {
+            width: 40px;
+            height: 40px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-size: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+        .autodm-banner-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .autodm-banner-badge {
+            background-color: #2563eb;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-right: 6px;
+            display: inline-block;
+        }
+        .autodm-banner-btn {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            padding: 8px 18px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .autodm-banner-btn:hover {
+            background-color: #c7d2fe;
+        }
+        .autodm-banner-close {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+        .autodm-banner-close:hover {
+            opacity: 1;
+        }
+        .autodm-subbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .autodm-nav-pills {
+            display: flex;
+            gap: 12px;
+        }
+        .autodm-pill-btn {
+            background-color: #ffffff;
+            border: 1px solid var(--border-dark);
+            color: var(--text-dark);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .autodm-pill-btn.active {
+            background-color: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+        .autodm-pill-btn:not(.active):hover {
+            background-color: #f1f5f9;
+        }
+        .autodm-support-link {
+            color: #4f46e5;
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .autodm-panel {
+            background-color: #ffffff;
+            border: 1px solid var(--border-dark);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+        .autodm-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .autodm-panel-title {
+            font-size: 18px;
+            font-weight: 850;
+            color: var(--text-dark);
+            margin: 0;
+            text-align: left;
+        }
+        .autodm-handle-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            border: 1px solid var(--border-dark);
+            background-color: #ffffff;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            transition: border-color 0.2s ease;
+        }
+        .autodm-handle-dropdown:hover {
+            border-color: var(--accent-purple);
+        }
+        .autodm-handle-dropdown img {
+            width: 16px;
+            height: 16px;
+        }
+        .autodm-subtabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid var(--border-dark);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+        }
+        .autodm-subtab-btn {
+            background: none;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding-bottom: 8px;
+            position: relative;
+            transition: color 0.2s ease;
+        }
+        .autodm-subtab-btn.active {
+            color: #2563eb;
+        }
+        .autodm-subtab-btn.active::after {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #2563eb;
+            border-radius: 2px;
+        }
+        .autodm-subtab-btn:not(.active):hover {
+            color: var(--text-dark);
+        }
+        
+        /* Media Card Grid for Screenshot Layout */
+        .autodm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .autodm-card {
+            background-color: #ffffff;
+            border: 1px solid var(--border-dark);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+            text-align: left;
+        }
+        .autodm-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.04);
+            border-color: rgba(99,102,241,0.15);
+        }
+        .autodm-card-image-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #f1f5f9;
+            position: relative;
+        }
+        .autodm-card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .autodm-card-fallback-icon {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            background-color: #f8fafc;
+            font-size: 24px;
+        }
+        .autodm-card-caption {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+            min-height: 30px;
+        }
+        .autodm-card-date {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .autodm-card-btn {
+            background-color: #e2e8f0;
+            color: #1e293b;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 9999px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .autodm-card-btn:hover {
+            background-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        /* Modern Dialog Modals overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-card {
+            background-color: #ffffff;
+            border: 1px solid var(--border-dark);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: left;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin: 0;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
     </style>
 </head>
 
@@ -1730,27 +2193,46 @@
 
                     </div>
 
-                    <!-- Middle Row: Instagram Post Scanner Card -->
-                    <div class="stats-grid" style="grid-template-columns: 1fr; margin-top: 32px;">
+                    <!-- Middle Row: Instagram Post Scanner Card & Recent Media -->
+                    <div class="stats-grid" style="margin-top: 32px;">
                         <!-- Instagram Post Scanner -->
-                        <div class="dark-panel">
-                            <h3><i data-lucide="instagram"></i> Instagram Post Scanner</h3>
-                            <div style="text-align: left;">
-                                <label class="form-label" for="postId">Instagram Post URL or ID:</label>
-                                <input type="text" id="postId" class="dark-input"
-                                    placeholder="Paste Instagram URL or enter post ID">
-                                <div class="dark-info-box">
-                                    <strong>Examples:</strong><br>
-                                    • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
-                                    • Shortcode: DTnrWNNk-WY<br>
-                                    • Numeric ID: 17841400455970028
+                        <div class="dark-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3><i data-lucide="instagram"></i> Instagram Post Scanner</h3>
+                                <div style="text-align: left; margin-top: 16px;">
+                                    <label class="form-label" for="postId">Instagram Post URL or ID:</label>
+                                    <input type="text" id="postId" class="dark-input"
+                                        placeholder="Paste Instagram URL or enter post ID">
+                                    <div class="dark-info-box">
+                                        <strong>Examples:</strong><br>
+                                        • URL: https://www.instagram.com/p/DTnrWNNk-WY/<br>
+                                        • Shortcode: DTnrWNNk-WY<br>
+                                        • Numeric ID: 17841400455970028
+                                    </div>
                                 </div>
-                                <button class="btn-blue-light" onclick="scanInstagramPost()" style="margin-top: 18px;">
+                            </div>
+                            <div style="text-align: left;">
+                                <button class="btn-blue-light" onclick="scanInstagramPost()" style="margin-top: 18px; width: 100%;">
                                     <i data-lucide="search"></i> Scan Comments
                                 </button>
                                 <p id="scanStatus"
                                     style="margin-top: 12px; color: #047857; font-size: 13px; font-weight: 700;">
                                 </p>
+                            </div>
+                        </div>
+
+                        <!-- Recent Posts & Reels Selection -->
+                        <div class="dark-panel" style="display: flex; flex-direction: column;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="grid"></i> Recent Posts & Reels
+                                </h3>
+                                <button onclick="loadRecentMedia()" class="btn-toolbar-grey" style="padding: 6px 12px; font-size: 11px; margin: 0; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Refresh
+                                </button>
+                            </div>
+                            <div id="recentMediaContainer" style="overflow-y: auto; max-height: 290px; padding-right: 4px; flex-grow: 1;">
+                                <p style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading posts...</p>
                             </div>
                         </div>
                     </div>
@@ -1875,170 +2357,184 @@
                 </div>
 
                 <div id="autoreply-view-section" class="view-section" style="display: none;">
-                    <!-- Auto-Reply Link Triggers -->
-                    <div id="auto-reply-card" class="dark-panel"
-                        style="display: flex; flex-direction: column; margin-bottom: 32px;">
-                        <h3><i data-lucide="message-square"></i> Auto-Reply Link Triggers</h3>
-                        <div style="text-align: left; flex-grow: 1; display: flex; flex-direction: column;">
-                            <!-- Keyword & Reply Type Row -->
-                            <div class="auto-reply-grid">
-                                <div>
-                                    <label class="form-label" for="triggerKeywordInput">Keyword:</label>
-                                    <input type="text" id="triggerKeywordInput" class="dark-input"
-                                        style="margin-bottom: 0;" placeholder="e.g. link">
-                                </div>
-                                <div>
-                                    <label class="form-label" for="replyTypeSelect">Reply Type:</label>
-                                    <select id="replyTypeSelect" class="dark-input"
-                                        style="margin-bottom: 0; padding: 12px 18px; border-radius: 9999px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 20px top 50%; background-size: 10px auto;">
-                                        <option value="public">Comment</option>
-                                        <option value="dm">Direct Msg (DM)</option>
-                                    </select>
-                                </div>
+                    
+                    <!-- AutoDM Header Row -->
+                    <div class="autodm-header">
+                        <div class="autodm-title">AutoDM</div>
+                        <button class="autodm-btn-create" onclick="openCreateAutomationModal()">
+                            <i data-lucide="plus"></i> Create Automation
+                        </button>
+                    </div>
+
+                    <!-- Messenger Automations Banner -->
+                    <div class="autodm-banner" id="messengerBanner">
+                        <div class="autodm-banner-content">
+                            <div class="autodm-banner-icon">💬</div>
+                            <div class="autodm-banner-text">
+                                <span class="autodm-banner-badge">NEW</span> <strong>Messenger automations are now live</strong><br>
+                                Auto-reply to comments & DMs on your Facebook Page — connect a Page to get started.
                             </div>
-
-                            <!-- Target Instagram Posts Section -->
-                            <div
-                                style="margin-bottom: 16px; padding: 16px; border: 1px solid var(--border-dark); border-radius: 16px; background-color: rgba(99,102,241,0.04); box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
-                                <label class="form-label" style="font-weight: 800; margin-bottom: 6px;">Target Instagram
-                                    Posts (URLs or IDs):</label>
-                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" id="targetPostInput" class="dark-input"
-                                        style="margin-bottom: 0; flex-grow: 1;"
-                                        placeholder="Paste Instagram Post URL or enter post ID">
-                                    <button type="button" class="btn-blue-light" onclick="addTargetPost(event)"
-                                        style="margin: 0; padding: 10px 20px; font-size: 12px; height: 46px; border-radius: 9999px;">Add
-                                        Post</button>
-                                </div>
-                                <div id="targetPostsList"
-                                    style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                                    <span style="color: var(--text-muted); font-size: 13px; font-style: italic;">No
-                                        target posts added yet.</span>
-                                </div>
-
-                                <!-- Question / Checkbox for Separate Links (visible only if posts count > 1) -->
-                                <div id="separateLinksToggleContainer"
-                                    style="display: none; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-dark);">
-                                    <label class="checkbox-label"
-                                        style="margin-bottom: 0; display: inline-flex; align-items: center; cursor: pointer;">
-                                        <input type="checkbox" id="useSeparateLinksCheckbox"
-                                            onchange="toggleSeparateLinks(event)">
-                                        <span class="custom-checkbox"></span>
-                                        Use separate reply link / text for each post?
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Reply Text Input Containers -->
-                            <div id="singleReplyContainer" style="margin-bottom: 16px;">
-                                <label class="form-label" for="replyTextInput">Reply Text / Link:</label>
-                                <input type="text" id="replyTextInput" class="dark-input" style="margin-bottom: 0;"
-                                    placeholder="e.g. Here is the link: https://google.com">
-                            </div>
-
-                            <div id="separateRepliesContainer"
-                                style="display: none; margin-bottom: 16px; padding: 16px; border: 1px dashed var(--border-dark); border-radius: 16px; background-color: rgba(99,102,241,0.04);">
-                                <label class="form-label" style="font-weight: 800; margin-bottom: 12px;">Configure
-                                    Separate Reply Links:</label>
-                                <div id="separateRepliesInputsList"
-                                    style="display: flex; flex-direction: column; gap: 12px;">
-                                    <!-- Inputs will be generated dynamically -->
-                                </div>
-                            </div>
-
-                            <button class="btn-blue-light" onclick="addAutoReplyRule()"
-                                style="margin-top: 6px; margin-bottom: 18px;">
-                                <i data-lucide="plus-circle"></i> Add Trigger Rule
-                            </button>
-
-                            <label class="form-label" style="margin-bottom: 8px;">Active Auto-Replies:</label>
-                            <div id="autoReplyRulesList"
-                                style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
-                                <p style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading
-                                    triggers...</p>
-                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <button class="autodm-banner-btn" onclick="alert('Facebook Page connect option coming soon!')">Connect Facebook</button>
+                            <span class="autodm-banner-close" onclick="document.getElementById('messengerBanner').style.display='none'">&times;</span>
                         </div>
                     </div>
 
-                    <!-- Dedicated Auto-Scan Shield Section -->
-                    <div class="dark-panel" style="text-align: left;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-dark); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
-                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <i data-lucide="shield-check" style="stroke: #10b981; width: 22px; height: 22px;"></i>
-                                Real-time Auto-Scan Shield
-                            </h3>
-                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                <span id="autoScanBadge"
-                                    style="font-size: 11px; padding: 6px 14px; border: 1px solid rgba(3, 105, 161, 0.15); border-radius: 9999px; font-weight: 700; background: rgba(3, 105, 161, 0.08); color: #0369a1; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(3, 105, 161, 0.03);">
-                                    <span
-                                        style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0369a1;"></span>
-                                    AUTO-SCAN ACTIVE
-                                </span>
-                                <button id="syncRecentBtn" class="btn-blue-light" onclick="syncRecentPosts()"
-                                    style="padding: 10px 20px; font-size: 13px; margin: 0; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sync Recent
-                                    Posts
-                                </button>
+                    <!-- Subbar with Pills and Support Link -->
+                    <div class="autodm-subbar">
+                        <div class="autodm-nav-pills">
+                            <button class="autodm-pill-btn active" id="btn-tab-automations" onclick="switchSubTab('automations')">Automations</button>
+                            <button class="autodm-pill-btn" id="btn-tab-settings" onclick="switchSubTab('settings')">Settings</button>
+                        </div>
+                        <a href="/contact/" class="autodm-support-link">
+                            <i data-lucide="headphones" style="width: 16px; height: 16px;"></i> Support
+                        </a>
+                    </div>
+
+                    <!-- Tab Content: Automations (Screenshot Grid) -->
+                    <div id="autodm-tab-content-automations" class="autodm-panel">
+                        <div class="autodm-panel-header">
+                            <h3 class="autodm-panel-title">Jump right in and automate your Instagram</h3>
+                            <div class="autodm-handle-dropdown" onclick="alert('Handle settings: connected account {{ account.user.username }}')">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="IG Logo" style="width: 16px; height: 16px;">
+                                <span>{% if user.profile.instagram_handle %}{{ user.profile.instagram_handle }}{% else %}_{{ user.username }}{% endif %}</span>
+                                <i data-lucide="chevron-down" style="width: 14px; height: 14px; margin-left: 4px;"></i>
                             </div>
                         </div>
 
-                        <div class="scanner-shield-grid">
-                            <!-- Scanner settings / status -->
-                            <div class="scanner-profile-column">
-                                <h4
-                                    style="margin: 0 0 16px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
-                                    <i data-lucide="settings" style="width: 16px; height: 16px;"></i> Scanner Profile
-                                </h4>
-                                <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.2;">
-                                    <li
-                                        style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px;">
-                                        <strong>Status:</strong>
-                                        <span
-                                            style="color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                                            <span
-                                                style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #059669;"></span>
-                                            Listening
-                                        </span>
-                                    </li>
-                                    <li
-                                        style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; margin-top: 4px;">
-                                        <strong>Interval:</strong>
-                                        <span style="color: var(--text-dark); font-weight: 700;">60 seconds</span>
-                                    </li>
-                                    <li
-                                        style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; margin-top: 4px;">
-                                        <strong>Target Scope:</strong>
-                                        <span style="color: var(--text-dark); font-weight: 700;">Last 5 posts</span>
-                                    </li>
-                                    <li style="display: flex; justify-content: space-between; margin-top: 4px;">
-                                        <strong>Last Auto-Scan:</strong>
-                                        <span id="lastScanTime"
-                                            style="color: var(--text-dark); font-weight: 700;">Checking...</span>
-                                    </li>
-                                </ul>
-                            </div>
+                        <!-- Horizontal Subtabs List -->
+                        <div class="autodm-subtabs">
+                            <button class="autodm-subtab-btn active" onclick="switchGridTab('posts_reels')">Posts/Reels</button>
+                            <button class="autodm-subtab-btn" onclick="alert('Stories automations are coming soon!')">Stories</button>
+                            <button class="autodm-subtab-btn" onclick="alert('IG Live automations are coming soon!')">IG Live</button>
+                            <button class="autodm-subtab-btn" onclick="alert('DMs automations are coming soon!')">DMs</button>
+                            <button class="autodm-subtab-btn" onclick="alert('DMs on your posts are coming soon!')">DMs your post</button>
+                        </div>
 
-                            <!-- Recent posts scanned list -->
-                            <div style="display: flex; flex-direction: column; justify-content: space-between;">
-                                <div>
-                                    <h4
-                                        style="margin: 0 0 16px 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
-                                        <i data-lucide="layout-grid" style="width: 16px; height: 16px;"></i> Recently
-                                        Monitored Posts
-                                    </h4>
-                                    <div id="recentScannedPostsList"
-                                        style="display: flex; flex-direction: column; gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 8px;">
-                                        <p
-                                            style="color: var(--text-muted); font-size: 13px; font-style: italic; margin: 0;">
-                                            No posts monitored yet. Click sync or wait for the automatic scan.</p>
+                        <!-- Card Grid -->
+                        <div class="autodm-grid" id="autodmPostsGrid">
+                            <!-- Populated dynamically via javascript -->
+                            <p style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading posts...</p>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content: Settings (Active Trigger Rules & Moderation Settings) -->
+                    <div id="autodm-tab-content-settings" class="autodm-panel" style="display: none;">
+                        <div style="display: flex; gap: 32px; flex-wrap: wrap;">
+                            <!-- Column 1: Active triggers list -->
+                            <div style="flex: 1.5; min-width: 280px; text-align: left;">
+                                <h3 style="margin-bottom: 16px; font-size: 16px; font-weight: 800;"><i data-lucide="list"></i> Active Auto-Reply Triggers</h3>
+                                <div id="autoReplyRulesList" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 4px;">
+                                    <p style="color: var(--text-muted); font-size: 13px; font-style: italic;">Loading triggers...</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Column 2: Connected details & Auto-scan configuration -->
+                            <div style="flex: 1; min-width: 250px; text-align: left;">
+                                <h3 style="margin-bottom: 16px; font-size: 16px; font-weight: 800;"><i data-lucide="shield"></i> Scanner Status</h3>
+                                <!-- Shield widget -->
+                                <div class="connected-status-banner" style="background-color: rgba(99,102,241,0.04); border: 1px solid var(--border-dark); border-radius: 16px; padding: 16px; margin-bottom: 24px;">
+                                    📱 <strong>Connected Account Details</strong><br>
+                                    Business Account ID: {{ account.ig_business_id }}<br>
+                                    Connected: {{ account.connected_at|date:"M d, Y H:i" }}
+                                    <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                        <a href="/instagram/connect/" class="btn-pink-red" style="text-decoration: none; padding: 6px 14px; font-size: 11px;">🔄 Reconnect</a>
+                                        <form method="post" action="/instagram/disconnect/" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button class="btn-toolbar-grey" type="submit" style="padding: 6px 14px; font-size: 11px;">Disconnect</button>
+                                        </form>
                                     </div>
+                                </div>
+
+                                <div style="border-top: 1px solid var(--border-dark); padding-top: 16px; margin-top: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                        <h4 style="margin: 0; font-size: 14px; font-weight: 800; text-transform: uppercase;">Auto-Scan Shield</h4>
+                                        <button id="syncRecentBtn" class="btn-blue-light" onclick="syncRecentPosts()" style="padding: 6px 12px; font-size: 11px; margin: 0; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Sync Recent
+                                        </button>
+                                    </div>
+
+                                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 2.2;">
+                                        <li style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px;">
+                                            <strong>Status:</strong>
+                                            <span style="color: #059669; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #059669;"></span>
+                                                Listening
+                                            </span>
+                                        </li>
+                                        <li style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; margin-top: 4px;">
+                                            <strong>Interval:</strong>
+                                            <span style="color: var(--text-dark); font-weight: 700;">60 seconds</span>
+                                        </li>
+                                        <li style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 4px; margin-top: 4px;">
+                                            <strong>Target Scope:</strong>
+                                            <span style="color: var(--text-dark); font-weight: 700;">Last 5 posts</span>
+                                        </li>
+                                        <li style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                            <strong>Last Auto-Scan:</strong>
+                                            <span id="lastScanTime" style="color: var(--text-dark); font-weight: 700;">Checking...</span>
+                                        </li>
+                                    </ul>
+
+                                    <h4 style="margin: 20px 0 12px 0; font-size: 13px; font-weight: 800; text-transform: uppercase;">Recently Monitored Posts</h4>
+                                    <div id="recentScannedPostsList" style="display: flex; flex-direction: column; gap: 10px; max-height: 180px; overflow-y: auto; padding-right: 8px;">
+                                        <p style="color: var(--text-muted); font-size: 12px; font-style: italic; margin: 0;">No posts monitored yet. Click sync or wait for the automatic scan.</p>
+                                    </div>
+                                    <p id="syncStatus" style="margin-top: 12px; color: #047857; font-size: 12px; font-weight: 700; display: none;"></p>
                                 </div>
                             </div>
                         </div>
-                        <p id="syncStatus"
-                            style="margin-top: 18px; color: #047857; font-size: 13px; font-weight: 700; margin-bottom: 0; display: none;">
-                        </p>
+                    </div>
+                </div>
+
+                <!-- Setup/Create Automation Modal Overlay -->
+                <div class="modal-overlay" id="setupAutomationModal" onclick="handleModalOverlayClick(event)">
+                    <div class="modal-card">
+                        <div class="modal-header">
+                            <h3 class="modal-title" id="modalTitle">Setup Automation</h3>
+                            <button class="modal-close-btn" onclick="closeSetupAutomationModal()">&times;</button>
+                        </div>
+                        
+                        <!-- Mini Preview of the Post -->
+                        <div id="modalPostPreview" style="display: flex; gap: 12px; align-items: center; background: #f8fafc; border: 1px solid var(--border-dark); border-radius: 12px; padding: 10px; margin-bottom: 20px;">
+                            <img src="" id="modalPostImage" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border-dark);">
+                            <div style="flex-grow: 1; min-width: 0; text-align: left;">
+                                <p id="modalPostCaption" style="font-size: 11px; font-weight: 700; color: var(--text-dark); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+                                <span id="modalPostIdBadge" style="font-size: 9px; font-weight: 800; color: var(--accent-purple); text-transform: uppercase;"></span>
+                            </div>
+                        </div>
+
+                        <!-- Form content -->
+                        <div style="text-align: left; display: flex; flex-direction: column; gap: 16px;">
+                            <div>
+                                <label class="form-label" for="modalKeywordInput" style="font-weight: 700;">Trigger Keyword:</label>
+                                <input type="text" id="modalKeywordInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. WEBSITE">
+                            </div>
+                            
+                            <div>
+                                <label class="form-label" for="modalReplyTypeSelect" style="font-weight: 700;">Reply Type:</label>
+                                <select id="modalReplyTypeSelect" class="dark-input" style="margin-bottom: 0; padding: 12px 18px; border-radius: 9999px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 20px top 50%; background-size: 10px auto;">
+                                    <option value="public">Comment</option>
+                                    <option value="dm">Direct Message (DM)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label" for="modalReplyTextInput" style="font-weight: 700;">Reply Text / Link:</label>
+                                <input type="text" id="modalReplyTextInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. Here is the link: https://google.com">
+                            </div>
+
+                            <!-- Optional: target multiple posts manual list override if they did "+ Create Automation" button -->
+                            <div id="modalTargetPostInputContainer" style="display: none;">
+                                <label class="form-label" for="modalTargetPostInput" style="font-weight: 700;">Target Post ID or URL:</label>
+                                <input type="text" id="modalTargetPostInput" class="dark-input" style="margin-bottom: 0;" placeholder="e.g. DTnrWNNk-WY">
+                            </div>
+
+                            <button class="btn-blue-light" onclick="submitModalAutomation()" style="margin-top: 10px; width: 100%;">
+                                <i data-lucide="plus-circle"></i> Create Automation
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2186,11 +2682,427 @@
             }
             loadAutoReplyRules();
             loadScanStatus();
+            {% if account %}
+            loadRecentMedia();
+            {% endif %}
             // Handle routing on load
             handleRouting();
             // Poll scanner status every 15 seconds
             setInterval(loadScanStatus, 15000);
         });
+
+        const recentMediaUrl = "/api/instagram/media/";
+        let recentMediaCache = [];
+        let currentSelectedModalPostId = null;
+
+        function loadRecentMedia() {
+            const containers = [
+                document.getElementById("recentMediaContainer"),
+                document.getElementById("recentMediaSelectionContainer"),
+                document.getElementById("autodmPostsGrid")
+            ];
+            
+            containers.forEach(container => {
+                if (container) {
+                    container.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; padding: 24px; gap: 8px; color: var(--text-muted);">
+                            <span class="spinner-mini"></span> Loading recent media...
+                        </div>
+                    `;
+                }
+            });
+
+            fetch(recentMediaUrl)
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.error || `HTTP error! status: ${res.status}`);
+                        }
+                        return data;
+                    } else {
+                        throw new Error(`Server returned error status ${res.status}.`);
+                    }
+                })
+                .then(data => {
+                    recentMediaCache = data.media || [];
+                    renderRecentMedia();
+                })
+                .catch(err => {
+                    console.error("Error loading recent media:", err);
+                    containers.forEach(container => {
+                        if (container) {
+                            container.innerHTML = `
+                                <div style="color: var(--danger); font-size: 13px; font-weight: 600; padding: 12px; border: 1px solid rgba(244,63,94,0.15); border-radius: 12px; background: rgba(244,63,94,0.02); text-align: left;">
+                                    ❌ Failed to load recent posts/reels: ${err.message}
+                                </div>
+                            `;
+                        }
+                    });
+                });
+        }
+
+        function renderRecentMedia() {
+            const dashboardContainer = document.getElementById("recentMediaContainer");
+            const selectionContainer = document.getElementById("recentMediaSelectionContainer");
+            const autodmGrid = document.getElementById("autodmPostsGrid");
+
+            if (!recentMediaCache || recentMediaCache.length === 0) {
+                const emptyHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 32px 16px; font-size: 13px; font-style: italic;">
+                        No recent posts or reels found.
+                    </div>
+                `;
+                if (dashboardContainer) dashboardContainer.innerHTML = emptyHTML;
+                if (selectionContainer) selectionContainer.innerHTML = emptyHTML;
+                if (autodmGrid) autodmGrid.innerHTML = emptyHTML;
+                return;
+            }
+
+            // Render for Dashboard Post Scanner Row
+            if (dashboardContainer) {
+                dashboardContainer.innerHTML = "";
+                recentMediaCache.forEach(media => {
+                    const row = createMediaItemRow(media, "scan");
+                    dashboardContainer.appendChild(row);
+                });
+            }
+
+            // Render for Auto-Reply Trigger selection list
+            if (selectionContainer) {
+                selectionContainer.innerHTML = "";
+                recentMediaCache.forEach(media => {
+                    const row = createMediaItemRow(media, "select");
+                    selectionContainer.appendChild(row);
+                });
+            }
+
+            // Render for AutoDM Card Grid (Screenshot view)
+            if (autodmGrid) {
+                autodmGrid.innerHTML = "";
+                recentMediaCache.forEach(media => {
+                    const card = createAutoDmCard(media);
+                    autodmGrid.appendChild(card);
+                });
+            }
+
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function createMediaItemRow(media, actionType) {
+            const hasThumbnail = media.media_url || media.thumbnail_url;
+            const thumbUrl = media.thumbnail_url || media.media_url;
+            const caption = media.caption || "(No Caption)";
+            const typeClass = (media.media_type || "image").toLowerCase();
+            const publishedDate = new Date(media.timestamp).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+
+            const row = document.createElement("div");
+            row.className = "media-item-row";
+
+            let thumbnailHTML = "";
+            if (hasThumbnail) {
+                thumbnailHTML = `<img src="${thumbUrl}" alt="Post thumbnail" class="media-thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
+            }
+            thumbnailHTML += `
+                <div class="media-fallback-icon" style="${hasThumbnail ? 'display: none;' : ''}">
+                    <i data-lucide="${typeClass === 'video' ? 'video' : typeClass === 'carousel_album' ? 'layers' : 'image'}"></i>
+                </div>
+            `;
+
+            let actionButtonHTML = "";
+            if (actionType === "scan") {
+                actionButtonHTML = `
+                    <button class="media-action-btn" onclick="selectMediaForScan('${media.id}')">
+                        <i data-lucide="search" style="width: 12px; height: 12px;"></i> Scan
+                    </button>
+                `;
+            } else {
+                actionButtonHTML = `
+                    <button class="media-action-btn" onclick="selectMediaForAutoReply('${media.id}')">
+                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Select
+                    </button>
+                `;
+            }
+
+            row.innerHTML = `
+                ${thumbnailHTML}
+                <div class="media-info">
+                    <div class="media-caption">${escapeHtml(caption)}</div>
+                    <div class="media-meta">
+                        <span class="media-badge ${typeClass}">${typeClass.replace('_', ' ')}</span>
+                        <span>${publishedDate}</span>
+                    </div>
+                </div>
+                <div>
+                    ${actionButtonHTML}
+                </div>
+            `;
+            return row;
+        }
+
+        function createAutoDmCard(media) {
+            const hasThumbnail = media.media_url || media.thumbnail_url;
+            const thumbUrl = media.thumbnail_url || media.media_url;
+            const caption = media.caption || "(No Caption)";
+            const typeClass = (media.media_type || "image").toLowerCase();
+            const postedOnStr = formatDateToPostedOn(media.timestamp);
+
+            const card = document.createElement("div");
+            card.className = "autodm-card";
+
+            let imgHTML = "";
+            if (hasThumbnail) {
+                imgHTML = `<img src="${thumbUrl}" alt="Post Image" class="autodm-card-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
+            }
+            imgHTML += `
+                <div class="autodm-card-fallback-icon" style="${hasThumbnail ? 'display: none;' : ''}">
+                    <i data-lucide="${typeClass === 'video' ? 'video' : typeClass === 'carousel_album' ? 'layers' : 'image'}"></i>
+                </div>
+            `;
+
+            card.innerHTML = `
+                <div class="autodm-card-image-wrapper">
+                    ${imgHTML}
+                </div>
+                <div class="autodm-card-caption">🚀 ${escapeHtml(caption)}</div>
+                <div class="autodm-card-date">${postedOnStr}</div>
+                <button class="autodm-card-btn" onclick="openSetupAutomationModal('${media.id}')">Setup automation</button>
+            `;
+            return card;
+        }
+
+        function switchSubTab(tabName) {
+            const automationsBtn = document.getElementById("btn-tab-automations");
+            const settingsBtn = document.getElementById("btn-tab-settings");
+            const automationsContent = document.getElementById("autodm-tab-content-automations");
+            const settingsContent = document.getElementById("autodm-tab-content-settings");
+
+            if (tabName === 'automations') {
+                if (automationsBtn) automationsBtn.classList.add("active");
+                if (settingsBtn) settingsBtn.classList.remove("active");
+                if (automationsContent) automationsContent.style.display = "block";
+                if (settingsContent) settingsContent.style.display = "none";
+            } else {
+                if (settingsBtn) settingsBtn.classList.add("active");
+                if (automationsBtn) automationsBtn.classList.remove("active");
+                if (settingsContent) settingsContent.style.display = "block";
+                if (automationsContent) automationsContent.style.display = "none";
+                // reload triggers inside setting tab
+                loadAutoReplyRules();
+                loadScanStatus();
+            }
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function switchGridTab(tabName) {
+            console.log("Subtab grid switch:", tabName);
+        }
+
+        function formatDateToPostedOn(timestampStr) {
+            try {
+                const date = new Date(timestampStr);
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const month = months[date.getMonth()];
+                const day = date.getDate();
+                
+                let suffix = "th";
+                if (day === 1 || day === 21 || day === 31) suffix = "st";
+                else if (day === 2 || day === 22) suffix = "nd";
+                else if (day === 3 || day === 23) suffix = "rd";
+                
+                return `Posted on: ${month} ${day}${suffix}`;
+            } catch(e) {
+                return `Posted on: ${timestampStr}`;
+            }
+        }
+
+        function openSetupAutomationModal(postId) {
+            currentSelectedModalPostId = postId;
+            const post = recentMediaCache.find(m => m.id === postId);
+            
+            const modal = document.getElementById("setupAutomationModal");
+            const preview = document.getElementById("modalPostPreview");
+            const img = document.getElementById("modalPostImage");
+            const caption = document.getElementById("modalPostCaption");
+            const idBadge = document.getElementById("modalPostIdBadge");
+            const targetContainer = document.getElementById("modalTargetPostInputContainer");
+            const title = document.getElementById("modalTitle");
+
+            if (title) title.innerText = "Setup Automation";
+            
+            if (post) {
+                if (preview) preview.style.display = "flex";
+                if (img) img.src = post.thumbnail_url || post.media_url || "";
+                if (caption) caption.innerText = post.caption || "(No Caption)";
+                if (idBadge) idBadge.innerText = `ID: ${post.id}`;
+            } else {
+                if (preview) preview.style.display = "none";
+            }
+
+            if (targetContainer) targetContainer.style.display = "none";
+            if (modal) modal.classList.add("active");
+        }
+
+        function openCreateAutomationModal() {
+            currentSelectedModalPostId = null;
+            const modal = document.getElementById("setupAutomationModal");
+            const preview = document.getElementById("modalPostPreview");
+            const targetContainer = document.getElementById("modalTargetPostInputContainer");
+            const title = document.getElementById("modalTitle");
+
+            if (title) title.innerText = "Create Custom Automation";
+            if (preview) preview.style.display = "none";
+            if (targetContainer) targetContainer.style.display = "block";
+            if (modal) modal.classList.add("active");
+        }
+
+        function closeSetupAutomationModal() {
+            const modal = document.getElementById("setupAutomationModal");
+            if (modal) modal.classList.remove("active");
+            
+            const keywordEl = document.getElementById("modalKeywordInput");
+            const replyEl = document.getElementById("modalReplyTextInput");
+            const targetEl = document.getElementById("modalTargetPostInput");
+
+            if (keywordEl) keywordEl.value = "";
+            if (replyEl) replyEl.value = "";
+            if (targetEl) targetEl.value = "";
+        }
+
+        function handleModalOverlayClick(e) {
+            if (e.target.id === "setupAutomationModal") {
+                closeSetupAutomationModal();
+            }
+        }
+
+        function submitModalAutomation() {
+            const keywordEl = document.getElementById("modalKeywordInput");
+            const replyTypeEl = document.getElementById("modalReplyTypeSelect");
+            const replyTextEl = document.getElementById("modalReplyTextInput");
+            const manualTargetEl = document.getElementById("modalTargetPostInput");
+
+            const keyword = keywordEl ? keywordEl.value.trim() : "";
+            const replyType = replyTypeEl ? replyTypeEl.value : "public";
+            const replyText = replyTextEl ? replyTextEl.value.trim() : "";
+            
+            let finalPostId = currentSelectedModalPostId;
+            if (!finalPostId && manualTargetEl) {
+                finalPostId = manualTargetEl.value.trim();
+            }
+
+            if (!keyword) {
+                alert("Please enter a trigger keyword.");
+                return;
+            }
+            if (!replyText) {
+                alert("Please enter reply text or link.");
+                return;
+            }
+
+            const targetPosts = finalPostId ? [finalPostId] : [];
+
+            const payload = {
+                trigger_keyword: keyword,
+                reply_type: replyType,
+                reply_text: replyText,
+                target_posts: targetPosts,
+                use_separate_links: false,
+                post_links: {}
+            };
+
+            fetch(autoReplyUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCsrfToken()
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(async res => {
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || "Failed to save rule");
+                    }
+                    return data;
+                } else {
+                    throw new Error(`Server returned error ${res.status}`);
+                }
+            })
+            .then(data => {
+                alert("🎉 Automation created successfully!");
+                closeSetupAutomationModal();
+                loadAutoReplyRules();
+                switchSubTab('settings');
+            })
+            .catch(err => {
+                console.error("Error creating automation:", err);
+                alert(`❌ Error creating automation: ${err.message}`);
+            });
+        }
+
+        function getCsrfToken() {
+            const name = "csrftoken";
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function selectMediaForScan(postId) {
+            const inputEl = document.getElementById("postId");
+            if (inputEl) {
+                inputEl.value = postId;
+                scanInstagramPost();
+            }
+        }
+
+        function selectMediaForAutoReply(postId) {
+            if (addedTargetPosts.includes(postId)) {
+                alert("This post has already been added.");
+                return;
+            }
+            addedTargetPosts.push(postId);
+            renderTargetPostsUI();
+        }
+
+        function toggleRecentMediaForAutoReply() {
+            const container = document.getElementById("recentMediaSelectionContainer");
+            const btn = document.getElementById("toggleRecentMediaBtn");
+            if (!container || !btn) return;
+            
+            if (container.style.display === "none") {
+                container.style.display = "block";
+                btn.innerHTML = `<i data-lucide="chevron-up" style="width: 12px; height: 12px;"></i> Hide Recent Media`;
+            } else {
+                container.style.display = "none";
+                btn.innerHTML = `<i data-lucide="grid" style="width: 12px; height: 12px;"></i> Quick Select from Recent Media`;
+            }
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         let addedTargetPosts = [];
 
