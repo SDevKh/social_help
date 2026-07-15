@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LB3TPSKJ15"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-LB3TPSKJ15');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - SocialFuse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #080b11; 
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --border-dark: rgba(255, 255, 255, 0.08);
+            --ink: #e2e8f0; 
+            --muted: #94a3b8;
+            --accent-brand: #6366f1; /* Indigo */
+            --accent-grape: #06b6d4; /* Cyan */
+            --accent-coral: #f43f5e; /* Coral */
+            --font-main: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--ink);
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.04) 0%, transparent 35%);
+            min-height: 100vh;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 24px;
+            width: 100%;
+        }
+
+        /* Nav */
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 24px;
+            letter-spacing: -0.5px;
+            color: var(--ink);
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, var(--accent-grape), var(--accent-brand));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-back {
+            padding: 10px 20px;
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            color: var(--ink);
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: var(--bg-card);
+            text-decoration: none;
+        }
+
+        .btn-back:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-brand);
+        }
+
+        /* Content Card */
+        .content-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            border-radius: 20px;
+            padding: 48px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--muted);
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 32px;
+            margin-bottom: 16px;
+            color: #ffffff;
+            border-left: 4px solid var(--accent-brand);
+            padding-left: 12px;
+        }
+
+        p {
+            color: var(--ink);
+            font-size: 16px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin: 32px 0;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+
+        .feature-item:hover {
+            border-color: var(--accent-grape);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .feature-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        /* Footer contact card */
+        .contact-box {
+            background: rgba(99, 102, 241, 0.04);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .contact-box a {
+            color: var(--accent-grape);
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .contact-box a:hover {
+            color: var(--accent-brand);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/" class="logo">Social<span>Fuse</span></a>
+            <a href="/dashboard/" class="btn-back">Go to Dashboard</a>
+        </div>
+
+        <div class="content-card">
+            <h1>About SocialFuse</h1>
+            <p class="subtitle">The ultimate hub for multi-tenant cross-platform publishing and smart comment moderation.</p>
+
+            <p>SocialFuse was created to empower content creators, digital marketers, and brands with the tools they need to automate scheduling and engage communities safely across multiple networks. We integrate directly with leading platforms to provide absolute scheduling freedom combined with intelligence filters.</p>
+
+            <h2>Core Offerings</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-title">📅 Multi-Platform Scheduling</div>
+                    <div class="feature-desc">Draft, preview, schedule, and publish posts to Instagram, LinkedIn Profiles/Pages, and Reddit subreddits.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">🛡️ Smart Toxicity Filtration</div>
+                    <div class="feature-desc">Filter toxic, offensive, or promotional comments automatically using high-accuracy AI models.</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">💡 Sarcasm & Sentiment Scan</div>
+                    <div class="feature-desc">Go beyond literal keywords. Our AI detects context, sarcasm, and real-time sentiment polarity.</div>
+                </div>
+            </div>
+
+            <h2>Our Mission</h2>
+            <p>Our goal is to build secure, frictionless bridges for modern workflows. We prioritize per-user OAuth tokens (multi-tenant architecture) to guarantee that you keep control over your digital footprint. By automating repetitive tasks, SocialFuse lets you focus on what really matters—building your community and brand.</p>
+
+            <div class="contact-box">
+                <p style="margin-bottom: 0;">Have any questions or suggestions? We'd love to hear from you. Get in touch at <a href="mailto:support@socialfuse.ai">support@socialfuse.ai</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

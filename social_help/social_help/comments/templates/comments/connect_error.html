@@ -96,6 +96,59 @@
 </head>
 
 <body>
+    {% if platform == "linkedin" %}
+    <h2>❌ LinkedIn Connection Error</h2>
+    <div class="error">
+        <p><strong>Unable to connect your LinkedIn account.</strong></p>
+        <p>Please check your application configuration below.</p>
+    </div>
+
+    <div class="instructions">
+        <h3>🔍 Troubleshooting Guide</h3>
+        
+        <div style="background: #fff4e5; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffa000; color: #663c00;">
+            <strong>⚠️ Missing Configuration Checklist:</strong>
+            <p style="margin-top: 5px; font-size: 14px;">LinkedIn OAuth requires registration of client credentials in your app environment. Please check the following:</p>
+            <ul style="margin-top: 5px; font-size: 14px;">
+                <li>Verify that you have set <code>LINKEDIN_CLIENT_ID</code> and <code>LINKEDIN_CLIENT_SECRET</code> in your <code>.env</code> file.</li>
+                <li>Make sure you restarted your Django server after updating the <code>.env</code> file.</li>
+                <li>Verify that your redirect URL is configured in the LinkedIn Developer Portal under Auth > OAuth 2.0 settings.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="debug">
+        <strong>Debug Info:</strong> {{ error }}
+    </div>
+
+    <a href="/dashboard/">Back to Dashboard</a>
+    {% elif platform == "reddit" %}
+    <h2>❌ Reddit Connection Error</h2>
+    <div class="error">
+        <p><strong>Unable to connect your Reddit account.</strong></p>
+        <p>Please check your application configuration below.</p>
+    </div>
+
+    <div class="instructions">
+        <h3>🔍 Troubleshooting Guide</h3>
+        
+        <div style="background: #fff4e5; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffa000; color: #663c00;">
+            <strong>⚠️ Missing Configuration Checklist:</strong>
+            <p style="margin-top: 5px; font-size: 14px;">Reddit OAuth requires registration of client credentials in your app environment. Please check the following:</p>
+            <ul style="margin-top: 5px; font-size: 14px;">
+                <li>Verify that you have set <code>REDDIT_CLIENT_ID</code> and <code>REDDIT_CLIENT_SECRET</code> in your <code>.env</code> file.</li>
+                <li>Make sure you restarted your Django server after updating the <code>.env</code> file.</li>
+                <li>Verify that your redirect URL is configured in your Reddit App Preferences under your registered Web App (redirect URI: <code>http://localhost:8000/reddit/callback/</code>).</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="debug">
+        <strong>Debug Info:</strong> {{ error }}
+    </div>
+
+    <a href="/dashboard/">Back to Dashboard</a>
+    {% else %}
     <h2>❌ Connection Error</h2>
     <div class="error">
         <p><strong>Unable to connect your Instagram account.</strong></p>
@@ -152,6 +205,7 @@
 
     <a href="/dashboard/">Back to Dashboard</a>
     <a href="/instagram/connect-direct/" class="btn-secondary">Try Manual Token</a>
+    {% endif %}
 </body>
 
 </html>

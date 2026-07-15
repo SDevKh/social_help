@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select LinkedIn Account - SocialFuse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-dark: #1e293b;
+            --border-dark: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --linkedin-blue: #0077b5;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            max-width: 600px;
+            margin: 80px auto;
+            padding: 24px;
+            line-height: 1.6;
+        }
+
+        .select-container {
+            background: var(--panel-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        p.desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .account-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .option-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--linkedin-blue);
+        }
+
+        .option-card.selected {
+            background: rgba(0, 119, 181, 0.08);
+            border-color: var(--linkedin-blue);
+        }
+
+        .option-radio {
+            margin-right: 16px;
+            width: 20px;
+            height: 20px;
+            accent-color: var(--linkedin-blue);
+        }
+
+        .option-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .option-urn {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
+            margin-top: 2px;
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: var(--linkedin-blue);
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+
+        .btn-cancel {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .btn-cancel:hover {
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="select-container">
+        <h2>💼 Select LinkedIn Connection</h2>
+        <p class="desc">Choose which profile or page you want to schedule and publish your posts to.</p>
+
+        <form action="/linkedin/save/" method="POST" id="select-form">
+            {% csrf_token %}
+            <div class="account-options">
+                {% for choice in choices %}
+                <label class="option-card {% if forloop.first %}selected{% endif %}">
+                    <input type="radio" name="selected_urn" value="{{ choice.urn }}" class="option-radio" {% if forloop.first %}checked{% endif %} onclick="selectCard(this)">
+                    <div class="option-info">
+                        <span class="option-name">{{ choice.name }}</span>
+                        <span class="option-urn">{{ choice.urn }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn-submit">Confirm Selection</button>
+            <a href="/dashboard/" class="btn-cancel">Cancel and return to dashboard</a>
+        </form>
+    </div>
+
+    <script>
+        function selectCard(radio) {
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            radio.closest('.option-card').classList.add('selected');
+        }
+    </script>
+</body>
+</html>

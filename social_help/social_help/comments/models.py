@@ -234,3 +234,28 @@ def save_user_profile(sender, instance, **kwargs):
     profile, created = UserProfile.objects.get_or_create(user=instance)
     profile.save()
 
+
+class LinkedInAccount(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    access_token = models.TextField()
+    author_id = models.CharField(max_length=100)
+    profile_name = models.CharField(max_length=255, blank=True, null=True)
+    connected_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.profile_name or self.author_id}"
+
+
+class RedditAccount(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    access_token = models.TextField()
+    refresh_token = models.TextField()
+    reddit_username = models.CharField(max_length=100)
+    subreddit = models.CharField(max_length=100, default="test")
+    connected_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - r/{self.subreddit} (as u/{self.reddit_username})"
+
+
+

@@ -2456,6 +2456,68 @@
                                     </div>
                                 </div>
 
+                                <!-- LinkedIn Connected Account Details -->
+                                <div class="connected-status-banner"
+                                    style="margin-top: 20px; margin-bottom: 0; background-color: rgba(0, 119, 181, 0.04); border: 1px solid var(--border-dark); border-radius: 16px;">
+                                    💼 <strong>LinkedIn Account Details</strong><br>
+                                    {% if linkedin_account %}
+                                        Profile Name: {{ linkedin_account.profile_name }}<br>
+                                        Member ID: {{ linkedin_account.author_id }}<br>
+                                        Connected: {{ linkedin_account.connected_at|date:"M d, Y H:i" }}
+                                        <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                            <a href="/linkedin/connect/" class="btn-blue-light"
+                                                style="text-decoration: none; padding: 6px 14px; font-size: 11px; background-color: #0077b5; color: white; border: none; border-radius: 8px;">🔄 Reconnect</a>
+                                            <form method="post" action="/linkedin/disconnect/" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button class="btn-toolbar-grey" type="submit"
+                                                    style="padding: 6px 14px; font-size: 11px; border-radius: 8px;">Disconnect</button>
+                                            </form>
+                                        </div>
+                                    {% else %}
+                                        <span style="color: var(--text-muted); font-size: 13px;">No LinkedIn account connected.</span><br>
+                                        <div style="margin-top: 16px;">
+                                            <a href="/linkedin/connect/" class="btn-blue-light"
+                                                style="text-decoration: none; padding: 8px 16px; font-size: 12px; background-color: #0077b5; color: white; border: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Connect LinkedIn</a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Reddit Connected Account Details -->
+                                <div class="connected-status-banner"
+                                    style="margin-top: 20px; margin-bottom: 0; background-color: rgba(255, 69, 0, 0.04); border: 1px solid var(--border-dark); border-radius: 16px; padding: 16px;">
+                                    🤖 <strong>Reddit Account Details</strong><br>
+                                    {% if reddit_account %}
+                                        Connected User: u/{{ reddit_account.reddit_username }}<br>
+                                        Target Subreddit: r/{{ reddit_account.subreddit }}<br>
+                                        Connected: {{ reddit_account.connected_at|date:"M d, Y H:i" }}
+                                        
+                                        <!-- Subreddit Configuration Form -->
+                                        <form method="post" action="/reddit/update-subreddit/" style="margin-top: 14px; display: flex; gap: 8px; align-items: center;">
+                                            {% csrf_token %}
+                                            <span style="font-size: 12px; color: var(--text-muted);">Change Subreddit: r/</span>
+                                            <input type="text" name="subreddit" value="{{ reddit_account.subreddit }}" placeholder="subreddit_name" required
+                                                style="padding: 4px 8px; font-size: 12px; border: 1px solid var(--border-dark); border-radius: 6px; width: 140px; background-color: transparent; color: inherit;">
+                                            <button type="submit" style="padding: 4px 10px; font-size: 11px; background-color: #ff4500; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">Update</button>
+                                        </form>
+
+                                        <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                            <a href="/reddit/connect/" class="btn-blue-light"
+                                                style="text-decoration: none; padding: 6px 14px; font-size: 11px; background-color: #ff4500; color: white; border: none; border-radius: 8px;">🔄 Reconnect</a>
+                                            <form method="post" action="/reddit/disconnect/" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button class="btn-toolbar-grey" type="submit"
+                                                    style="padding: 6px 14px; font-size: 11px; border-radius: 8px;">Disconnect</button>
+                                            </form>
+                                        </div>
+                                    {% else %}
+                                        <span style="color: var(--text-muted); font-size: 13px;">No Reddit account connected.</span><br>
+                                        <div style="margin-top: 16px;">
+                                            <a href="/reddit/connect/" class="btn-blue-light"
+                                                style="text-decoration: none; padding: 8px 16px; font-size: 12px; background-color: #ff4500; color: white; border: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Connect Reddit</a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
                             </div>
                         </div>
 

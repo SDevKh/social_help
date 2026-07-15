@@ -1065,6 +1065,30 @@ class SocialMediaPublishingAPITests(TestCase):
             self.assertEqual(post_id, "linkedin_share_urn")
 
     @mock.patch('requests.post')
+    def test_publish_to_linkedin_user_account_success(self, mock_post):
+        mock_res = mock.Mock()
+        mock_res.status_code = 201
+        mock_res.json.return_value = {"id": "user_linkedin_share_urn"}
+        mock_post.return_value = mock_res
+
+        from social_help.comments.models import LinkedInAccount
+        LinkedInAccount.objects.create(
+            user=self.user,
+            access_token="user_token",
+            author_id="urn:li:person:user_id",
+            profile_name="User Name"
+        )
+
+        from social_help.comments.views import publish_to_linkedin
+        post_id = publish_to_linkedin(self.post, self.post.media_url)
+        self.assertEqual(post_id, "user_linkedin_share_urn")
+
+        called_args, called_kwargs = mock_post.call_args
+        self.assertIn("Authorization", called_kwargs["headers"])
+        self.assertEqual(called_kwargs["headers"]["Authorization"], "Bearer user_token")
+        self.assertEqual(called_kwargs["json"]["author"], "urn:li:person:user_id")
+
+    @mock.patch('requests.post')
     def test_publish_to_reddit_success(self, mock_post):
         mock_token_res = mock.Mock()
         mock_token_res.status_code = 200
@@ -1085,3 +1109,40 @@ class SocialMediaPublishingAPITests(TestCase):
             from social_help.comments.views import publish_to_reddit
             post_id = publish_to_reddit(self.post, self.post.media_url)
             self.assertEqual(post_id, "reddit_name")
+
+    @mock.patch('requests.post')
+    def test_publish_to_reddit_user_account_success(self, mock_post):
+        from .models import RedditAccount
+        reddit_acc = RedditAccount.objects.create(
+            user=self.user,
+            access_token="old_token",
+            refresh_token="refresh_val",
+            reddit_username="reddit_test_user",
+            subreddit="custom_subreddit"
+        )
+
+        mock_refresh_res = mock.Mock()
+        mock_refresh_res.status_code = 200
+        mock_refresh_res.json.return_value = {"access_token": "new_refreshed_token"}
+        
+        mock_submit_res = mock.Mock()
+        mock_submit_res.status_code = 200
+        mock_submit_res.json.return_value = {"json": {"data": {"name": "reddit_post_name"}}}
+        
+        mock_post.side_effect = [mock_refresh_res, mock_submit_res]
+
+        with self.settings(
+            REDDIT_CLIENT_ID="reddit_id",
+            REDDIT_CLIENT_SECRET="reddit_secret",
+            REDDIT_USER_AGENT="agent"
+        ):
+            from social_help.comments.views import publish_to_reddit
+            post_id = publish_to_reddit(self.post, self.post.media_url)
+            self.assertEqual(post_id, "reddit_post_name")
+
+            reddit_acc.refresh_from_db()
+            self.assertEqual(reddit_acc.access_token, "new_refreshed_token")
+
+            called_args, called_kwargs = mock_post.call_args
+            self.assertEqual(called_kwargs["headers"]["Authorization"], "bearer new_refreshed_token")
+            self.assertEqual(called_kwargs["data"]["sr"], "custom_subreddit")

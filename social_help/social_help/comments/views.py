@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from .serializers import CommentSerializer, BlogPostSerializer, ScheduledPostSerializer
-from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost, ScheduledPost
+from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost, ScheduledPost, LinkedInAccount, RedditAccount
 from .instagram_service import InstagramService, InstagramTokenExpiredException
 from .forms import SignUpForm
 
@@ -271,6 +271,8 @@ def dashboard(request):
         return redirect('/')
 
     account = InstagramAccount.objects.filter(user=request.user).first()
+    linkedin_account = LinkedInAccount.objects.filter(user=request.user).first()
+    reddit_account = RedditAccount.objects.filter(user=request.user).first()
     
     # Calculate statistics for the user's scanned comments
     comments_qs = Comment.objects.filter(user=request.user)
@@ -314,6 +316,8 @@ def dashboard(request):
 
     return render(request, "comments/dashboard.html", {
         "account": account,
+        "linkedin_account": linkedin_account,
+        "reddit_account": reddit_account,
         "subscription": sub,
         "payment_success": payment_success,
         "total_comments": total_comments,
@@ -702,6 +706,394 @@ def instagram_oauth_callback(request):
         },
     )
 
+    return redirect("/dashboard/")
+
+
+# -------------------------------------------------------------------
+# LINKEDIN LOGIN OAUTH
+# -------------------------------------------------------------------
+
+def get_linkedin_redirect_uri(request):
+    """
+    Get the LinkedIn OAuth redirect URI dynamically based on the current host.
+    """
+    host = request.get_host()
+    scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else "http"
+    if not host:
+        return getattr(settings, "LINKEDIN_REDIRECT_URI", "").strip()
+    return f"{scheme}://{host}/linkedin/callback/"
+
+
+@login_required
+def linkedin_oauth_login(request):
+    """
+    Start LinkedIn OAuth to connect user's personal/business profile
+    """
+    client_id = getattr(settings, "LINKEDIN_CLIENT_ID", "").strip()
+    redirect_uri = get_linkedin_redirect_uri(request)
+
+    if not client_id or not redirect_uri:
+        return render(request, "comments/connect_error.html", {
+            "error": "LinkedIn OAuth is not configured correctly. Please set LINKEDIN_CLIENT_ID in your .env file.",
+            "platform": "linkedin"
+        })
+
+    state = secrets.token_urlsafe(16)
+    request.session["linkedin_oauth_state"] = state
+
+    scope = "openid profile w_member_social w_organization_social r_organization_admin email"
+
+    oauth_url = (
+        "https://www.linkedin.com/oauth/v2/authorization"
+        f"?response_type=code"
+        f"&client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&state={state}"
+        f"&scope={scope}"
+    )
+
+    return redirect(oauth_url)
+
+
+@login_required
+def linkedin_oauth_callback(request):
+    """
+    OAuth callback – exchanges code for access token, fetches profile details, and links LinkedIn account
+    """
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    saved_state = request.session.get("linkedin_oauth_state")
+
+    if not code or not state:
+        return render(request, "comments/connect_error.html", {
+            "error": "Missing authorization code or state parameter.",
+            "platform": "linkedin"
+        })
+
+    if saved_state:
+        del request.session["linkedin_oauth_state"]
+
+    client_id = getattr(settings, "LINKEDIN_CLIENT_ID", "").strip()
+    client_secret = getattr(settings, "LINKEDIN_CLIENT_SECRET", "").strip()
+    redirect_uri = get_linkedin_redirect_uri(request)
+
+    # 1. Exchange code -> access token
+    token_url = "https://www.linkedin.com/oauth/v2/accessToken"
+    payload = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": redirect_uri,
+        "client_id": client_id,
+        "client_secret": client_secret,
+    }
+    
+    token_res = requests.post(token_url, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=15)
+    token_data = token_res.json()
+    access_token = token_data.get("access_token")
+
+    if not access_token:
+        return render(request, "comments/connect_error.html", {
+            "error": f"Token exchange failed: {token_data.get('error_description', token_data)}",
+            "platform": "linkedin"
+        })
+
+    # 2. Get profile details using Userinfo API
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    userinfo_url = "https://api.linkedin.com/v2/userinfo"
+    userinfo_res = requests.get(userinfo_url, headers=headers, timeout=15)
+    
+    if userinfo_res.status_code != 200:
+        return render(request, "comments/connect_error.html", {
+            "error": f"Failed to retrieve user profile from LinkedIn Userinfo API. Status: {userinfo_res.status_code}",
+            "platform": "linkedin"
+        })
+
+    userinfo_data = userinfo_res.json()
+    sub_id = userinfo_data.get("sub")
+    profile_name = userinfo_data.get("name")
+    
+    if not sub_id:
+        return render(request, "comments/connect_error.html", {
+            "error": "Failed to extract unique member sub ID from LinkedIn profile data.",
+            "platform": "linkedin"
+        })
+
+    author_id = f"urn:li:person:{sub_id}"
+
+    # 3. Try to get organizations user manages
+    choices = [
+        {"urn": author_id, "name": f"Personal Profile ({profile_name})"}
+    ]
+    
+    try:
+        # Query LinkedIn organizational entity ACLs endpoint
+        acls_url = "https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED"
+        acls_res = requests.get(acls_url, headers=headers, timeout=10)
+        if acls_res.status_code == 200:
+            elements = acls_res.json().get("elements", [])
+            for elem in elements:
+                org_urn = elem.get("organizationalTarget")
+                if org_urn and org_urn.startswith("urn:li:organization:"):
+                    org_id = org_urn.split(":")[-1]
+                    # Fetch organization details (specifically name)
+                    org_detail_url = f"https://api.linkedin.com/v2/organizations/{org_id}"
+                    org_detail_res = requests.get(org_detail_url, headers=headers, timeout=5)
+                    if org_detail_res.status_code == 200:
+                        org_data = org_detail_res.json()
+                        localized_name = org_data.get("localizedName")
+                        if not localized_name:
+                            localized_name = org_data.get("vanityName", f"Organization #{org_id}")
+                        choices.append({
+                            "urn": org_urn,
+                            "name": f"Company Page: {localized_name}"
+                        })
+                    else:
+                        choices.append({
+                            "urn": org_urn,
+                            "name": f"Company Page ID: {org_id}"
+                        })
+    except Exception as e:
+        logger.warning(f"Error fetching LinkedIn organizations: {e}")
+
+    # If the user administers organization pages, redirect to selection page
+    if len(choices) > 1:
+        request.session["linkedin_oauth_token"] = access_token
+        request.session["linkedin_choices"] = choices
+        return redirect("/linkedin/select/")
+
+    # 4. Save or update LinkedInAccount (defaults to personal profile)
+    from .models import LinkedInAccount
+    LinkedInAccount.objects.update_or_create(
+        user=request.user,
+        defaults={
+            "access_token": access_token,
+            "author_id": author_id,
+            "profile_name": profile_name,
+        }
+    )
+
+    return redirect("/dashboard/")
+
+
+@login_required
+def linkedin_disconnect(request):
+    """
+    Remove user's connected LinkedIn account
+    """
+    if request.method == "POST":
+        from .models import LinkedInAccount
+        LinkedInAccount.objects.filter(user=request.user).delete()
+    return redirect("/dashboard/")
+
+
+@login_required
+def linkedin_select_page(request):
+    """
+    Renders the page to let the user select between profile and pages
+    """
+    choices = request.session.get("linkedin_choices")
+    token = request.session.get("linkedin_oauth_token")
+
+    if not choices or not token:
+        return redirect("/dashboard/")
+
+    return render(request, "comments/linkedin_select.html", {
+        "choices": choices
+    })
+
+
+@login_required
+def linkedin_save_selection(request):
+    """
+    Saves the selected LinkedIn profile or page as the user's primary connection
+    """
+    if request.method == "POST":
+        selected_urn = request.POST.get("selected_urn")
+        token = request.session.get("linkedin_oauth_token")
+        choices = request.session.get("linkedin_choices")
+
+        if not selected_urn or not token or not choices:
+            return redirect("/dashboard/")
+
+        # Find the display name for the selected URN
+        profile_name = "Connected LinkedIn Account"
+        for choice in choices:
+            if choice["urn"] == selected_urn:
+                profile_name = choice["name"]
+                break
+
+        # Save to database
+        from .models import LinkedInAccount
+        LinkedInAccount.objects.update_or_create(
+            user=request.user,
+            defaults={
+                "access_token": token,
+                "author_id": selected_urn,
+                "profile_name": profile_name,
+            }
+        )
+
+        # Clear session data
+        if "linkedin_oauth_token" in request.session:
+            del request.session["linkedin_oauth_token"]
+        if "linkedin_choices" in request.session:
+            del request.session["linkedin_choices"]
+
+    return redirect("/dashboard/")
+
+
+# -------------------------------------------------------------------
+# REDDIT LOGIN OAUTH
+# -------------------------------------------------------------------
+
+def get_reddit_redirect_uri(request):
+    """
+    Get the Reddit OAuth redirect URI dynamically based on the current host.
+    """
+    host = request.get_host()
+    scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else "http"
+    if not host:
+        return getattr(settings, "REDDIT_REDIRECT_URI", "").strip()
+    return f"{scheme}://{host}/reddit/callback/"
+
+
+@login_required
+def reddit_oauth_login(request):
+    """
+    Start Reddit OAuth to connect user's Reddit account
+    """
+    client_id = getattr(settings, "REDDIT_CLIENT_ID", "").strip()
+    redirect_uri = get_reddit_redirect_uri(request)
+
+    if not client_id or not redirect_uri:
+        return render(request, "comments/connect_error.html", {
+            "error": "Reddit OAuth is not configured correctly. Please set REDDIT_CLIENT_ID in your .env file.",
+            "platform": "reddit"
+        })
+
+    state = secrets.token_urlsafe(16)
+    request.session["reddit_oauth_state"] = state
+
+    scope = "identity submit"
+    oauth_url = (
+        "https://www.reddit.com/api/v1/authorize"
+        f"?client_id={client_id}"
+        f"&response_type=code"
+        f"&state={state}"
+        f"&redirect_uri={redirect_uri}"
+        f"&duration=permanent"
+        f"&scope={scope}"
+    )
+
+    return redirect(oauth_url)
+
+
+@login_required
+def reddit_oauth_callback(request):
+    """
+    OAuth callback – exchanges code for tokens, fetches username, and links Reddit account
+    """
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    saved_state = request.session.get("reddit_oauth_state")
+
+    if not code or not state:
+        return render(request, "comments/connect_error.html", {
+            "error": "Missing authorization code or state parameter.",
+            "platform": "reddit"
+        })
+
+    if saved_state:
+        del request.session["reddit_oauth_state"]
+
+    client_id = getattr(settings, "REDDIT_CLIENT_ID", "").strip()
+    client_secret = getattr(settings, "REDDIT_CLIENT_SECRET", "").strip()
+    redirect_uri = get_reddit_redirect_uri(request)
+
+    # 1. Exchange code -> access and refresh token
+    import requests
+    from requests.auth import HTTPBasicAuth
+    auth = HTTPBasicAuth(client_id, client_secret)
+    data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": redirect_uri
+    }
+    headers = {"User-Agent": getattr(settings, "REDDIT_USER_AGENT", "SocialFuse/1.0")}
+    token_url = "https://www.reddit.com/api/v1/access_token"
+    token_res = requests.post(token_url, auth=auth, data=data, headers=headers, timeout=15)
+    token_data = token_res.json()
+    access_token = token_data.get("access_token")
+    refresh_token = token_data.get("refresh_token")
+
+    if not access_token:
+        return render(request, "comments/connect_error.html", {
+            "error": f"Reddit Token exchange failed: {token_data.get('error_description', token_data)}",
+            "platform": "reddit"
+        })
+
+    # 2. Get Reddit profile info to get the username
+    user_headers = {
+        "Authorization": f"bearer {access_token}",
+        "User-Agent": getattr(settings, "REDDIT_USER_AGENT", "SocialFuse/1.0")
+    }
+    me_url = "https://oauth.reddit.com/api/v1/me"
+    me_res = requests.get(me_url, headers=user_headers, timeout=15)
+    
+    if me_res.status_code != 200:
+        return render(request, "comments/connect_error.html", {
+            "error": f"Failed to retrieve user profile from Reddit API. Status: {me_res.status_code}",
+            "platform": "reddit"
+        })
+
+    reddit_username = me_res.json().get("name")
+    if not reddit_username:
+        return render(request, "comments/connect_error.html", {
+            "error": "Failed to extract unique username from Reddit profile data.",
+            "platform": "reddit"
+        })
+
+    # 3. Save or update RedditAccount
+    from .models import RedditAccount
+    default_sub = getattr(settings, "REDDIT_SUBREDDIT", "test")
+    
+    RedditAccount.objects.update_or_create(
+        user=request.user,
+        defaults={
+            "access_token": access_token,
+            "refresh_token": refresh_token or "",
+            "reddit_username": reddit_username,
+            "subreddit": default_sub,
+        }
+    )
+
+    return redirect("/dashboard/")
+
+
+@login_required
+def reddit_update_subreddit(request):
+    """
+    Update target subreddit for Reddit account
+    """
+    if request.method == "POST":
+        subreddit = request.POST.get("subreddit", "").strip()
+        if subreddit:
+            from .models import RedditAccount
+            RedditAccount.objects.filter(user=request.user).update(subreddit=subreddit)
+    return redirect("/dashboard/")
+
+
+@login_required
+def reddit_disconnect(request):
+    """
+    Remove user's connected Reddit account
+    """
+    if request.method == "POST":
+        from .models import RedditAccount
+        RedditAccount.objects.filter(user=request.user).delete()
     return redirect("/dashboard/")
 
 
@@ -1245,6 +1637,11 @@ def privacy_policy(request):
 def terms_of_service(request):
     """Serve the static Terms of Service page required by Meta App Review."""
     return render(request, "comments/terms_of_service.html")
+
+def about_page(request):
+    """Serve the static About page."""
+    return render(request, "comments/about.html")
+
 
 def contact(request):
     """Serve the static Contact page required by Meta App Review."""
@@ -2368,12 +2765,23 @@ def publish_to_twitter(post):
 def publish_to_linkedin(post, media_url):
     import requests
     from django.conf import settings
-    if not settings.LINKEDIN_ACCESS_TOKEN or not settings.LINKEDIN_AUTHOR_ID:
-        raise Exception("LinkedIn API credentials are not configured in settings.")
+    from .models import LinkedInAccount
+    
+    linkedin_acc = LinkedInAccount.objects.filter(user=post.user).first()
+    
+    if linkedin_acc:
+        access_token = linkedin_acc.access_token
+        author_id = linkedin_acc.author_id
+    else:
+        access_token = settings.LINKEDIN_ACCESS_TOKEN
+        author_id = settings.LINKEDIN_AUTHOR_ID
+        
+    if not access_token or not author_id:
+        raise Exception("LinkedIn API credentials are not configured.")
         
     url = "https://api.linkedin.com/v2/ugcPosts"
     headers = {
-        "Authorization": f"Bearer {settings.LINKEDIN_ACCESS_TOKEN}",
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
         "X-Restli-Protocol-Version": "2.0.0"
     }
@@ -2395,7 +2803,7 @@ def publish_to_linkedin(post, media_url):
         share_content["shareMediaCategory"] = "NONE"
         
     payload = {
-        "author": settings.LINKEDIN_AUTHOR_ID,
+        "author": author_id,
         "lifecycleState": "PUBLISHED",
         "specificContent": {
             "com.linkedin.ugc.ShareContent": share_content
@@ -2420,30 +2828,73 @@ def publish_to_linkedin(post, media_url):
 def publish_to_reddit(post, media_url):
     import requests
     from django.conf import settings
-    if not settings.REDDIT_CLIENT_ID or not settings.REDDIT_USERNAME or not settings.REDDIT_PASSWORD:
-        raise Exception("Reddit API credentials are not configured in settings.")
+    from .models import RedditAccount
+
+    client_id = getattr(settings, "REDDIT_CLIENT_ID", "").strip()
+    client_secret = getattr(settings, "REDDIT_CLIENT_SECRET", "").strip()
+    user_agent = getattr(settings, "REDDIT_USER_AGENT", "SocialFuse/1.0")
+
+    # Check if user has connected their own Reddit account
+    reddit_acc = RedditAccount.objects.filter(user=post.user).first()
+
+    if reddit_acc:
+        # User-specific OAuth publish path
+        if not client_id or not client_secret:
+            raise Exception("Reddit Client ID or Client Secret is not configured in settings.")
         
-    auth = requests.auth.HTTPBasicAuth(settings.REDDIT_CLIENT_ID, settings.REDDIT_CLIENT_SECRET)
-    auth_data = {
-        "grant_type": "password",
-        "username": settings.REDDIT_USERNAME,
-        "password": settings.REDDIT_PASSWORD
-    }
-    headers = {"User-Agent": settings.REDDIT_USER_AGENT}
-    res = requests.post("https://www.reddit.com/api/v1/access_token", auth=auth, data=auth_data, headers=headers, timeout=15)
-    if res.status_code != 200:
-        raise Exception(f"Failed to get Reddit access token: {res.text}")
+        # Refresh the token to ensure it's valid
+        from requests.auth import HTTPBasicAuth
+        auth = HTTPBasicAuth(client_id, client_secret)
+        data = {
+            "grant_type": "refresh_token",
+            "refresh_token": reddit_acc.refresh_token
+        }
+        headers = {"User-Agent": user_agent}
+        res = requests.post("https://www.reddit.com/api/v1/access_token", auth=auth, data=data, headers=headers, timeout=15)
+        if res.status_code == 200:
+            token_data = res.json()
+            new_token = token_data.get("access_token")
+            if new_token:
+                reddit_acc.access_token = new_token
+                if "refresh_token" in token_data:
+                    reddit_acc.refresh_token = token_data["refresh_token"]
+                reddit_acc.save()
+                token = new_token
+            else:
+                token = reddit_acc.access_token
+        else:
+            token = reddit_acc.access_token
+
+        subreddit = reddit_acc.subreddit
+    else:
+        # Fallback path: Global settings client/password flow
+        if not settings.REDDIT_USERNAME or not settings.REDDIT_PASSWORD:
+            raise Exception("Reddit API credentials are not configured in settings.")
+            
+        auth = requests.auth.HTTPBasicAuth(client_id, client_secret)
+        auth_data = {
+            "grant_type": "password",
+            "username": settings.REDDIT_USERNAME,
+            "password": settings.REDDIT_PASSWORD
+        }
+        headers = {"User-Agent": user_agent}
+        res = requests.post("https://www.reddit.com/api/v1/access_token", auth=auth, data=auth_data, headers=headers, timeout=15)
+        if res.status_code != 200:
+            raise Exception(f"Failed to get Reddit access token: {res.text}")
+            
+        token = res.json().get("access_token")
+        if not token:
+            raise Exception("Reddit access token not found in OAuth response.")
         
-    token = res.json().get("access_token")
-    if not token:
-        raise Exception("Reddit access token not found in OAuth response.")
-        
+        subreddit = settings.REDDIT_SUBREDDIT
+
+    # Submit the post
     submit_headers = {
         "Authorization": f"bearer {token}",
-        "User-Agent": settings.REDDIT_USER_AGENT
+        "User-Agent": user_agent
     }
     post_data = {
-        "sr": settings.REDDIT_SUBREDDIT,
+        "sr": subreddit,
         "title": post.title or "Update from SocialFuse",
     }
     if media_url:
