@@ -56,6 +56,7 @@ class ModerationSetting(models.Model):
     )
     enable_sarcasm_detection = models.BooleanField(default=True, help_text="Enable AI sarcasm detection")
     sarcasm_threshold = models.FloatField(default=0.5, help_text="Confidence threshold for sarcasm flagging (0.0 - 1.0)")
+    live_mode = models.BooleanField(default=True, help_text="Turn Live Mode On/Off for auto-reply and DMs")
 
     def keyword_list(self):
         return [k.strip().lower() for k in self.keywords.split(",")]
@@ -175,6 +176,50 @@ class BlogPost(models.Model):
 
     def __str__(self):
         return self.title
+
+class ScheduledPost(models.Model):
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("scheduled", "Scheduled"),
+        ("publishing", "Publishing"),
+        ("published", "Published"),
+        ("failed", "Failed"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="scheduled_posts")
+    title = models.CharField(max_length=255, blank=True, null=True, help_text="Title of the post (required for Reddit/Quora, optional for others)")
+    content = models.TextField(blank=True, null=True, help_text="Main text or caption of the post")
+    
+    # Platform Selections
+    post_to_reddit = models.BooleanField(default=False, help_text="Publish to Reddit")
+    post_to_quora = models.BooleanField(default=False, help_text="Publish to Quora")
+    post_to_linkedin = models.BooleanField(default=False, help_text="Publish to LinkedIn")
+    post_to_instagram = models.BooleanField(default=False, help_text="Publish to Instagram")
+    post_to_facebook = models.BooleanField(default=False, help_text="Publish to Facebook")
+    post_to_twitter = models.BooleanField(default=False, help_text="Publish to Twitter/X")
+    
+    # Media Options
+    media_url = models.URLField(max_length=1000, blank=True, null=True, help_text="External URL of media (image/video)")
+    media_file = models.ImageField(upload_to="scheduled_posts/", blank=True, null=True, help_text="Uploaded media file")
+    
+    # Execution Tracking
+    scheduled_at = models.DateTimeField(blank=True, null=True, help_text="Time when the post should be published. If null, it is treated as a draft.")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    published_at = models.DateTimeField(blank=True, null=True, help_text="Actual time when publication finished")
+    
+    # Platform logs and ids
+    external_ids = models.JSONField(default=dict, blank=True, help_text="IDs of published posts on each platform, e.g. {'reddit': 't3_abc123'}")
+    error_message = models.TextField(blank=True, null=True, help_text="Error message if the post publication failed")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-scheduled_at", "-created_at"]
+
+    def __str__(self):
+        title_str = self.title or (self.content[:30] if self.content else "Untitled")
+        return f"{self.user.username} - {title_str} ({self.status})"
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver

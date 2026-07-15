@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Comment, BlogPost
+from .models import Comment, BlogPost, ScheduledPost
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,3 +33,12 @@ class BlogPostSerializer(serializers.ModelSerializer):
         if obj.image_url:
             return obj.image_url
         return None
+
+
+class ScheduledPostSerializer(serializers.ModelSerializer):
+    user_username = serializers.ReadOnlyField(source="user.username")
+
+    class Meta:
+        model = ScheduledPost
+        fields = "__all__"
+        read_only_fields = ("user", "published_at", "external_ids", "error_message")

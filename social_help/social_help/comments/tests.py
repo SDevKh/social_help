@@ -1,8 +1,9 @@
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
-from social_help.comments.models import Subscription, InstagramAccount, Comment, AutoReplyRule
+from social_help.comments.models import Subscription, InstagramAccount, Comment, AutoReplyRule, ScheduledPost, ModerationSetting
 from unittest.mock import Mock, patch
 import base64
+import json
 
 class GumroadPaymentTests(TestCase):
     def setUp(self):
@@ -748,9 +749,339 @@ class RecentInstagramMediaAPITests(TestCase):
         self.assertEqual(response.json().get("media")[0]["id"], "post1")
 
 
+from datetime import timedelta
+
+class ScheduledPostTests(TestCase):
+    def setUp(self):
+        # Create users
+        self.user = User.objects.create_user(username="creator1", password="password123")
+        self.other_user = User.objects.create_user(username="creator2", password="password123")
+        
+        # Authenticate self.client with user
+        self.client.login(username="creator1", password="password123")
+
+        # Setup mocks for real publishing to avoid hitting actual APIs
+        from unittest.mock import patch
+        self.patcher_ig = patch('social_help.comments.views.publish_to_instagram', return_value="mock_ig_123")
+        self.patcher_fb = patch('social_help.comments.views.publish_to_facebook', return_value="mock_fb_123")
+        self.patcher_tw = patch('social_help.comments.views.publish_to_twitter', return_value="mock_tw_123")
+        self.patcher_li = patch('social_help.comments.views.publish_to_linkedin', return_value="mock_li_123")
+        self.patcher_rd = patch('social_help.comments.views.publish_to_reddit', return_value="mock_rd_123")
+        
+        self.mock_ig = self.patcher_ig.start()
+        self.mock_fb = self.patcher_fb.start()
+        self.mock_tw = self.patcher_tw.start()
+        self.mock_li = self.patcher_li.start()
+        self.mock_rd = self.patcher_rd.start()
+
+    def tearDown(self):
+        self.patcher_ig.stop()
+        self.patcher_fb.stop()
+        self.patcher_tw.stop()
+        self.patcher_li.stop()
+        self.patcher_rd.stop()
+
+    def test_scheduled_post_model_creation(self):
+        post = ScheduledPost.objects.create(
+            user=self.user,
+            title="My First Post",
+            content="Hello world",
+            post_to_twitter=True,
+            status="draft"
+        )
+        self.assertEqual(str(post), "creator1 - My First Post (draft)")
+        self.assertEqual(post.post_to_twitter, True)
+        self.assertEqual(post.post_to_reddit, False)
+
+    def test_list_scheduled_posts(self):
+        # Create posts for both users
+        ScheduledPost.objects.create(user=self.user, title="Post 1", status="draft")
+        ScheduledPost.objects.create(user=self.other_user, title="Other Post", status="draft")
+        
+        response = self.client.get("/api/posts/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], "Post 1")
+
+    def test_create_scheduled_post_via_api(self):
+        payload = {
+            "title": "New Post via API",
+            "content": "Checking DRF setup",
+            "post_to_reddit": True,
+            "post_to_linkedin": True,
+            "status": "scheduled",
+            "scheduled_at": "2026-07-14T10:00:00Z"
+        }
+        response = self.client.post(
+            "/api/posts/",
+            data=json.dumps(payload),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["title"], "New Post via API")
+        self.assertEqual(data["post_to_reddit"], True)
+        self.assertEqual(data["post_to_linkedin"], True)
+        self.assertEqual(data["status"], "scheduled")
+        
+        # Verify saved in db
+        db_post = ScheduledPost.objects.get(pk=data["id"])
+        self.assertEqual(db_post.user, self.user)
+
+    def test_retrieve_scheduled_post_via_api(self):
+        post = ScheduledPost.objects.create(user=self.user, title="Retrieve Me", status="draft")
+        response = self.client.get(f"/api/posts/{post.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["title"], "Retrieve Me")
+
+    def test_update_scheduled_post_via_api(self):
+        post = ScheduledPost.objects.create(user=self.user, title="Old Title", status="draft")
+        payload = {
+            "title": "New Title"
+        }
+        response = self.client.put(
+            f"/api/posts/{post.id}/",
+            data=json.dumps(payload),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["title"], "New Title")
+        post.refresh_from_db()
+        self.assertEqual(post.title, "New Title")
+
+    def test_delete_scheduled_post_via_api(self):
+        post = ScheduledPost.objects.create(user=self.user, title="Delete Me", status="draft")
+        response = self.client.delete(f"/api/posts/{post.id}/")
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(ScheduledPost.objects.filter(pk=post.id).exists())
+
+    def test_publish_scheduled_post_immediately_via_api(self):
+        post = ScheduledPost.objects.create(
+            user=self.user,
+            title="Instant Post",
+            content="Publishing right now",
+            post_to_twitter=True,
+            post_to_instagram=True,
+            status="scheduled"
+        )
+        response = self.client.post(f"/api/posts/{post.id}/publish/")
+        self.assertEqual(response.status_code, 200)
+        
+        data = response.json()
+        self.assertEqual(data["status"], "published")
+        self.assertIsNotNone(data["published_at"])
+        self.assertIn("twitter", data["external_ids"])
+        self.assertIn("instagram", data["external_ids"])
+
+    def test_publish_immediately_with_simulate_fail(self):
+        post = ScheduledPost.objects.create(
+            user=self.user,
+            title="Failing Post",
+            content="This post will simulate_fail on publish",
+            post_to_twitter=True,
+            status="scheduled"
+        )
+        response = self.client.post(f"/api/posts/{post.id}/publish/")
+        self.assertEqual(response.status_code, 200)
+        
+        data = response.json()
+        self.assertEqual(data["status"], "failed")
+        self.assertIn("Simulated API Timeout error", data["error_message"])
+
+    def test_process_scheduled_posts_management_command(self):
+        from django.core.management import call_command
+        from django.utils import timezone
+        
+        # Create scheduled post in the past
+        past_time = timezone.now() - timedelta(minutes=10)
+        post_due = ScheduledPost.objects.create(
+            user=self.user,
+            title="Due Post",
+            content="Must publish",
+            post_to_reddit=True,
+            scheduled_at=past_time,
+            status="scheduled"
+        )
+        
+        # Create scheduled post in the future (should not process)
+        future_time = timezone.now() + timedelta(hours=1)
+        post_future = ScheduledPost.objects.create(
+            user=self.user,
+            title="Future Post",
+            content="Wait",
+            post_to_reddit=True,
+            scheduled_at=future_time,
+            status="scheduled"
+        )
+        
+        # Call management command
+        call_command("process_scheduled_posts")
+        
+        # Refresh from db
+        post_due.refresh_from_db()
+        post_future.refresh_from_db()
+        
+        self.assertEqual(post_due.status, "published")
+        self.assertIsNotNone(post_due.published_at)
+        self.assertEqual(post_future.status, "scheduled")
+        self.assertIsNone(post_future.published_at)
 
 
+class LiveModeTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="moderator1", password="password123")
+        self.client.login(username="moderator1", password="password123")
+        # Ensure subscription is active so paid check passes
+        Subscription.objects.get_or_create(user=self.user, tier="pro", is_active=True)
+
+    def test_settings_api_live_mode_default(self):
+        response = self.client.get("/api/settings/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["live_mode"], True)
+
+    def test_settings_api_update_live_mode(self):
+        # Update live_mode to False
+        payload = {
+            "toxicity_threshold": 0.6,
+            "keywords": "spam,toxic",
+            "enable_sarcasm_detection": False,
+            "sarcasm_threshold": 0.4,
+            "live_mode": False
+        }
+        response = self.client.post(
+            "/api/settings/",
+            data=json.dumps(payload),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify database update
+        setting = ModerationSetting.objects.get(user=self.user)
+        self.assertEqual(setting.live_mode, False)
+        
+        # Verify get API returns correct value
+        get_response = self.client.get("/api/settings/")
+        self.assertEqual(get_response.json()["live_mode"], False)
+
+    @patch("social_help.comments.scanner.InstagramService")
+    def test_scanner_respects_live_mode(self, mock_instagram_service_class):
+        account = InstagramAccount.objects.create(
+            user=self.user,
+            ig_business_id="ig_123",
+            page_access_token="fake_token"
+        )
+        
+        # Setup settings with live_mode = False
+        setting, _ = ModerationSetting.objects.get_or_create(user=self.user)
+        setting.live_mode = False
+        setting.save()
+        
+        from social_help.comments.scanner import scan_account_posts
+        
+        # Call scanner and assert it returns empty list immediately
+        results = scan_account_posts(account)
+        self.assertEqual(results, [])
+        mock_instagram_service_class.assert_not_called()
+        
+        # Set live_mode = True and assert it initiates the scan (calls InstagramService)
+        setting.live_mode = True
+        setting.save()
+        
+        # We need mock get_recent_media or similar to not fail
+        mock_service_instance = mock_instagram_service_class.return_value
+        mock_service_instance.extract_shortcode.return_value = None
+        
+        scan_account_posts(account)
+        mock_instagram_service_class.assert_called_once_with(account=account)
 
 
+from unittest import mock
+from social_help.comments.models import InstagramAccount, ScheduledPost
 
+class SocialMediaPublishingAPITests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testapiuser", password="password123")
+        self.account = InstagramAccount.objects.create(
+            user=self.user,
+            ig_business_id="17841450633263795",
+            page_id="103993782799387",
+            page_access_token="fake_token"
+        )
+        self.post = ScheduledPost.objects.create(
+            user=self.user,
+            title="API Post",
+            content="Hello from test",
+            media_url="http://example.com/image.jpg"
+        )
 
+    @mock.patch('requests.post')
+    def test_publish_to_instagram_success(self, mock_post):
+        mock_res1 = mock.Mock()
+        mock_res1.json.return_value = {"id": "container_123"}
+        mock_res2 = mock.Mock()
+        mock_res2.json.return_value = {"id": "media_published_id"}
+        mock_post.side_effect = [mock_res1, mock_res2]
+
+        from social_help.comments.views import publish_to_instagram
+        post_id = publish_to_instagram(self.post, self.account, self.post.media_url)
+        self.assertEqual(post_id, "media_published_id")
+        self.assertEqual(mock_post.call_count, 2)
+
+    @mock.patch('requests.post')
+    def test_publish_to_facebook_success(self, mock_post):
+        mock_res = mock.Mock()
+        mock_res.json.return_value = {"id": "fb_post_id"}
+        mock_post.return_value = mock_res
+
+        from social_help.comments.views import publish_to_facebook
+        post_id = publish_to_facebook(self.post, self.account, self.post.media_url)
+        self.assertEqual(post_id, "fb_post_id")
+        mock_post.assert_called_once()
+
+    @mock.patch('tweepy.Client')
+    def test_publish_to_twitter_success(self, mock_tweepy_client):
+        mock_client_instance = mock_tweepy_client.return_value
+        mock_response = mock.Mock()
+        mock_response.data = {"id": "tweet_123"}
+        mock_client_instance.create_tweet.return_value = mock_response
+
+        with self.settings(TWITTER_API_KEY="key", TWITTER_ACCESS_TOKEN="token"):
+            from social_help.comments.views import publish_to_twitter
+            post_id = publish_to_twitter(self.post)
+            self.assertEqual(post_id, "tweet_123")
+
+    @mock.patch('requests.post')
+    def test_publish_to_linkedin_success(self, mock_post):
+        mock_res = mock.Mock()
+        mock_res.status_code = 201
+        mock_res.json.return_value = {"id": "linkedin_share_urn"}
+        mock_post.return_value = mock_res
+
+        with self.settings(LINKEDIN_ACCESS_TOKEN="token", LINKEDIN_AUTHOR_ID="urn:li:person:123"):
+            from social_help.comments.views import publish_to_linkedin
+            post_id = publish_to_linkedin(self.post, self.post.media_url)
+            self.assertEqual(post_id, "linkedin_share_urn")
+
+    @mock.patch('requests.post')
+    def test_publish_to_reddit_success(self, mock_post):
+        mock_token_res = mock.Mock()
+        mock_token_res.status_code = 200
+        mock_token_res.json.return_value = {"access_token": "reddit_token"}
+        mock_submit_res = mock.Mock()
+        mock_submit_res.status_code = 200
+        mock_submit_res.json.return_value = {"json": {"data": {"name": "reddit_name"}}}
+        mock_post.side_effect = [mock_token_res, mock_submit_res]
+
+        with self.settings(
+            REDDIT_CLIENT_ID="id",
+            REDDIT_CLIENT_SECRET="secret",
+            REDDIT_USERNAME="user",
+            REDDIT_PASSWORD="password",
+            REDDIT_USER_AGENT="agent",
+            REDDIT_SUBREDDIT="sub"
+        ):
+            from social_help.comments.views import publish_to_reddit
+            post_id = publish_to_reddit(self.post, self.post.media_url)
+            self.assertEqual(post_id, "reddit_name")

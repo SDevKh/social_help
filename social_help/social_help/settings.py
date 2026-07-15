@@ -215,3 +215,22 @@ POLAR_WEBHOOK_SECRET = os.getenv("POLAR_WEBHOOK_SECRET", "")
 ADMIN_BASIC_AUTH_USERNAME = os.getenv('ADMIN_BASIC_AUTH_USERNAME', 'admin')
 ADMIN_BASIC_AUTH_PASSWORD = os.getenv('ADMIN_BASIC_AUTH_PASSWORD', 'adminpass')
 ALLOWED_ADMIN_IPS = [ip.strip() for ip in os.getenv('ALLOWED_ADMIN_IPS', '').split(',') if ip.strip()]
+
+# Twitter / X Settings
+TWITTER_API_KEY = os.getenv("TWITTER_API_KEY", "")
+TWITTER_API_SECRET = os.getenv("TWITTER_API_SECRET", "")
+TWITTER_ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN", "")
+TWITTER_ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET", "")
+
+# LinkedIn Settings
+LINKEDIN_ACCESS_TOKEN = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
+LINKEDIN_AUTHOR_ID = os.getenv("LINKEDIN_AUTHOR_ID", "")
+
+# Reddit Settings
+REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID", "")
+REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET", "")
+REDDIT_USERNAME = os.getenv("REDDIT_USERNAME", "")
+REDDIT_PASSWORD = os.getenv("REDDIT_PASSWORD", "")
+REDDIT_USER_AGENT = os.getenv("REDDIT_USER_AGENT", "SocialFuse/1.0")
+REDDIT_SUBREDDIT = os.getenv("REDDIT_SUBREDDIT", "test")
+

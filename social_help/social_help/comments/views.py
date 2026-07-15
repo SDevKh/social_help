@@ -14,8 +14,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from .serializers import CommentSerializer, BlogPostSerializer
-from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost
+from .serializers import CommentSerializer, BlogPostSerializer, ScheduledPostSerializer
+from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost, ScheduledPost
 from .instagram_service import InstagramService, InstagramTokenExpiredException
 from .forms import SignUpForm
 
@@ -836,6 +836,7 @@ class ModerationSettingsAPI(APIView):
             "keywords": s.keywords,
             "enable_sarcasm_detection": getattr(s, "enable_sarcasm_detection", True),
             "sarcasm_threshold": getattr(s, "sarcasm_threshold", 0.5),
+            "live_mode": getattr(s, "live_mode", True),
         })
 
     def post(self, request):
@@ -850,8 +851,12 @@ class ModerationSettingsAPI(APIView):
         s.sarcasm_threshold = request.data.get(
             "sarcasm_threshold", getattr(s, "sarcasm_threshold", 0.5)
         )
+        s.live_mode = request.data.get(
+            "live_mode", getattr(s, "live_mode", True)
+        )
         s.save()
         return Response({"message": "Settings updated"})
+
 
 
 class ResolveCommentWithGroq(APIView):
@@ -2238,4 +2243,364 @@ class GenerateContentIdeasAPIView(APIView):
         except Exception as e:
             logger.exception("Error in GenerateContentIdeasAPIView")
             return Response({"error": str(e)}, status=500)
+
+
+def publish_to_instagram(post, account, media_url):
+    import requests
+    if not account or not getattr(account, "ig_business_id", None):
+        raise Exception("No connected Instagram account found for this user.")
+        
+    ig_business_id = account.ig_business_id
+    token = account.page_access_token
+    
+    if not media_url:
+        raise Exception("Instagram posts require an image or video URL/file.")
+        
+    is_video = any(media_url.lower().endswith(ext) for ext in [".mp4", ".mov", ".avi", ".m4v", ".3gp"])
+    
+    # Create media container
+    url = f"https://graph.facebook.com/v20.0/{ig_business_id}/media"
+    payload = {
+        "caption": post.content or "",
+        "access_token": token
+    }
+    if is_video:
+        payload["media_type"] = "VIDEO"
+        payload["video_url"] = media_url
+    else:
+        payload["image_url"] = media_url
+        
+    res = requests.post(url, data=payload, timeout=15)
+    data = res.json()
+    if "error" in data:
+        raise Exception(f"Failed to create Instagram media container: {data['error'].get('message')}")
+        
+    container_id = data.get("id")
+    if not container_id:
+        raise Exception("No container ID returned from Instagram media API.")
+        
+    if is_video:
+        import time
+        status_url = f"https://graph.facebook.com/v20.0/{container_id}"
+        params = {"fields": "status_code", "access_token": token}
+        for _ in range(6):
+            time.sleep(5)
+            status_res = requests.get(status_url, params=params, timeout=10)
+            status_data = status_res.json()
+            if status_data.get("status_code") == "FINISHED":
+                break
+            if "error" in status_data:
+                raise Exception(f"Video container status check failed: {status_data['error'].get('message')}")
+        else:
+            raise Exception("Video processing on Instagram timed out. Please try again.")
+            
+    # Publish container
+    pub_url = f"https://graph.facebook.com/v20.0/{ig_business_id}/media_publish"
+    pub_payload = {
+        "creation_id": container_id,
+        "access_token": token
+    }
+    pub_res = requests.post(pub_url, data=pub_payload, timeout=15)
+    pub_data = pub_res.json()
+    if "error" in pub_data:
+        raise Exception(f"Failed to publish Instagram container: {pub_data['error'].get('message')}")
+        
+    return pub_data.get("id") or container_id
+
+
+def publish_to_facebook(post, account, media_url):
+    import requests
+    from django.conf import settings
+    if not account or not getattr(account, "page_id", None):
+        page_id = getattr(settings, "INSTAGRAM_PAGE_ID", None)
+    else:
+        page_id = account.page_id
+        
+    if not page_id:
+        raise Exception("No connected Facebook Page ID found.")
+        
+    token = account.page_access_token if account else getattr(settings, "INSTAGRAM_PAGE_ACCESS_TOKEN", "")
+    if not token:
+        raise Exception("Facebook Page Access Token not configured.")
+        
+    if media_url:
+        is_video = any(media_url.lower().endswith(ext) for ext in [".mp4", ".mov", ".avi", ".m4v", ".3gp"])
+        endpoint = "videos" if is_video else "photos"
+        url = f"https://graph.facebook.com/v20.0/{page_id}/{endpoint}"
+        payload = {
+            "caption" if is_video else "message": post.content or "",
+            "url" if is_video else "url": media_url,
+            "access_token": token
+        }
+    else:
+        url = f"https://graph.facebook.com/v20.0/{page_id}/feed"
+        payload = {
+            "message": post.content or "",
+            "access_token": token
+        }
+        
+    res = requests.post(url, data=payload, timeout=15)
+    data = res.json()
+    if "error" in data:
+        raise Exception(f"Facebook API Error: {data['error'].get('message')}")
+        
+    return data.get("id") or data.get("post_id")
+
+
+def publish_to_twitter(post):
+    from django.conf import settings
+    if not settings.TWITTER_API_KEY or not settings.TWITTER_ACCESS_TOKEN:
+        raise Exception("Twitter/X API credentials are not configured in settings.")
+        
+    import tweepy
+    client = tweepy.Client(
+        consumer_key=settings.TWITTER_API_KEY,
+        consumer_secret=settings.TWITTER_API_SECRET,
+        access_token=settings.TWITTER_ACCESS_TOKEN,
+        access_token_secret=settings.TWITTER_ACCESS_TOKEN_SECRET
+    )
+    response = client.create_tweet(text=post.content or "")
+    if response and hasattr(response, "data") and response.data:
+        return response.data.get("id")
+    raise Exception("Failed to publish tweet: Twitter API returned empty response.")
+
+
+def publish_to_linkedin(post, media_url):
+    import requests
+    from django.conf import settings
+    if not settings.LINKEDIN_ACCESS_TOKEN or not settings.LINKEDIN_AUTHOR_ID:
+        raise Exception("LinkedIn API credentials are not configured in settings.")
+        
+    url = "https://api.linkedin.com/v2/ugcPosts"
+    headers = {
+        "Authorization": f"Bearer {settings.LINKEDIN_ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0"
+    }
+    
+    share_content = {
+        "shareCommentary": {
+            "text": post.content or ""
+        }
+    }
+    if media_url:
+        share_content["shareMediaCategory"] = "ARTICLE"
+        share_content["media"] = [{
+            "status": "READY",
+            "description": {"text": post.title or ""},
+            "originalUrl": media_url,
+            "title": {"text": post.title or "Shared Media"}
+        }]
+    else:
+        share_content["shareMediaCategory"] = "NONE"
+        
+    payload = {
+        "author": settings.LINKEDIN_AUTHOR_ID,
+        "lifecycleState": "PUBLISHED",
+        "specificContent": {
+            "com.linkedin.ugc.ShareContent": share_content
+        },
+        "visibility": {
+            "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+        }
+    }
+    
+    res = requests.post(url, json=payload, headers=headers, timeout=15)
+    if res.status_code not in [200, 201]:
+        try:
+            err_msg = res.json().get("message", res.text)
+        except Exception:
+            err_msg = res.text
+        raise Exception(f"LinkedIn API Error ({res.status_code}): {err_msg}")
+        
+    data = res.json()
+    return data.get("id")
+
+
+def publish_to_reddit(post, media_url):
+    import requests
+    from django.conf import settings
+    if not settings.REDDIT_CLIENT_ID or not settings.REDDIT_USERNAME or not settings.REDDIT_PASSWORD:
+        raise Exception("Reddit API credentials are not configured in settings.")
+        
+    auth = requests.auth.HTTPBasicAuth(settings.REDDIT_CLIENT_ID, settings.REDDIT_CLIENT_SECRET)
+    auth_data = {
+        "grant_type": "password",
+        "username": settings.REDDIT_USERNAME,
+        "password": settings.REDDIT_PASSWORD
+    }
+    headers = {"User-Agent": settings.REDDIT_USER_AGENT}
+    res = requests.post("https://www.reddit.com/api/v1/access_token", auth=auth, data=auth_data, headers=headers, timeout=15)
+    if res.status_code != 200:
+        raise Exception(f"Failed to get Reddit access token: {res.text}")
+        
+    token = res.json().get("access_token")
+    if not token:
+        raise Exception("Reddit access token not found in OAuth response.")
+        
+    submit_headers = {
+        "Authorization": f"bearer {token}",
+        "User-Agent": settings.REDDIT_USER_AGENT
+    }
+    post_data = {
+        "sr": settings.REDDIT_SUBREDDIT,
+        "title": post.title or "Update from SocialFuse",
+    }
+    if media_url:
+        post_data["kind"] = "link"
+        post_data["url"] = media_url
+    else:
+        post_data["kind"] = "self"
+        post_data["text"] = post.content or ""
+        
+    submit_res = requests.post("https://oauth.reddit.com/api/submit", data=post_data, headers=submit_headers, timeout=15)
+    if submit_res.status_code not in [200, 201]:
+        raise Exception(f"Reddit submission failed ({submit_res.status_code}): {submit_res.text}")
+        
+    submit_data = submit_res.json()
+    if submit_data.get("json", {}).get("errors"):
+        errors_list = submit_data["json"]["errors"]
+        raise Exception(f"Reddit API error: {errors_list}")
+        
+    reddit_name = submit_data.get("json", {}).get("data", {}).get("name")
+    return reddit_name or "success"
+
+
+def simulate_publish_post(post):
+    """
+    Publishes a ScheduledPost to various social media platforms.
+    In a real-world scenario, this will interface with the respective platforms' REST APIs.
+    """
+    import random
+    from django.utils import timezone
+    from django.conf import settings
+    from .models import InstagramAccount
+    
+    platforms_to_post = []
+    if post.post_to_reddit:
+        platforms_to_post.append("reddit")
+    if post.post_to_quora:
+        platforms_to_post.append("quora")
+    if post.post_to_linkedin:
+        platforms_to_post.append("linkedin")
+    if post.post_to_instagram:
+        platforms_to_post.append("instagram")
+    if post.post_to_facebook:
+        platforms_to_post.append("facebook")
+    if post.post_to_twitter:
+        platforms_to_post.append("twitter")
+        
+    if not platforms_to_post:
+        post.status = "failed"
+        post.error_message = "No platforms were selected for publication."
+        post.save()
+        return
+        
+    post.status = "publishing"
+    post.save()
+    
+    account = InstagramAccount.objects.filter(user=post.user).first()
+    
+    media_url = None
+    if post.media_url:
+        media_url = post.media_url
+    elif post.media_file:
+        domain = getattr(settings, "DOMAIN_URL", "http://localhost:8000")
+        media_url = f"{domain.rstrip('/')}{post.media_file.url}"
+        
+    external_ids = {}
+    errors = []
+    
+    is_simulated_fail = post.content and "simulate_fail" in post.content.lower()
+    
+    for platform in platforms_to_post:
+        try:
+            if is_simulated_fail:
+                raise Exception("Simulated API Timeout error.")
+                
+            if platform == "instagram":
+                post_id = publish_to_instagram(post, account, media_url)
+                external_ids[platform] = post_id
+            elif platform == "facebook":
+                post_id = publish_to_facebook(post, account, media_url)
+                external_ids[platform] = post_id
+            elif platform == "twitter":
+                post_id = publish_to_twitter(post)
+                external_ids[platform] = post_id
+            elif platform == "linkedin":
+                post_id = publish_to_linkedin(post, media_url)
+                external_ids[platform] = post_id
+            elif platform == "reddit":
+                post_id = publish_to_reddit(post, media_url)
+                external_ids[platform] = post_id
+            elif platform == "quora":
+                mock_id = f"mock_quora_{random.randint(100000, 999999)}"
+                external_ids[platform] = mock_id
+        except Exception as e:
+            errors.append(f"Failed to post to {platform.capitalize()}: {str(e)}")
+            
+    if errors:
+        post.status = "failed"
+        post.error_message = "; ".join(errors)
+        if external_ids:
+            post.external_ids = external_ids
+    else:
+        post.status = "published"
+        post.external_ids = external_ids
+        post.published_at = timezone.now()
+        post.error_message = None
+        
+    post.save()
+
+
+class ScheduledPostListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        posts = ScheduledPost.objects.filter(user=request.user)
+        serializer = ScheduledPostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ScheduledPostSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+class ScheduledPostRetrieveUpdateDestroyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk, user):
+        return get_object_or_404(ScheduledPost, pk=pk, user=user)
+
+    def get(self, request, pk):
+        post = self.get_object(pk, request.user)
+        serializer = ScheduledPostSerializer(post)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        post = self.get_object(pk, request.user)
+        serializer = ScheduledPostSerializer(post, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, pk):
+        post = self.get_object(pk, request.user)
+        post.delete()
+        return Response({"success": True}, status=204)
+
+
+class PublishScheduledPostImmediatelyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(ScheduledPost, pk=pk, user=request.user)
+        simulate_publish_post(post)
+        serializer = ScheduledPostSerializer(post)
+        return Response(serializer.data)
+
 

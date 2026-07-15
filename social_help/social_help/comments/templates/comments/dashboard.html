@@ -1984,6 +1984,99 @@
             justify-content: center;
             line-height: 1;
         }
+
+        /* Post Scheduler Specific Styles */
+        .platform-checkbox-card {
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .platform-checkbox-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-1px);
+        }
+        .platform-checkbox-card input[type="checkbox"]:checked + span {
+            font-weight: 800;
+            color: #ffffff;
+        }
+        .post-queue-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-dark);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .post-queue-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
+        .post-queue-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+        .post-queue-card.status-published::before { background: #10b981; }
+        .post-queue-card.status-scheduled::before { background: #6366f1; }
+        .post-queue-card.status-failed::before { background: #ef4444; }
+        .post-queue-card.status-draft::before { background: #64748b; }
+        .post-queue-card.status-publishing::before { background: #fbbf24; }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-status.published { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-status.scheduled { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); }
+        .badge-status.failed { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .badge-status.draft { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
+        .badge-status.publishing { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+
+        .platform-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: capitalize;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+        }
+        .platform-badge.active-platform {
+            color: #ffffff;
+            font-weight: 800;
+        }
+        .platform-badge.reddit { border-color: rgba(255, 69, 0, 0.3); background: rgba(255, 69, 0, 0.1); color: #ff4500; }
+        .platform-badge.quora { border-color: rgba(185, 43, 39, 0.3); background: rgba(185, 43, 39, 0.1); color: #f87171; }
+        .platform-badge.linkedin { border-color: rgba(0, 119, 181, 0.3); background: rgba(0, 119, 181, 0.1); color: #60a5fa; }
+        .platform-badge.instagram { border-color: rgba(225, 48, 108, 0.3); background: rgba(225, 48, 108, 0.1); color: #f472b6; }
+        .platform-badge.facebook { border-color: rgba(24, 119, 242, 0.3); background: rgba(24, 119, 242, 0.1); color: #3b82f6; }
+        .platform-badge.twitter { border-color: rgba(29, 161, 242, 0.3); background: rgba(29, 161, 242, 0.1); color: #38bdf8; }
     </style>
 </head>
 
@@ -2019,6 +2112,9 @@
                 </a>
                 <a href="/dashboard/#ai" id="menu-item-ai" class="menu-item" onclick="switchView(event, 'ai')">
                     <i data-lucide="sparkles"></i> AI Content Generator
+                </a>
+                <a href="/dashboard/#scheduler" id="menu-item-scheduler" class="menu-item" onclick="switchView(event, 'scheduler')">
+                    <i data-lucide="calendar"></i> Post Scheduler
                 </a>
             </nav>
 
@@ -2294,6 +2390,16 @@
                         <div class="dark-panel">
                             <h3><i data-lucide="sliders"></i> Moderation Settings</h3>
                             <div style="text-align: left;">
+
+                                <!-- Live Mode Toggle -->
+                                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="checkbox" id="liveModeToggle" checked>
+                                    <span class="custom-checkbox"></span>
+                                    <strong>🟢 Live Mode (Auto-Fetch & Auto-Reply)</strong>
+                                </label>
+                                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px; margin-bottom: 18px; margin-left: 28px;">
+                                    When turned ON, background scanner periodically fetches comments and triggers auto-replies. When turned OFF, background fetching is completely paused.
+                                </span>
 
                                 <!-- Toxicity Threshold slider -->
                                 <div class="slider-wrapper">
@@ -2627,6 +2733,120 @@
 
                     </div>
                 </div>
+
+                <div id="scheduler-view-section" class="view-section" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; margin-bottom: 32px; text-align: left;">
+                        
+                        <!-- Left: Form to create post -->
+                        <div class="dark-panel" style="padding: 24px;">
+                            <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800;">
+                                <i data-lucide="plus-circle" style="stroke: #6366f1; width: 22px; height: 22px;"></i>
+                                Create & Automate Post
+                            </h3>
+                            
+                            <form id="scheduler-form" onsubmit="schedulePost(event)" style="display: flex; flex-direction: column; gap: 16px;">
+                                <div>
+                                    <label class="form-label" style="font-weight: 700; margin-bottom: 6px;">Post Title (Optional)</label>
+                                    <input type="text" id="sched-title" class="dark-input" placeholder="e.g. Launching our new feature!" style="margin-bottom: 0;">
+                                </div>
+                                
+                                <div>
+                                    <label class="form-label" style="font-weight: 700; margin-bottom: 6px;">Post Content / Caption (Required)</label>
+                                    <textarea id="sched-content" class="dark-input" placeholder="What would you like to say? Use hashtags and links..." required style="height: 120px; border-radius: 12px; margin-bottom: 0; padding: 12px 18px; font-family: inherit; resize: vertical;"></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label class="form-label" style="font-weight: 700; margin-bottom: 6px;">Media / Image URL (Optional)</label>
+                                    <input type="url" id="sched-media-url" class="dark-input" placeholder="https://example.com/image.png" style="margin-bottom: 0;">
+                                </div>
+                                
+                                <!-- Target Platforms Grid -->
+                                <div>
+                                    <label class="form-label" style="font-weight: 700; margin-bottom: 8px; display: block;">Select Platforms to Publish</label>
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                        
+                                        <label class="platform-checkbox-card">
+                                            <input type="checkbox" id="sched-reddit" style="cursor: pointer;">
+                                            <span style="font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                                <span style="color: #ff4500;">Reddit</span>
+                                            </span>
+                                        </label>
+                                        
+                                        <label class="platform-checkbox-card">
+                                            <input type="checkbox" id="sched-quora" style="cursor: pointer;">
+                                            <span style="font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                                <span style="color: #b92b27;">Quora</span>
+                                            </span>
+                                        </label>
+                                        
+                                        <label class="platform-checkbox-card">
+                                            <input type="checkbox" id="sched-linkedin" style="cursor: pointer;">
+                                            <span style="font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                                <span style="color: #0077b5;">LinkedIn</span>
+                                            </span>
+                                        </label>
+                                        
+                                        <label class="platform-checkbox-card">
+                                            <input type="checkbox" id="sched-instagram" style="cursor: pointer;">
+                                            <span style="font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                                <span style="color: #e1306c;">Instagram</span>
+                                            </span>
+                                        </label>
+                                        
+                                        <label class="platform-checkbox-card">
+                                            <input type="checkbox" id="sched-facebook" style="cursor: pointer;">
+                                            <span style="font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                                <span style="color: #1877f2;">Facebook</span>
+                                            </span>
+                                        </label>
+                                        
+                                        <label class="platform-checkbox-card">
+                                            <input type="checkbox" id="sched-twitter" style="cursor: pointer;">
+                                            <span style="font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                                <span style="color: #1da1f2;">Twitter/X</span>
+                                            </span>
+                                        </label>
+                                        
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="form-label" style="font-weight: 700; margin-bottom: 6px;">Schedule Publish Time</label>
+                                    <input type="datetime-local" id="sched-time" class="dark-input" style="margin-bottom: 0; padding: 12px 18px; border-radius: 9999px;">
+                                    <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">Leave empty to publish immediately, or set a date/time.</span>
+                                </div>
+                                
+                                <button type="submit" class="btn-blue-light" style="margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 9999px; height: 48px; font-weight: 700;">
+                                    <i data-lucide="zap"></i> Schedule & Automate Post
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Right: Post Queue list -->
+                        <div class="dark-panel" style="padding: 24px; min-height: 500px; display: flex; flex-direction: column;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800;">
+                                    <i data-lucide="calendar-range" style="stroke: #10b981; width: 22px; height: 22px;"></i>
+                                    Automation Queue
+                                </h3>
+                                <button onclick="loadScheduledPosts()" class="btn-toolbar-grey" style="padding: 6px 12px; font-size: 11px; margin: 0; display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px;">
+                                    <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Refresh
+                                </button>
+                            </div>
+                            
+                            <!-- Queue Cards Container -->
+                            <div id="postsQueueContainer" style="display: flex; flex-direction: column; gap: 16px; flex-grow: 1; overflow-y: auto; max-height: 450px;">
+                                <!-- Dynamically loaded posts go here -->
+                                <div style="text-align: center; padding: 64px 0; border: 2px dashed rgba(255,255,255,0.08); border-radius: 20px;">
+                                    <i data-lucide="inbox" style="width: 48px; height: 48px; stroke: #475569; margin: 0 auto 12px auto; display: block;"></i>
+                                    <p style="font-weight: 700; color: #64748b; margin: 0;">No automated posts yet</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+
 
                 {% endif %}
             </div>
@@ -3375,10 +3595,12 @@
             const dashboardSec = document.getElementById('dashboard-view-section');
             const autoreplySec = document.getElementById('autoreply-view-section');
             const aiSec = document.getElementById('ai-view-section');
+            const schedulerSec = document.getElementById('scheduler-view-section');
 
             if (viewName === 'autoreply') {
                 if (dashboardSec) dashboardSec.style.display = 'none';
                 if (aiSec) aiSec.style.display = 'none';
+                if (schedulerSec) schedulerSec.style.display = 'none';
                 if (autoreplySec) {
                     autoreplySec.style.display = 'block';
                     autoreplySec.style.opacity = 0;
@@ -3392,6 +3614,7 @@
             } else if (viewName === 'ai') {
                 if (dashboardSec) dashboardSec.style.display = 'none';
                 if (autoreplySec) autoreplySec.style.display = 'none';
+                if (schedulerSec) schedulerSec.style.display = 'none';
                 if (aiSec) {
                     aiSec.style.display = 'block';
                     aiSec.style.opacity = 0;
@@ -3402,9 +3625,27 @@
                 if (aiMenu) aiMenu.classList.add('active');
 
                 history.pushState(null, null, '#ai');
+            } else if (viewName === 'scheduler') {
+                if (dashboardSec) dashboardSec.style.display = 'none';
+                if (autoreplySec) autoreplySec.style.display = 'none';
+                if (aiSec) aiSec.style.display = 'none';
+                if (schedulerSec) {
+                    schedulerSec.style.display = 'block';
+                    schedulerSec.style.opacity = 0;
+                    setTimeout(() => { schedulerSec.style.opacity = 1; }, 50);
+                }
+
+                const schedulerMenu = document.getElementById('menu-item-scheduler');
+                if (schedulerMenu) schedulerMenu.classList.add('active');
+
+                history.pushState(null, null, '#scheduler');
+                
+                // Load scheduled posts when viewing this tab
+                loadScheduledPosts();
             } else {
                 if (autoreplySec) autoreplySec.style.display = 'none';
                 if (aiSec) aiSec.style.display = 'none';
+                if (schedulerSec) schedulerSec.style.display = 'none';
                 if (dashboardSec) {
                     dashboardSec.style.display = 'block';
                     dashboardSec.style.opacity = 0;
@@ -3427,10 +3668,267 @@
                 switchView(null, 'autoreply');
             } else if (window.location.hash === '#ai') {
                 switchView(null, 'ai');
+            } else if (window.location.hash === '#scheduler') {
+                switchView(null, 'scheduler');
             } else {
                 switchView(null, 'dashboard');
             }
         }
+
+        // Post Scheduler API Integrations
+        function loadScheduledPosts() {
+            const container = document.getElementById('postsQueueContainer');
+            if (!container) return;
+
+            // Show loading placeholder
+            container.innerHTML = `
+                <div style="text-align: center; padding: 32px 0;">
+                    <div style="border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #6366f1; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto 12px auto;"></div>
+                    <p style="color: var(--text-muted); font-size: 12px; font-weight: 700; margin: 0;">Loading queue...</p>
+                </div>
+            `;
+
+            fetch('/api/posts/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 64px 0; border: 2px dashed rgba(255,255,255,0.08); border-radius: 20px;">
+                            <i data-lucide="inbox" style="width: 48px; height: 48px; stroke: #475569; margin: 0 auto 12px auto; display: block;"></i>
+                            <p style="font-weight: 700; color: #64748b; margin: 0;">No automated posts yet</p>
+                        </div>
+                    `;
+                    if (window.lucide) window.lucide.createIcons();
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.forEach(post => {
+                    // Build status badge
+                    let statusLabel = post.status.toUpperCase();
+                    let statusClass = post.status;
+                    
+                    // Build platforms list
+                    let platformsHtml = '';
+                    const platforms = [
+                        { name: 'reddit', active: post.post_to_reddit, color: '#ff4500' },
+                        { name: 'quora', active: post.post_to_quora, color: '#b92b27' },
+                        { name: 'linkedin', active: post.post_to_linkedin, color: '#0077b5' },
+                        { name: 'instagram', active: post.post_to_instagram, color: '#e1306c' },
+                        { name: 'facebook', active: post.post_to_facebook, color: '#1877f2' },
+                        { name: 'twitter', active: post.post_to_twitter, color: '#1da1f2' }
+                    ];
+                    
+                    platforms.forEach(p => {
+                        if (p.active) {
+                            platformsHtml += `<span class="platform-badge ${p.name}" style="margin-right: 4px; font-size: 10px;">${p.name}</span>`;
+                        }
+                    });
+
+                    // Format date/time
+                    let timeStr = 'Draft';
+                    if (post.scheduled_at) {
+                        const d = new Date(post.scheduled_at);
+                        timeStr = 'Sched: ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    }
+                    if (post.status === 'published' && post.published_at) {
+                        const d = new Date(post.published_at);
+                        timeStr = 'Pub: ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    }
+
+                    // Render errors if failed
+                    let errorHtml = '';
+                    if (post.status === 'failed' && post.error_message) {
+                        errorHtml = `
+                            <div style="margin-top: 10px; padding: 10px 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-size: 11px; color: #f87171; line-height: 1.4;">
+                                <strong>Error:</strong> ${post.error_message}
+                            </div>
+                        `;
+                    }
+
+                    // Render media preview if URL exists
+                    let mediaHtml = '';
+                    if (post.media_url) {
+                        mediaHtml = `
+                            <div style="margin-top: 10px;">
+                                <img src="${post.media_url}" style="width: 100%; max-height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-dark);">
+                            </div>
+                        `;
+                    }
+
+                    // Action buttons
+                    let actionsHtml = '';
+                    if (post.status === 'scheduled' || post.status === 'draft' || post.status === 'failed') {
+                        actionsHtml = `
+                            <button onclick="publishPostImmediately(${post.id})" class="btn-blue-light" style="padding: 5px 12px; font-size: 10px; margin: 0; display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px;">
+                                <i data-lucide="send" style="width: 10px; height: 10px;"></i> Publish Now
+                            </button>
+                        `;
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = `post-queue-card status-${post.status}`;
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 8px;">
+                            <div>
+                                <h4 style="margin: 0; font-size: 14px; font-weight: 800; color: #ffffff;">${post.title || 'Untitled Post'}</h4>
+                                <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 2px;">${timeStr}</span>
+                            </div>
+                            <span class="badge-status ${post.status}">${statusLabel}</span>
+                        </div>
+                        <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap;">${post.content || ''}</p>
+                        ${mediaHtml}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 8px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 12px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                ${platformsHtml}
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                ${actionsHtml}
+                                <button onclick="deleteScheduledPost(${post.id})" class="btn-pink-red" style="padding: 5px 12px; font-size: 10px; margin: 0; display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px; border: none;">
+                                    <i data-lucide="trash-2" style="width: 10px; height: 10px;"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                        ${errorHtml}
+                    `;
+                    container.appendChild(card);
+                });
+
+                if (window.lucide) window.lucide.createIcons();
+            })
+            .catch(err => {
+                console.error("Error loading posts:", err);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 32px 0; color: #f87171;">
+                        <p style="font-weight: 700; margin: 0;">Failed to load queue</p>
+                    </div>
+                `;
+            });
+        }
+
+        function schedulePost(event) {
+            if (event) event.preventDefault();
+
+            const title = document.getElementById('sched-title').value;
+            const content = document.getElementById('sched-content').value;
+            const mediaUrl = document.getElementById('sched-media-url').value;
+            const scheduledAt = document.getElementById('sched-time').value;
+
+            // Platforms
+            const postToReddit = document.getElementById('sched-reddit').checked;
+            const postToQuora = document.getElementById('sched-quora').checked;
+            const postToLinkedin = document.getElementById('sched-linkedin').checked;
+            const postToInstagram = document.getElementById('sched-instagram').checked;
+            const postToFacebook = document.getElementById('sched-facebook').checked;
+            const postToTwitter = document.getElementById('sched-twitter').checked;
+
+            if (!postToReddit && !postToQuora && !postToLinkedin && !postToInstagram && !postToFacebook && !postToTwitter) {
+                alert("Please select at least one platform to publish.");
+                return;
+            }
+
+            const payload = {
+                title: title || null,
+                content: content,
+                media_url: mediaUrl || null,
+                post_to_reddit: postToReddit,
+                post_to_quora: postToQuora,
+                post_to_linkedin: postToLinkedin,
+                post_to_instagram: postToInstagram,
+                post_to_facebook: postToFacebook,
+                post_to_twitter: postToTwitter,
+                scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+                status: scheduledAt ? "scheduled" : "draft"
+            };
+
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            fetch('/api/posts/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => { throw err; });
+                }
+                return res.json();
+            })
+            .then(data => {
+                // Reset form
+                document.getElementById('sched-title').value = '';
+                document.getElementById('sched-content').value = '';
+                document.getElementById('sched-media-url').value = '';
+                document.getElementById('sched-time').value = '';
+                
+                document.getElementById('sched-reddit').checked = false;
+                document.getElementById('sched-quora').checked = false;
+                document.getElementById('sched-linkedin').checked = false;
+                document.getElementById('sched-instagram').checked = false;
+                document.getElementById('sched-facebook').checked = false;
+                document.getElementById('sched-twitter').checked = false;
+
+                loadScheduledPosts();
+                alert(payload.scheduled_at ? "Post successfully scheduled!" : "Post created as a draft.");
+            })
+            .catch(err => {
+                console.error("Error creating post:", err);
+                alert("Error: " + JSON.stringify(err));
+            })
+            .finally(() => {
+                if (submitBtn) submitBtn.disabled = false;
+            });
+        }
+
+        function deleteScheduledPost(id) {
+            if (!confirm("Are you sure you want to delete this scheduled post?")) return;
+
+            fetch(`/api/posts/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(res => {
+                if (res.status === 204 || res.ok) {
+                    loadScheduledPosts();
+                } else {
+                    alert("Failed to delete post.");
+                }
+            })
+            .catch(err => console.error("Error deleting post:", err));
+        }
+
+        function publishPostImmediately(id) {
+            fetch(`/api/posts/${id}/publish/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                loadScheduledPosts();
+                if (data.status === 'published') {
+                    alert("Post published successfully to selected platforms!");
+                } else {
+                    alert("Post failed to publish: " + (data.error_message || "Unknown error"));
+                }
+            })
+            .catch(err => console.error("Error publishing post:", err));
+        }
+
 
         function generateContentIdeas(e) {
             if (e) e.preventDefault();
@@ -3608,6 +4106,7 @@
                 const enableSarcasm = document.getElementById("enableSarcasmDetection");
                 const sarcasmThresholdSlider = document.getElementById("sarcasmThresholdSlider");
                 const sarcasmThresholdValue = document.getElementById("sarcasmThresholdValue");
+                const liveModeToggle = document.getElementById("liveModeToggle");
 
                 if (thresholdSlider) {
                     thresholdSlider.value = data.toxicity_threshold;
@@ -3626,6 +4125,9 @@
                 }
                 if (sarcasmThresholdValue) {
                     sarcasmThresholdValue.innerText = data.sarcasm_threshold || 0.5;
+                }
+                if (liveModeToggle) {
+                    liveModeToggle.checked = data.live_mode !== false;
                 }
             })
             .catch(err => console.log("Settings load optional"));
@@ -3656,7 +4158,8 @@
                 toxicity_threshold: parseFloat(document.getElementById("thresholdSlider").value),
                 keywords: document.getElementById("keywordsInput").value,
                 enable_sarcasm_detection: document.getElementById("enableSarcasmDetection").checked,
-                sarcasm_threshold: parseFloat(document.getElementById("sarcasmThresholdSlider").value)
+                sarcasm_threshold: parseFloat(document.getElementById("sarcasmThresholdSlider").value),
+                live_mode: document.getElementById("liveModeToggle").checked
             };
 
             fetch(settingsUrl, {
@@ -3744,6 +4247,7 @@
         }
 
         function loadComments() {
+            if (!document.getElementById("comments")) return;
             fetch(commentsUrl)
                 .then(res => {
                     const contentType = res.headers.get("content-type");
@@ -3817,6 +4321,7 @@
         // Render Redesigned Comments List
         function renderComments() {
             const container = document.getElementById("comments");
+            if (!container) return;
             container.innerHTML = "";
 
             const searchQuery = (document.getElementById("searchInput") ? document.getElementById("searchInput").value.toLowerCase() : "");
@@ -4275,24 +4780,29 @@
                 })
                 .then(data => {
                     // Update last scan time
-                    document.getElementById("lastScanTime").innerText = data.last_scan_time || "Never";
+                    const lastScanTimeEl = document.getElementById("lastScanTime");
+                    if (lastScanTimeEl) {
+                        lastScanTimeEl.innerText = data.last_scan_time || "Never";
+                    }
 
                     // Check if there is a scanner error
                     const badge = document.getElementById("autoScanBadge");
-                    if (data.error) {
-                        badge.style.background = "rgba(185, 28, 28, 0.08)";
-                        badge.style.color = "#b91c1c";
-                        badge.style.borderColor = "rgba(185, 28, 28, 0.15)";
-                        badge.style.boxShadow = "0 2px 6px rgba(185, 28, 28, 0.03)";
-                        badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #b91c1c;"></span> ERROR`;
-                        badge.title = data.error;
-                    } else {
-                        badge.style.background = "rgba(3, 105, 161, 0.08)";
-                        badge.style.color = "#0369a1";
-                        badge.style.borderColor = "rgba(3, 105, 161, 0.15)";
-                        badge.style.boxShadow = "0 2px 6px rgba(3, 105, 161, 0.03)";
-                        badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0369a1;"></span> AUTO-SCAN ACTIVE`;
-                        badge.removeAttribute("title");
+                    if (badge) {
+                        if (data.error) {
+                            badge.style.background = "rgba(185, 28, 28, 0.08)";
+                            badge.style.color = "#b91c1c";
+                            badge.style.borderColor = "rgba(185, 28, 28, 0.15)";
+                            badge.style.boxShadow = "0 2px 6px rgba(185, 28, 28, 0.03)";
+                            badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #b91c1c;"></span> ERROR`;
+                            badge.title = data.error;
+                        } else {
+                            badge.style.background = "rgba(3, 105, 161, 0.08)";
+                            badge.style.color = "#0369a1";
+                            badge.style.borderColor = "rgba(3, 105, 161, 0.15)";
+                            badge.style.boxShadow = "0 2px 6px rgba(3, 105, 161, 0.03)";
+                            badge.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #0369a1;"></span> AUTO-SCAN ACTIVE`;
+                            badge.removeAttribute("title");
+                        }
                     }
 
                     // Update recent posts list

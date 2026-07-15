@@ -21,6 +21,9 @@ from .views import (
     ScanStatusAPI,
     GenerateContentIdeasAPIView,
     RecentInstagramMediaAPI,
+    ScheduledPostListCreateAPIView,
+    ScheduledPostRetrieveUpdateDestroyAPIView,
+    PublishScheduledPostImmediatelyAPIView,
 )
 from .polar_views import PolarCheckoutURL, PolarWebhookAPI
 
@@ -48,4 +51,7 @@ urlpatterns = [
     path("instagram/webhook/", InstagramWebhookView.as_view()),
     path("blog/", BlogPostListView.as_view()),
     path("generate-content-ideas/", GenerateContentIdeasAPIView.as_view()),
+    path("posts/", ScheduledPostListCreateAPIView.as_view()),
+    path("posts/<int:pk>/", ScheduledPostRetrieveUpdateDestroyAPIView.as_view()),
+    path("posts/<int:pk>/publish/", PublishScheduledPostImmediatelyAPIView.as_view()),
 ]

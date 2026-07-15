@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.cache import cache
 from django.db import close_old_connections
-from .models import InstagramAccount, Subscription, AutoReplyRule
+from .models import InstagramAccount, Subscription, AutoReplyRule, ModerationSetting
 from .instagram_service import InstagramService, InstagramTokenExpiredException
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,12 @@ def scan_account_posts(account):
     moderate new comments and auto-reply, then cache the status.
     """
     logger.info(f"Scanning posts for user {account.user.username}...")
+    
+    # Check if live mode is turned on
+    setting, _ = ModerationSetting.objects.get_or_create(user=account.user)
+    if not getattr(setting, "live_mode", True):
+        logger.info(f"Live mode is OFF for user {account.user.username}. Skipping comment fetching and auto-reply pipeline.")
+        return []
     
     # Check subscription limit first
     sub, _ = Subscription.objects.get_or_create(user=account.user, defaults={'tier': 'free'})
@@ -143,6 +149,14 @@ def background_loop():
         try:
             close_old_connections()
             scan_all_accounts()
+            close_old_connections()
+            
+            # Process scheduled posts
+            from django.core.management import call_command
+            try:
+                call_command("process_scheduled_posts")
+            except Exception as e:
+                logger.error(f"Error processing scheduled posts in background: {e}")
             close_old_connections()
         except Exception as e:
             logger.exception("Error in background loop execution")
