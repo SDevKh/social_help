@@ -3259,68 +3259,72 @@ class InstagramSendDirectMessageAPIView(APIView):
         """
         Send a direct message reply to an Instagram conversation participant
         """
-        conversation_id = request.data.get("conversation_id")
-        recipient_id = request.data.get("recipient_id")
-        message_text = (request.data.get("message") or request.data.get("text") or "").strip()
+        try:
+            conversation_id = request.data.get("conversation_id")
+            recipient_id = request.data.get("recipient_id")
+            message_text = (request.data.get("message") or request.data.get("text") or "").strip()
 
-        if not message_text:
-            return Response({"success": False, "error": "Message text cannot be empty."}, status=400)
+            if not message_text:
+                return Response({"success": False, "error": "Message text cannot be empty."}, status=400)
 
-        conversation = None
-        if conversation_id:
-            conversation = get_object_or_404(InstagramConversation, pk=conversation_id, user=request.user)
-            recipient_id = conversation.participant_id
-        
-        if not recipient_id:
-            return Response({"success": False, "error": "recipient_id or valid conversation_id required."}, status=400)
+            conversation = None
+            if conversation_id:
+                conversation = get_object_or_404(InstagramConversation, pk=conversation_id, user=request.user)
+                recipient_id = conversation.participant_id
+            
+            if not recipient_id:
+                return Response({"success": False, "error": "recipient_id or valid conversation_id required."}, status=400)
 
-        account = InstagramAccount.objects.filter(user=request.user).first()
-        if not account:
-            return Response({"success": False, "error": "No connected Instagram account found."}, status=400)
+            account = InstagramAccount.objects.filter(user=request.user).first()
+            if not account:
+                return Response({"success": False, "error": "No connected Instagram account found."}, status=400)
 
-        service = InstagramService(account=account)
-        res = service.send_direct_message(recipient_id=recipient_id, message_text=message_text)
+            service = InstagramService(account=account)
+            res = service.send_direct_message(recipient_id=recipient_id, message_text=message_text)
 
-        if not res.get("success"):
-            return Response({"success": False, "error": res.get("error", "Failed to send DM")}, status=400)
+            if not res.get("success"):
+                return Response({"success": False, "error": res.get("error", "Failed to send DM")}, status=400)
 
-        msg_mid = res.get("id") or f"mid_{int(timezone.now().timestamp() * 1000)}"
+            msg_mid = res.get("id") or f"mid_{int(timezone.now().timestamp() * 1000)}"
 
-        if not conversation:
-            conversation, _ = InstagramConversation.objects.get_or_create(
-                user=request.user,
-                account=account,
-                participant_id=recipient_id,
-                defaults={
-                    "conversation_id": f"conv_{account.id}_{recipient_id}",
-                    "last_message_text": message_text,
-                    "last_message_at": timezone.now(),
-                }
+            if not conversation:
+                conversation, _ = InstagramConversation.objects.get_or_create(
+                    user=request.user,
+                    account=account,
+                    participant_id=recipient_id,
+                    defaults={
+                        "conversation_id": f"conv_{account.id}_{recipient_id}",
+                        "last_message_text": message_text,
+                        "last_message_at": timezone.now(),
+                    }
+                )
+
+            # Record sent message
+            InstagramDirectMessage.objects.create(
+                conversation=conversation,
+                message_id=msg_mid,
+                sender_id=account.ig_business_id,
+                sender_username=service.get_instagram_username(),
+                is_from_business=True,
+                text=message_text,
+                timestamp=timezone.now(),
+                is_auto_reply=False,
             )
 
-        # Record sent message
-        InstagramDirectMessage.objects.create(
-            conversation=conversation,
-            message_id=msg_mid,
-            sender_id=account.ig_business_id,
-            sender_username=service.get_instagram_username(),
-            is_from_business=True,
-            text=message_text,
-            timestamp=timezone.now(),
-            is_auto_reply=False,
-        )
+            conversation.last_message_text = message_text
+            conversation.last_message_at = timezone.now()
+            conversation.save(update_fields=["last_message_text", "last_message_at"])
 
-        conversation.last_message_text = message_text
-        conversation.last_message_at = timezone.now()
-        conversation.save(update_fields=["last_message_text", "last_message_at"])
-
-        return Response({
-            "success": True,
-            "message": "Direct message sent successfully",
-            "message_id": msg_mid,
-            "text": message_text,
-            "timestamp": timezone.now().strftime("%b %d, %H:%M")
-        })
+            return Response({
+                "success": True,
+                "message": "Direct message sent successfully",
+                "message_id": msg_mid,
+                "text": message_text,
+                "timestamp": timezone.now().strftime("%b %d, %H:%M")
+            })
+        except Exception as e:
+            logger.error(f"Error sending Instagram DM: {e}", exc_info=True)
+            return Response({"success": False, "error": str(e)}, status=400)
 
 
 class InstagramSyncConversationsAPIView(APIView):
@@ -3330,71 +3334,75 @@ class InstagramSyncConversationsAPIView(APIView):
         """
         Sync conversations from Instagram Graph API into local database
         """
-        account = InstagramAccount.objects.filter(user=request.user).first()
-        if not account:
-            return Response({"success": False, "error": "No connected Instagram account."}, status=400)
+        try:
+            account = InstagramAccount.objects.filter(user=request.user).first()
+            if not account:
+                return Response({"success": False, "error": "No connected Instagram account."}, status=400)
 
-        service = InstagramService(account=account)
-        res = service.fetch_conversations(limit=25)
+            service = InstagramService(account=account)
+            res = service.fetch_conversations(limit=25)
 
-        if not res.get("success"):
-            return Response({"success": False, "error": res.get("error", "Failed to fetch conversations from Instagram")}, status=400)
+            if not res.get("success"):
+                return Response({"success": False, "error": res.get("error", "Failed to fetch conversations from Instagram")}, status=400)
 
-        raw_convs = res.get("conversations", [])
-        synced_count = 0
+            raw_convs = res.get("conversations", [])
+            synced_count = 0
 
-        for item in raw_convs:
-            c_id = item.get("id")
-            participants = item.get("participants", {}).get("data", [])
-            other_participant = None
-            for p in participants:
-                if str(p.get("id")) != str(account.ig_business_id):
-                    other_participant = p
-                    break
-            
-            if not other_participant and participants:
-                other_participant = participants[0]
+            for item in raw_convs:
+                c_id = item.get("id")
+                participants = item.get("participants", {}).get("data", [])
+                other_participant = None
+                for p in participants:
+                    if str(p.get("id")) != str(account.ig_business_id):
+                        other_participant = p
+                        break
+                
+                if not other_participant and participants:
+                    other_participant = participants[0]
 
-            if not other_participant:
-                continue
+                if not other_participant:
+                    continue
 
-            p_id = other_participant.get("id")
-            p_username = other_participant.get("username")
-            p_name = other_participant.get("name")
+                p_id = other_participant.get("id")
+                p_username = other_participant.get("username")
+                p_name = other_participant.get("name")
 
-            # Get recent message snippet
-            last_msg_snippet = ""
-            recent_msgs = item.get("messages", {}).get("data", [])
-            if recent_msgs:
-                last_msg_snippet = recent_msgs[0].get("message", "")
+                # Get recent message snippet
+                last_msg_snippet = ""
+                recent_msgs = item.get("messages", {}).get("data", [])
+                if recent_msgs:
+                    last_msg_snippet = recent_msgs[0].get("message", "")
 
-            conv, created = InstagramConversation.objects.get_or_create(
-                user=request.user,
-                account=account,
-                participant_id=p_id,
-                defaults={
-                    "conversation_id": c_id or f"conv_{account.id}_{p_id}",
-                    "participant_username": p_username,
-                    "participant_name": p_name,
-                    "last_message_text": last_msg_snippet,
-                    "last_message_at": timezone.now(),
-                }
-            )
+                conv, created = InstagramConversation.objects.get_or_create(
+                    user=request.user,
+                    account=account,
+                    participant_id=p_id,
+                    defaults={
+                        "conversation_id": c_id or f"conv_{account.id}_{p_id}",
+                        "participant_username": p_username,
+                        "participant_name": p_name,
+                        "last_message_text": last_msg_snippet,
+                        "last_message_at": timezone.now(),
+                    }
+                )
 
-            if p_username and not conv.participant_username:
-                conv.participant_username = p_username
-            if p_name and not conv.participant_name:
-                conv.participant_name = p_name
-            if last_msg_snippet:
-                conv.last_message_text = last_msg_snippet
-            conv.save()
-            synced_count += 1
+                if p_username and not conv.participant_username:
+                    conv.participant_username = p_username
+                if p_name and not conv.participant_name:
+                    conv.participant_name = p_name
+                if last_msg_snippet:
+                    conv.last_message_text = last_msg_snippet
+                conv.save()
+                synced_count += 1
 
-        return Response({
-            "success": True,
-            "message": f"Successfully synced {synced_count} Instagram conversations",
-            "count": synced_count
-        })
+            return Response({
+                "success": True,
+                "message": f"Successfully synced {synced_count} Instagram conversations",
+                "count": synced_count
+            })
+        except Exception as e:
+            logger.error(f"Error syncing Instagram conversations: {e}", exc_info=True)
+            return Response({"success": False, "error": str(e)}, status=400)
 
 
 # ==============================================================================
