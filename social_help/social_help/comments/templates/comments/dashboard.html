@@ -4211,18 +4211,28 @@
         }
 
         function handleRouting() {
-            if (window.location.hash === '#inbox') {
+            const hash = (window.location.hash || '').toLowerCase();
+            if (hash === '#inbox') {
                 switchView(null, 'inbox');
-            } else if (window.location.hash === '#autoreply') {
+            } else if (hash === '#autoreply') {
                 switchView(null, 'autoreply');
-            } else if (window.location.hash === '#ai') {
+            } else if (hash === '#ai') {
                 switchView(null, 'ai');
-            } else if (window.location.hash === '#scheduler') {
+            } else if (hash === '#scheduler') {
                 switchView(null, 'scheduler');
             } else {
                 switchView(null, 'dashboard');
             }
         }
+
+        // Run immediately and on all lifecycle events
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', handleRouting);
+        } else {
+            handleRouting();
+        }
+        window.addEventListener('load', handleRouting);
+        window.addEventListener('hashchange', handleRouting);
 
         // =====================================================================
         // LIVE INSTAGRAM DM INBOX JAVASCRIPT
