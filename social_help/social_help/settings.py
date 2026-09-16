@@ -227,6 +227,8 @@ LINKEDIN_ACCESS_TOKEN = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
 LINKEDIN_AUTHOR_ID = os.getenv("LINKEDIN_AUTHOR_ID", "")
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID", "")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET", "")
+LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI", "")
+LINKEDIN_SCOPES = os.getenv("LINKEDIN_SCOPES", "openid profile w_member_social w_organization_social r_organization_admin email")
 
 # Reddit Settings
 REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID", "")

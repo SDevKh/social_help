@@ -1,7 +1,9 @@
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
-from social_help.comments.models import Subscription, InstagramAccount, Comment, AutoReplyRule, ScheduledPost, ModerationSetting
+from social_help.comments.models import Subscription, InstagramAccount, Comment, AutoReplyRule, ScheduledPost, ModerationSetting, InstagramConversation, InstagramDirectMessage
+from social_help.comments.instagram_service import InstagramService
 from unittest.mock import Mock, patch
+from unittest import mock
 import base64
 import json
 
@@ -1146,3 +1148,178 @@ class SocialMediaPublishingAPITests(TestCase):
             called_args, called_kwargs = mock_post.call_args
             self.assertEqual(called_kwargs["headers"]["Authorization"], "bearer new_refreshed_token")
             self.assertEqual(called_kwargs["data"]["sr"], "custom_subreddit")
+
+
+class InstagramDirectMessagingTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="dm_user", password="password123")
+        self.client.login(username="dm_user", password="password123")
+        Subscription.objects.get_or_create(user=self.user, tier="pro", is_active=True)
+        self.account = InstagramAccount.objects.create(
+            user=self.user,
+            ig_business_id="17841400000000000",
+            page_id="100000000000000",
+            page_access_token="EAABtest_token",
+            auth_method="facebook_oauth"
+        )
+
+    @mock.patch('requests.post')
+    def test_send_direct_message_service_success(self, mock_post):
+        mock_res = mock.Mock()
+        mock_res.json.return_value = {"message_id": "mid.123456789"}
+        mock_post.return_value = mock_res
+
+        service = InstagramService(account=self.account)
+        res = service.send_direct_message(recipient_id="987654321", message_text="Hello from SocialFuse!")
+
+        self.assertTrue(res["success"])
+        self.assertEqual(res["id"], "mid.123456789")
+
+    @mock.patch.object(InstagramService, 'send_direct_message')
+    def test_webhook_dm_triggers_auto_reply(self, mock_send_dm):
+        mock_send_dm.return_value = {"success": True, "id": "mid.auto_resp_123"}
+
+        # Create auto-reply rule for DM keywords
+        rule = AutoReplyRule.objects.create(
+            user=self.user,
+            trigger_keyword="VIP",
+            reply_text="Here is your VIP access link: https://socialfuse.ai/vip",
+            trigger_type="dm",
+            match_type="contains",
+            is_active=True
+        )
+
+        webhook_payload = {
+            "object": "instagram",
+            "entry": [
+                {
+                    "id": "17841400000000000",
+                    "time": 1718000000,
+                    "messaging": [
+                        {
+                            "sender": {"id": "lead_user_999"},
+                            "recipient": {"id": "17841400000000000"},
+                            "timestamp": 1718000000000,
+                            "message": {
+                                "mid": "m_lead_msg_001",
+                                "text": "I would love VIP access please!",
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        response = self.client.post(
+            "/api/instagram/webhook/",
+            data=json.dumps(webhook_payload),
+            content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        # Check that conversation was created
+        conv = InstagramConversation.objects.filter(user=self.user, participant_id="lead_user_999").first()
+        self.assertIsNotNone(conv)
+        self.assertEqual(conv.last_message_text, "Here is your VIP access link: https://socialfuse.ai/vip")
+
+        # Check that direct messages (incoming and auto-reply) were saved
+        incoming_msg = InstagramDirectMessage.objects.filter(conversation=conv, message_id="m_lead_msg_001").first()
+        self.assertIsNotNone(incoming_msg)
+        self.assertFalse(incoming_msg.is_from_business)
+
+        auto_msg = InstagramDirectMessage.objects.filter(conversation=conv, is_auto_reply=True).first()
+        self.assertIsNotNone(auto_msg)
+        self.assertTrue(auto_msg.is_from_business)
+
+        # Check rule metric was incremented
+        rule.refresh_from_db()
+        self.assertEqual(rule.times_triggered, 1)
+
+    @mock.patch.object(InstagramService, 'send_direct_message')
+    def test_inbox_send_dm_api(self, mock_send_dm):
+        mock_send_dm.return_value = {"success": True, "id": "mid.api_sent_456"}
+
+        conv = InstagramConversation.objects.create(
+            user=self.user,
+            account=self.account,
+            conversation_id="conv_test_1",
+            participant_id="customer_101",
+            participant_username="customer_user"
+        )
+
+        response = self.client.post(
+            "/api/instagram/messages/send/",
+            data=json.dumps({
+                "conversation_id": conv.id,
+                "message": "Thanks for reaching out! How can we assist you?"
+            }),
+            content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        # Verify conversation updated
+        conv.refresh_from_db()
+        self.assertEqual(conv.last_message_text, "Thanks for reaching out! How can we assist you?")
+
+    def test_conversations_list_and_messages_api(self):
+        conv = InstagramConversation.objects.create(
+            user=self.user,
+            account=self.account,
+            conversation_id="conv_list_test",
+            participant_id="user_888",
+            participant_username="alex_test",
+            last_message_text="Hello SocialFuse",
+            unread_count=2
+        )
+
+        InstagramDirectMessage.objects.create(
+            conversation=conv,
+            message_id="msg_01",
+            sender_id="user_888",
+            text="Hello SocialFuse"
+        )
+
+        # 1. Test listing conversations
+        list_res = self.client.get("/api/instagram/conversations/")
+        self.assertEqual(list_res.status_code, 200)
+        data = list_res.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(len(data["conversations"]), 1)
+        self.assertEqual(data["conversations"][0]["participant_username"], "alex_test")
+
+        # 2. Test reading messages (should mark unread_count as 0)
+        msg_res = self.client.get(f"/api/instagram/conversations/{conv.id}/messages/")
+        self.assertEqual(msg_res.status_code, 200)
+        msg_data = msg_res.json()
+        self.assertTrue(msg_data["success"])
+        self.assertEqual(len(msg_data["messages"]), 1)
+        self.assertEqual(msg_data["messages"][0]["text"], "Hello SocialFuse")
+
+        conv.refresh_from_db()
+        self.assertEqual(conv.unread_count, 0)
+
+    def test_auto_reply_rule_toggle_api(self):
+        rule = AutoReplyRule.objects.create(
+            user=self.user,
+            trigger_keyword="SALE",
+            reply_text="Use code 50OFF at checkout",
+            trigger_type="both",
+            is_active=True
+        )
+
+        # Toggle rule
+        toggle_res = self.client.post(
+            f"/api/instagram/auto-reply-rules/{rule.id}/",
+            data=json.dumps({"action": "toggle"}),
+            content_type="application/json"
+        )
+        self.assertEqual(toggle_res.status_code, 200)
+        self.assertFalse(toggle_res.json()["is_active"])
+
+        rule.refresh_from_db()
+        self.assertFalse(rule.is_active)
+

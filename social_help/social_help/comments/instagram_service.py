@@ -3,6 +3,7 @@ import random
 import requests
 from django.conf import settings
 from django.core.cache import cache
+from django.utils import timezone
 from .models import Comment, ModerationSetting, AutoReplyRule
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -865,6 +866,131 @@ class InstagramService:
             print(f"[ERROR] Send DM reply request failed: {e}")
             return {"success": False, "error": str(e)}
 
+    def send_direct_message(self, recipient_id, message_text):
+        """
+        Send a direct message (DM) to an Instagram user using their IGSID.
+        POST https://graph.facebook.com/v20.0/{ig_business_id}/messages
+        """
+        if not recipient_id or not message_text:
+            return {"success": False, "error": "recipient_id and message_text are required"}
+
+        if not self.ig_business_id or not self.page_token:
+            return {"success": False, "error": "Instagram Account ID or Page Access Token is missing."}
+
+        url = f"https://graph.facebook.com/v20.0/{self.ig_business_id}/messages"
+        headers = {"Content-Type": "application/json"}
+        params = {"access_token": self.page_token}
+        payload = {
+            "recipient": {
+                "id": str(recipient_id)
+            },
+            "message": {
+                "text": message_text
+            }
+        }
+        try:
+            res = requests.post(url, params=params, json=payload, headers=headers, timeout=12)
+            data = res.json()
+            if "error" in data:
+                err_msg = data["error"].get("message", "Unknown Meta API error")
+                print(f"[ERROR] Failed to send Instagram DM to {recipient_id}: {err_msg}")
+                return {"success": False, "error": err_msg, "code": data["error"].get("code")}
+            print(f"[INFO] Successfully sent Instagram DM to {recipient_id}, message_id: {data.get('message_id')}")
+            return {"success": True, "id": data.get("message_id") or data.get("id")}
+        except Exception as e:
+            print(f"[ERROR] Send DM request failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    def fetch_conversations(self, limit=25):
+        """
+        Fetch Instagram Direct Message conversations.
+        GET /{ig_business_id}/conversations?platform=instagram&fields=id,updated_time,participants,messages{id,created_time,from,to,message}
+        """
+        if not self.ig_business_id or not self.page_token:
+            return {"success": False, "conversations": [], "error": "Instagram Account ID or Access Token is missing."}
+
+        endpoint = f"{self.ig_business_id}/conversations"
+        params = {
+            "platform": "instagram",
+            "fields": "id,updated_time,participants,messages.limit(1){id,created_time,from,to,message}",
+            "limit": limit
+        }
+        data = self.api_get(endpoint, params)
+        if not data or "data" not in data:
+            return {"success": False, "conversations": [], "error": "No conversations found or API error."}
+        
+        return {"success": True, "conversations": data.get("data", [])}
+
+    def fetch_conversation_messages(self, conversation_id, limit=50):
+        """
+        Fetch message history for a specific conversation.
+        GET /{conversation_id}/messages?fields=id,created_time,from,to,message,attachments
+        """
+        if not conversation_id or not self.page_token:
+            return {"success": False, "messages": [], "error": "conversation_id or Access Token is missing."}
+
+        endpoint = f"{conversation_id}/messages"
+        params = {
+            "fields": "id,created_time,from,to,message,attachments",
+            "limit": limit
+        }
+        data = self.api_get(endpoint, params)
+        if not data or "data" not in data:
+            return {"success": False, "messages": [], "error": "No messages found or API error."}
+        
+        return {"success": True, "messages": data.get("data", [])}
+
+    def fetch_user_profile(self, user_id):
+        """
+        Fetch public profile info for an Instagram user (IGSID).
+        GET /{user_id}?fields=id,name,username,profile_pic
+        """
+        if not user_id or not self.page_token:
+            return None
+        
+        cache_key = f"ig_user_profile_{user_id}"
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+
+        try:
+            endpoint = f"{user_id}"
+            params = {"fields": "id,name,username,profile_pic"}
+            data = self.api_get(endpoint, params)
+            if data and not data.get("error"):
+                cache.set(cache_key, data, timeout=3600 * 6)
+                return data
+        except Exception:
+            pass
+        return None
+
+    def verify_permissions(self):
+        """
+        Inspect the current Access Token to get granted scopes/permissions.
+        """
+        if not self.page_token:
+            return {"success": False, "error": "No access token configured."}
+
+        url = "https://graph.facebook.com/v20.0/me/permissions"
+        params = {"access_token": self.page_token}
+        try:
+            res = requests.get(url, params=params, timeout=10)
+            data = res.json()
+            if "data" in data:
+                granted = [p.get("permission") for p in data["data"] if p.get("status") == "granted"]
+                declined = [p.get("permission") for p in data["data"] if p.get("status") != "granted"]
+                return {
+                    "success": True,
+                    "granted_permissions": granted,
+                    "declined_permissions": declined,
+                    "has_messages": any(p in granted for p in ["instagram_business_manage_messages", "instagram_manage_messages"]),
+                    "has_pages": "pages_show_list" in granted,
+                    "has_engagement": "pages_read_engagement" in granted,
+                }
+            return {"success": False, "error": data.get("error", {}).get("message", "Could not check permissions")}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def get_instagram_username(self):
         if not hasattr(self, "_instagram_username"):
             self._instagram_username = None
@@ -874,11 +1000,14 @@ class InstagramService:
                 if cached:
                     self._instagram_username = cached
                 else:
-                    data = self.api_get(f"{self.ig_business_id}", {"fields": "username"})
-                    if data and "username" in data:
-                        username = data["username"]
-                        self._instagram_username = username
-                        cache.set(cache_key, username, timeout=86400)
+                    try:
+                        data = self.api_get(f"{self.ig_business_id}", {"fields": "username"})
+                        if data and "username" in data:
+                            username = data["username"]
+                            self._instagram_username = username
+                            cache.set(cache_key, username, timeout=86400)
+                    except Exception:
+                        pass
         return self._instagram_username
 
     def scan_instagram_comments(self, post_url, user=None, prefetched_comments=None):
@@ -920,6 +1049,11 @@ class InstagramService:
                 current_media_id = current_shortcode if current_shortcode.isdigit() else self.get_media_id(current_shortcode)
 
                 for rule in auto_reply_rules:
+                    if not getattr(rule, "is_active", True):
+                        continue
+                    if getattr(rule, "trigger_type", "comment") not in ("comment", "both"):
+                        continue
+
                     rule_post_id = getattr(rule, "instagram_post_id", None)
                     if rule_post_id and rule_post_id.strip():
                         target_post = rule_post_id.strip()
@@ -929,7 +1063,14 @@ class InstagramService:
                             continue
 
                     trigger = rule.trigger_keyword.strip().lower()
-                    if trigger and (re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower):
+                    match_type = getattr(rule, "match_type", "contains")
+                    is_match = False
+                    if match_type == "exact":
+                        is_match = (comment_text_lower.strip() == trigger)
+                    else:
+                        is_match = bool(re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower)
+
+                    if trigger and is_match:
                         rule_type = getattr(rule, "reply_type", "public")
                         if rule_type == "dm":
                             reply_res = self.send_private_reply(comment["id"], rule.reply_text)
@@ -939,6 +1080,9 @@ class InstagramService:
                             replied = True
                             reply_id = reply_res.get("id")
                             reply_type_sent = rule_type
+                            rule.times_triggered = getattr(rule, "times_triggered", 0) + 1
+                            rule.last_triggered_at = timezone.now()
+                            rule.save(update_fields=["times_triggered", "last_triggered_at"])
                             break
 
             results.append({

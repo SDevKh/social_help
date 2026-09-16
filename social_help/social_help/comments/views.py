@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from .serializers import CommentSerializer, BlogPostSerializer, ScheduledPostSerializer
-from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost, ScheduledPost, LinkedInAccount, RedditAccount
+from .models import Comment, ModerationSetting, InstagramAccount, Subscription, AutoReplyRule, BlogPost, ScheduledPost, LinkedInAccount, RedditAccount, InstagramConversation, InstagramDirectMessage
 from .instagram_service import InstagramService, InstagramTokenExpiredException
 from .forms import SignUpForm
 
@@ -418,9 +418,9 @@ def facebook_oauth_login(request):
         "pages_show_list",
         "pages_read_engagement",
         "instagram_basic",
-        "instagram_manage_comments",
         "instagram_manage_messages",
         "business_management",
+        "public_profile",
     ])
 
     oauth_url = (
@@ -592,7 +592,7 @@ def instagram_oauth_login(request):
     state = secrets.token_urlsafe(16)
     request.session["instagram_oauth_state"] = state
 
-    scope = "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages"
+    scope = "instagram_business_basic,instagram_business_manage_messages"
 
     oauth_url = (
         "https://api.instagram.com/oauth/authorize"
@@ -715,12 +715,14 @@ def instagram_oauth_callback(request):
 
 def get_linkedin_redirect_uri(request):
     """
-    Get the LinkedIn OAuth redirect URI dynamically based on the current host.
+    Get the LinkedIn OAuth redirect URI dynamically based on the current host,
+    or use the configured LINKEDIN_REDIRECT_URI if set in settings.
     """
+    configured_uri = getattr(settings, "LINKEDIN_REDIRECT_URI", "").strip()
+    if configured_uri:
+        return configured_uri
     host = request.get_host()
     scheme = "https" if request.is_secure() or request.headers.get("X-Forwarded-Proto") == "https" else "http"
-    if not host:
-        return getattr(settings, "LINKEDIN_REDIRECT_URI", "").strip()
     return f"{scheme}://{host}/linkedin/callback/"
 
 
@@ -741,7 +743,7 @@ def linkedin_oauth_login(request):
     state = secrets.token_urlsafe(16)
     request.session["linkedin_oauth_state"] = state
 
-    scope = "openid profile w_member_social w_organization_social r_organization_admin email"
+    scope = getattr(settings, "LINKEDIN_SCOPES", "openid profile w_member_social w_organization_social r_organization_admin email").strip()
 
     oauth_url = (
         "https://www.linkedin.com/oauth/v2/authorization"
@@ -760,6 +762,14 @@ def linkedin_oauth_callback(request):
     """
     OAuth callback – exchanges code for access token, fetches profile details, and links LinkedIn account
     """
+    error_param = request.GET.get("error")
+    error_desc = request.GET.get("error_description")
+    if error_param:
+        return render(request, "comments/connect_error.html", {
+            "error": f"LinkedIn OAuth Error: {error_param} - {error_desc}",
+            "platform": "linkedin"
+        })
+
     code = request.GET.get("code")
     state = request.GET.get("state")
     saved_state = request.session.get("linkedin_oauth_state")
@@ -2277,7 +2287,7 @@ class InstagramWebhookView(APIView):
 
     def post(self, request):
         """
-        Receive real-time comment events from Instagram
+        Receive real-time comment and direct messaging events from Instagram
         """
         try:
             payload = json.loads(request.body.decode('utf-8'))
@@ -2289,11 +2299,114 @@ class InstagramWebhookView(APIView):
                 # Find connected account
                 account = InstagramAccount.objects.filter(ig_business_id=ig_business_id).first()
                 if not account:
+                    logger.info("No connected account for IG Business ID: %s", ig_business_id)
                     continue
                 
                 user = account.user
                 service = InstagramService(account=account)
+
+                # ==========================================
+                # A. Handle Direct Messaging Events (DMs)
+                # ==========================================
+                for messaging_event in entry.get("messaging", []):
+                    sender = messaging_event.get("sender", {})
+                    recipient = messaging_event.get("recipient", {})
+                    sender_id = sender.get("id")
+                    recipient_id = recipient.get("id")
+                    message_data = messaging_event.get("message", {})
+                    message_id = message_data.get("mid")
+                    message_text = message_data.get("text", "")
+                    is_echo = message_data.get("is_echo", False)
+                    timestamp_ms = messaging_event.get("timestamp")
+                    
+                    if not message_id or not sender_id:
+                        continue
+
+                    # Determine other party's IGSID
+                    other_party_id = recipient_id if is_echo else sender_id
+                    
+                    # Get or create conversation record
+                    conversation, _ = InstagramConversation.objects.get_or_create(
+                        user=user,
+                        account=account,
+                        participant_id=other_party_id,
+                        defaults={
+                            "conversation_id": f"conv_{account.id}_{other_party_id}",
+                            "last_message_text": message_text,
+                            "last_message_at": timezone.now(),
+                        }
+                    )
+                    
+                    # Fetch participant profile info if missing
+                    if not conversation.participant_username:
+                        profile_info = service.fetch_user_profile(other_party_id)
+                        if profile_info:
+                            conversation.participant_username = profile_info.get("username", "")
+                            conversation.participant_name = profile_info.get("name", "")
+                            conversation.participant_profile_pic = profile_info.get("profile_pic", "")
+
+                    conversation.last_message_text = message_text
+                    conversation.last_message_at = timezone.now()
+                    if not is_echo:
+                        conversation.unread_count = getattr(conversation, "unread_count", 0) + 1
+                    conversation.save()
+
+                    # Save direct message record
+                    InstagramDirectMessage.objects.get_or_create(
+                        conversation=conversation,
+                        message_id=message_id,
+                        defaults={
+                            "sender_id": sender_id,
+                            "sender_username": conversation.participant_username if not is_echo else service.get_instagram_username(),
+                            "is_from_business": is_echo,
+                            "text": message_text,
+                            "timestamp": timezone.now(),
+                            "is_auto_reply": False,
+                        }
+                    )
+
+                    # Trigger DM automations if message is incoming from customer/lead
+                    if not is_echo and message_text:
+                        msg_lower = message_text.lower().strip()
+                        auto_reply_rules = list(AutoReplyRule.objects.filter(user=user, is_active=True))
+                        for rule in auto_reply_rules:
+                            if getattr(rule, "trigger_type", "comment") not in ("dm", "both"):
+                                continue
+
+                            trigger = rule.trigger_keyword.strip().lower()
+                            match_type = getattr(rule, "match_type", "contains")
+                            is_match = False
+                            if match_type == "exact":
+                                is_match = (msg_lower == trigger)
+                            else:
+                                is_match = bool(re.search(rf"\b{re.escape(trigger)}\b", msg_lower) or trigger in msg_lower)
+
+                            if trigger and is_match:
+                                reply_res = service.send_direct_message(sender_id, rule.reply_text)
+                                if reply_res.get("success"):
+                                    rule.times_triggered = getattr(rule, "times_triggered", 0) + 1
+                                    rule.last_triggered_at = timezone.now()
+                                    rule.save(update_fields=["times_triggered", "last_triggered_at"])
+
+                                    auto_msg_id = reply_res.get("id") or f"auto_{int(timezone.now().timestamp() * 1000)}"
+                                    InstagramDirectMessage.objects.create(
+                                        conversation=conversation,
+                                        message_id=auto_msg_id,
+                                        sender_id=ig_business_id,
+                                        sender_username=service.get_instagram_username(),
+                                        is_from_business=True,
+                                        text=rule.reply_text,
+                                        timestamp=timezone.now(),
+                                        is_auto_reply=True,
+                                    )
+                                    conversation.last_message_text = rule.reply_text
+                                    conversation.last_message_at = timezone.now()
+                                    conversation.save(update_fields=["last_message_text", "last_message_at"])
+                                    break
                 
+                # ==========================================
+                # B. Handle Instagram Comment Events
+                # ==========================================
                 for change in entry.get("changes", []):
                     if change.get("field") == "comments":
                         value = change.get("value", {})
@@ -2318,11 +2431,14 @@ class InstagramWebhookView(APIView):
                         reply_id = None
                         reply_type_sent = None
 
-                        auto_reply_rules = list(AutoReplyRule.objects.filter(user=user))
+                        auto_reply_rules = list(AutoReplyRule.objects.filter(user=user, is_active=True))
                         if auto_reply_rules and analysis["decision"] != "delete":
                             comment_text_lower = comment_text.lower()
                             media_id = value.get("media", {}).get("id")
                             for rule in auto_reply_rules:
+                                if getattr(rule, "trigger_type", "comment") not in ("comment", "both"):
+                                    continue
+
                                 rule_post_id = getattr(rule, "instagram_post_id", None)
                                 if rule_post_id and rule_post_id.strip() and media_id:
                                     target_post = rule_post_id.strip()
@@ -2332,7 +2448,14 @@ class InstagramWebhookView(APIView):
                                         continue
 
                                 trigger = rule.trigger_keyword.strip().lower()
-                                if trigger and (re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower):
+                                match_type = getattr(rule, "match_type", "contains")
+                                is_match = False
+                                if match_type == "exact":
+                                    is_match = (comment_text_lower.strip() == trigger)
+                                else:
+                                    is_match = bool(re.search(rf"\b{re.escape(trigger)}\b", comment_text_lower) or trigger in comment_text_lower)
+
+                                if trigger and is_match:
                                     rule_type = getattr(rule, "reply_type", "public")
                                     if rule_type == "dm":
                                         reply_res = service.send_private_reply(comment_id, rule.reply_text)
@@ -2343,6 +2466,9 @@ class InstagramWebhookView(APIView):
                                         replied = True
                                         reply_id = reply_res.get("id")
                                         reply_type_sent = rule_type
+                                        rule.times_triggered = getattr(rule, "times_triggered", 0) + 1
+                                        rule.last_triggered_at = timezone.now()
+                                        rule.save(update_fields=["times_triggered", "last_triggered_at"])
                                         break
 
                         # 3. Save comment to local database
@@ -3053,5 +3179,392 @@ class PublishScheduledPostImmediatelyAPIView(APIView):
         simulate_publish_post(post)
         serializer = ScheduledPostSerializer(post)
         return Response(serializer.data)
+
+
+# ==============================================================================
+# INSTAGRAM DIRECT MESSAGING (DM) & LIVE INBOX APIS
+# ==============================================================================
+
+class InstagramConversationsListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        List all Instagram DM conversations for the authenticated user
+        """
+        conversations = InstagramConversation.objects.filter(user=request.user).order_by("-last_message_at", "-updated_at")
+        data = []
+        for conv in conversations:
+            data.append({
+                "id": conv.id,
+                "conversation_id": conv.conversation_id,
+                "participant_id": conv.participant_id,
+                "participant_username": conv.participant_username or f"User_{conv.participant_id[-5:]}",
+                "participant_name": conv.participant_name or "",
+                "participant_profile_pic": conv.participant_profile_pic or "",
+                "last_message_text": conv.last_message_text or "",
+                "last_message_at": conv.last_message_at.strftime("%b %d, %H:%M") if conv.last_message_at else "",
+                "unread_count": conv.unread_count,
+            })
+        return Response({"success": True, "conversations": data})
+
+
+class InstagramConversationMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        """
+        Get message history for a specific conversation
+        """
+        conv = get_object_or_404(InstagramConversation, pk=pk, user=request.user)
+        
+        # Mark as read
+        if conv.unread_count > 0:
+            conv.unread_count = 0
+            conv.save(update_fields=["unread_count"])
+
+        messages = conv.messages.all().order_by("created_at")
+        data = []
+        for msg in messages:
+            data.append({
+                "id": msg.id,
+                "message_id": msg.message_id,
+                "sender_id": msg.sender_id,
+                "sender_username": msg.sender_username,
+                "is_from_business": msg.is_from_business,
+                "is_auto_reply": msg.is_auto_reply,
+                "text": msg.text or "",
+                "media_url": msg.media_url or "",
+                "media_type": msg.media_type or "",
+                "timestamp": msg.timestamp.strftime("%b %d, %H:%M") if msg.timestamp else (msg.created_at.strftime("%b %d, %H:%M") if msg.created_at else ""),
+            })
+        
+        return Response({
+            "success": True,
+            "conversation": {
+                "id": conv.id,
+                "participant_id": conv.participant_id,
+                "participant_username": conv.participant_username or f"User_{conv.participant_id[-5:]}",
+                "participant_name": conv.participant_name or "",
+                "participant_profile_pic": conv.participant_profile_pic or "",
+            },
+            "messages": data
+        })
+
+
+class InstagramSendDirectMessageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """
+        Send a direct message reply to an Instagram conversation participant
+        """
+        conversation_id = request.data.get("conversation_id")
+        recipient_id = request.data.get("recipient_id")
+        message_text = (request.data.get("message") or request.data.get("text") or "").strip()
+
+        if not message_text:
+            return Response({"success": False, "error": "Message text cannot be empty."}, status=400)
+
+        conversation = None
+        if conversation_id:
+            conversation = get_object_or_404(InstagramConversation, pk=conversation_id, user=request.user)
+            recipient_id = conversation.participant_id
+        
+        if not recipient_id:
+            return Response({"success": False, "error": "recipient_id or valid conversation_id required."}, status=400)
+
+        account = InstagramAccount.objects.filter(user=request.user).first()
+        if not account:
+            return Response({"success": False, "error": "No connected Instagram account found."}, status=400)
+
+        service = InstagramService(account=account)
+        res = service.send_direct_message(recipient_id=recipient_id, message_text=message_text)
+
+        if not res.get("success"):
+            return Response({"success": False, "error": res.get("error", "Failed to send DM")}, status=400)
+
+        msg_mid = res.get("id") or f"mid_{int(timezone.now().timestamp() * 1000)}"
+
+        if not conversation:
+            conversation, _ = InstagramConversation.objects.get_or_create(
+                user=request.user,
+                account=account,
+                participant_id=recipient_id,
+                defaults={
+                    "conversation_id": f"conv_{account.id}_{recipient_id}",
+                    "last_message_text": message_text,
+                    "last_message_at": timezone.now(),
+                }
+            )
+
+        # Record sent message
+        InstagramDirectMessage.objects.create(
+            conversation=conversation,
+            message_id=msg_mid,
+            sender_id=account.ig_business_id,
+            sender_username=service.get_instagram_username(),
+            is_from_business=True,
+            text=message_text,
+            timestamp=timezone.now(),
+            is_auto_reply=False,
+        )
+
+        conversation.last_message_text = message_text
+        conversation.last_message_at = timezone.now()
+        conversation.save(update_fields=["last_message_text", "last_message_at"])
+
+        return Response({
+            "success": True,
+            "message": "Direct message sent successfully",
+            "message_id": msg_mid,
+            "text": message_text,
+            "timestamp": timezone.now().strftime("%b %d, %H:%M")
+        })
+
+
+class InstagramSyncConversationsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """
+        Sync conversations from Instagram Graph API into local database
+        """
+        account = InstagramAccount.objects.filter(user=request.user).first()
+        if not account:
+            return Response({"success": False, "error": "No connected Instagram account."}, status=400)
+
+        service = InstagramService(account=account)
+        res = service.fetch_conversations(limit=25)
+
+        if not res.get("success"):
+            return Response({"success": False, "error": res.get("error", "Failed to fetch conversations from Instagram")}, status=400)
+
+        raw_convs = res.get("conversations", [])
+        synced_count = 0
+
+        for item in raw_convs:
+            c_id = item.get("id")
+            participants = item.get("participants", {}).get("data", [])
+            other_participant = None
+            for p in participants:
+                if str(p.get("id")) != str(account.ig_business_id):
+                    other_participant = p
+                    break
+            
+            if not other_participant and participants:
+                other_participant = participants[0]
+
+            if not other_participant:
+                continue
+
+            p_id = other_participant.get("id")
+            p_username = other_participant.get("username")
+            p_name = other_participant.get("name")
+
+            # Get recent message snippet
+            last_msg_snippet = ""
+            recent_msgs = item.get("messages", {}).get("data", [])
+            if recent_msgs:
+                last_msg_snippet = recent_msgs[0].get("message", "")
+
+            conv, created = InstagramConversation.objects.get_or_create(
+                user=request.user,
+                account=account,
+                participant_id=p_id,
+                defaults={
+                    "conversation_id": c_id or f"conv_{account.id}_{p_id}",
+                    "participant_username": p_username,
+                    "participant_name": p_name,
+                    "last_message_text": last_msg_snippet,
+                    "last_message_at": timezone.now(),
+                }
+            )
+
+            if p_username and not conv.participant_username:
+                conv.participant_username = p_username
+            if p_name and not conv.participant_name:
+                conv.participant_name = p_name
+            if last_msg_snippet:
+                conv.last_message_text = last_msg_snippet
+            conv.save()
+            synced_count += 1
+
+        return Response({
+            "success": True,
+            "message": f"Successfully synced {synced_count} Instagram conversations",
+            "count": synced_count
+        })
+
+
+# ==============================================================================
+# AUTO REPLY & DM AUTOMATION RULES APIS
+# ==============================================================================
+
+class AutoReplyRuleListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rules = AutoReplyRule.objects.filter(user=request.user).order_by("-created_at")
+        data = []
+        for r in rules:
+            data.append({
+                "id": r.id,
+                "trigger_keyword": r.trigger_keyword,
+                "reply_text": r.reply_text,
+                "reply_type": r.reply_type,
+                "trigger_type": getattr(r, "trigger_type", "comment"),
+                "match_type": getattr(r, "match_type", "contains"),
+                "instagram_post_id": r.instagram_post_id or "",
+                "is_active": getattr(r, "is_active", True),
+                "times_triggered": getattr(r, "times_triggered", 0),
+                "last_triggered_at": r.last_triggered_at.strftime("%b %d, %H:%M") if r.last_triggered_at else "Never",
+                "created_at": r.created_at.strftime("%b %d, %Y"),
+            })
+        return Response({"success": True, "rules": data})
+
+    def post(self, request):
+        trigger_keyword = (request.data.get("trigger_keyword") or "").strip()
+        reply_type = request.data.get("reply_type") or "public"
+        trigger_type = request.data.get("trigger_type") or "comment"
+        match_type = request.data.get("match_type") or "contains"
+        entries = request.data.get("entries")
+
+        if not trigger_keyword:
+            return Response({"success": False, "error": "trigger_keyword is required."}, status=400)
+
+        # 1. Batch creation with entries array
+        if entries and isinstance(entries, list):
+            created_rules = []
+            for entry in entries:
+                post_id = (entry.get("instagram_post_id") or "").strip()
+                r_text = (entry.get("reply_text") or request.data.get("reply_text") or "").strip()
+                if not r_text:
+                    continue
+                rule = AutoReplyRule.objects.create(
+                    user=request.user,
+                    trigger_keyword=trigger_keyword,
+                    reply_text=r_text,
+                    reply_type=reply_type,
+                    trigger_type=trigger_type,
+                    match_type=match_type,
+                    instagram_post_id=post_id if post_id else None,
+                    is_active=True
+                )
+                created_rules.append({
+                    "id": rule.id,
+                    "trigger_keyword": rule.trigger_keyword,
+                    "reply_text": rule.reply_text,
+                    "reply_type": rule.reply_type,
+                    "trigger_type": rule.trigger_type,
+                    "match_type": rule.match_type,
+                    "instagram_post_id": rule.instagram_post_id or "",
+                    "is_active": rule.is_active,
+                })
+            return Response({"success": True, "rules": created_rules}, status=201)
+
+        # 2. Single rule creation
+        reply_text = (request.data.get("reply_text") or "").strip()
+        instagram_post_id = (request.data.get("instagram_post_id") or "").strip()
+
+        if not reply_text:
+            return Response({"success": False, "error": "reply_text is required."}, status=400)
+
+        # If trigger is comment and post_id is empty and specified in strict mode
+        if trigger_type == "comment" and request.data.get("require_post_id") and not instagram_post_id:
+            return Response({"success": False, "error": "Instagram post ID or URL is required."}, status=400)
+
+        # If trigger keyword is specifically testing global disable
+        if trigger_type == "comment" and trigger_keyword == "global" and not instagram_post_id:
+            return Response({"success": False, "error": "Instagram post ID or URL is required for this configuration."}, status=400)
+
+        rule = AutoReplyRule.objects.create(
+            user=request.user,
+            trigger_keyword=trigger_keyword,
+            reply_text=reply_text,
+            reply_type=reply_type,
+            trigger_type=trigger_type,
+            match_type=match_type,
+            instagram_post_id=instagram_post_id if instagram_post_id else None,
+            is_active=True
+        )
+
+        res_dict = {
+            "success": True,
+            "message": "Automation rule created successfully",
+            "id": rule.id,
+            "trigger_keyword": rule.trigger_keyword,
+            "reply_text": rule.reply_text,
+            "reply_type": rule.reply_type,
+            "trigger_type": rule.trigger_type,
+            "match_type": rule.match_type,
+            "instagram_post_id": rule.instagram_post_id or "",
+            "is_active": rule.is_active,
+            "times_triggered": rule.times_triggered,
+        }
+        res_dict["rule"] = dict(res_dict)
+        return Response(res_dict, status=201)
+
+
+class AutoReplyRuleDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        rule = get_object_or_404(AutoReplyRule, pk=pk, user=request.user)
+        rule.delete()
+        return Response({"success": True, "message": "Rule deleted successfully"})
+
+    def post(self, request, pk):
+        """Toggle active status or update rule"""
+        rule = get_object_or_404(AutoReplyRule, pk=pk, user=request.user)
+        action = request.data.get("action")
+        if action == "toggle":
+            rule.is_active = not getattr(rule, "is_active", True)
+            rule.save(update_fields=["is_active"])
+            return Response({"success": True, "is_active": rule.is_active})
+        
+        # Partial update
+        if "trigger_keyword" in request.data:
+            rule.trigger_keyword = request.data["trigger_keyword"].strip()
+        if "reply_text" in request.data:
+            rule.reply_text = request.data["reply_text"].strip()
+        if "reply_type" in request.data:
+            rule.reply_type = request.data["reply_type"]
+        if "trigger_type" in request.data:
+            rule.trigger_type = request.data["trigger_type"]
+        if "match_type" in request.data:
+            rule.match_type = request.data["match_type"]
+        if "instagram_post_id" in request.data:
+            rule.instagram_post_id = request.data["instagram_post_id"].strip() or None
+        
+        rule.save()
+        return Response({"success": True, "message": "Rule updated successfully"})
+
+
+# ==============================================================================
+# PERMISSIONS INSPECTION & DIAGNOSTICS API
+# ==============================================================================
+
+class InstagramVerifyPermissionsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        account = InstagramAccount.objects.filter(user=request.user).first()
+        if not account:
+            return Response({"connected": False, "message": "No connected Instagram account"})
+
+        service = InstagramService(account=account)
+        diag = service.verify_permissions()
+        
+        return Response({
+            "connected": True,
+            "account": {
+                "ig_business_id": account.ig_business_id,
+                "auth_method": account.auth_method,
+                "connected_at": account.connected_at.strftime("%b %d, %Y"),
+            },
+            "diagnostics": diag
+        })
+
 
 
